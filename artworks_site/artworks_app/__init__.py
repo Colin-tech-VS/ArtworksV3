@@ -85,6 +85,9 @@ def create_app():
         ctx['cms_nav_pages'] = CmsPage.query.filter_by(published=True, show_in_nav=True).order_by(CmsPage.title).all()
         from .pricing_store import pricing_context
         ctx['pricing'] = pricing_context()
+        from .aria_assistant import aria_enabled, aria_show_on_vitrine
+        ctx['aria_enabled'] = aria_enabled() and aria_show_on_vitrine(request.endpoint)
+        ctx['site_url'] = (app.config.get('SITE_URL') or '').rstrip('/') or 'https://artworksdigital.fr'
         if request.blueprint == 'crm':
             from .crm.crm_ctx import (
                 ARTWORK_STATUS_LABELS, CAMPAIGN_STATUS_LABELS, NAV_META,
@@ -123,6 +126,8 @@ def create_app():
         if request.blueprint in ('crm', 'auth') or request.path.startswith('/static'):
             return response
         if request.path.startswith('/webhooks'):
+            return response
+        if request.path.startswith('/api/aria'):
             return response
         try:
             from .analytics_track import track_event

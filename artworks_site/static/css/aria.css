@@ -1,0 +1,351 @@
+/* Aria — widget chat vitrine (sidebar style ChatGPT) */
+
+.aria-root {
+  --aria-bg: #1a2832;
+  --aria-surface: #243442;
+  --aria-surface-2: #2d3f4f;
+  --aria-text: #f7f4ee;
+  --aria-muted: #a8b4bc;
+  --aria-accent: #b8734a;
+  --aria-user-bg: #3a4f62;
+  --aria-border: rgba(247, 244, 238, 0.08);
+  --aria-shadow: 0 24px 80px rgba(26, 40, 50, 0.45);
+  --aria-ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+  font-family: 'Outfit', system-ui, sans-serif;
+  z-index: 99990;
+}
+
+/* Bouton flottant */
+.aria-fab {
+  position: fixed;
+  right: clamp(16px, 3vw, 28px);
+  bottom: clamp(16px, 3vw, 28px);
+  width: 58px;
+  height: 58px;
+  border: none;
+  border-radius: 50%;
+  background: linear-gradient(145deg, var(--aria-accent), #9a5f3c);
+  color: #fff;
+  cursor: pointer;
+  box-shadow: var(--aria-shadow);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.35s var(--aria-ease), box-shadow 0.35s var(--aria-ease);
+  z-index: 99991;
+}
+.aria-fab:hover {
+  transform: scale(1.06) translateY(-2px);
+  box-shadow: 0 28px 56px rgba(184, 115, 74, 0.35);
+}
+.aria-fab svg { width: 26px; height: 26px; }
+.aria-fab.is-open { transform: scale(0.92); opacity: 0; pointer-events: none; }
+
+.aria-fab-pulse {
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  border: 2px solid rgba(184, 115, 74, 0.5);
+  animation: aria-pulse 2.4s ease-out infinite;
+  pointer-events: none;
+}
+@keyframes aria-pulse {
+  0% { transform: scale(1); opacity: 0.7; }
+  100% { transform: scale(1.35); opacity: 0; }
+}
+
+/* Overlay */
+.aria-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(26, 40, 50, 0.35);
+  backdrop-filter: blur(4px);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.4s var(--aria-ease), visibility 0.4s;
+  z-index: 99992;
+}
+.aria-overlay.is-open {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* Sidebar */
+.aria-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: min(440px, 100vw);
+  height: 100dvh;
+  background: var(--aria-bg);
+  color: var(--aria-text);
+  box-shadow: -12px 0 48px rgba(0, 0, 0, 0.25);
+  display: flex;
+  flex-direction: column;
+  transform: translateX(105%);
+  transition: transform 0.45s var(--aria-ease);
+  z-index: 99993;
+}
+.aria-panel.is-open {
+  transform: translateX(0);
+}
+
+.aria-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 18px;
+  border-bottom: 1px solid var(--aria-border);
+  flex-shrink: 0;
+}
+.aria-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, var(--aria-accent), #d4956e);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #fff;
+}
+.aria-head-text h2 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+.aria-head-text p {
+  margin: 2px 0 0;
+  font-size: 0.75rem;
+  color: var(--aria-muted);
+}
+.aria-head-actions {
+  margin-left: auto;
+  display: flex;
+  gap: 6px;
+}
+.aria-icon-btn {
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--aria-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s, color 0.2s;
+}
+.aria-icon-btn:hover {
+  background: var(--aria-surface);
+  color: var(--aria-text);
+}
+
+.aria-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px 16px 12px;
+  scroll-behavior: smooth;
+}
+.aria-messages::-webkit-scrollbar { width: 6px; }
+.aria-messages::-webkit-scrollbar-thumb {
+  background: var(--aria-surface-2);
+  border-radius: 3px;
+}
+
+.aria-welcome {
+  text-align: center;
+  padding: 24px 12px 32px;
+  animation: aria-fade-up 0.6s var(--aria-ease);
+}
+.aria-welcome h3 {
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: 1.65rem;
+  font-weight: 500;
+  margin: 0 0 8px;
+}
+.aria-welcome p {
+  color: var(--aria-muted);
+  font-size: 0.9rem;
+  line-height: 1.5;
+  margin: 0 0 20px;
+}
+.aria-suggestions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.aria-suggestion {
+  background: var(--aria-surface);
+  border: 1px solid var(--aria-border);
+  border-radius: 12px;
+  padding: 12px 14px;
+  font-size: 0.85rem;
+  color: var(--aria-text);
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.2s, border-color 0.2s, transform 0.2s;
+}
+.aria-suggestion:hover {
+  background: var(--aria-surface-2);
+  border-color: rgba(184, 115, 74, 0.35);
+  transform: translateX(4px);
+}
+
+@keyframes aria-fade-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.aria-msg {
+  margin-bottom: 20px;
+  animation: aria-fade-up 0.35s var(--aria-ease);
+}
+.aria-msg-user {
+  display: flex;
+  justify-content: flex-end;
+}
+.aria-msg-user .aria-bubble {
+  max-width: 88%;
+  background: var(--aria-user-bg);
+  border-radius: 18px 18px 4px 18px;
+  padding: 10px 14px;
+  font-size: 0.9rem;
+  line-height: 1.55;
+}
+.aria-msg-assistant .aria-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--aria-accent);
+  margin-bottom: 6px;
+}
+.aria-msg-assistant .aria-content {
+  font-size: 0.92rem;
+  line-height: 1.65;
+  color: var(--aria-text);
+}
+.aria-msg-assistant .aria-content p { margin: 0 0 0.65em; }
+.aria-msg-assistant .aria-content p:last-child { margin-bottom: 0; }
+.aria-msg-assistant .aria-content ul,
+.aria-msg-assistant .aria-content ol {
+  margin: 0.4em 0 0.65em;
+  padding-left: 1.25em;
+}
+.aria-msg-assistant .aria-content li { margin-bottom: 0.35em; }
+.aria-msg-assistant .aria-content strong {
+  font-weight: 600;
+  color: #fff;
+}
+.aria-msg-assistant .aria-content a {
+  color: #e8b896;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  font-weight: 500;
+  transition: color 0.2s;
+}
+.aria-msg-assistant .aria-content a:hover { color: #fff; }
+
+.aria-cursor {
+  display: inline-block;
+  width: 2px;
+  height: 1em;
+  background: var(--aria-accent);
+  margin-left: 2px;
+  vertical-align: text-bottom;
+  animation: aria-blink 0.9s step-end infinite;
+}
+@keyframes aria-blink {
+  50% { opacity: 0; }
+}
+
+.aria-typing {
+  display: flex;
+  gap: 5px;
+  padding: 8px 0;
+}
+.aria-typing span {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--aria-muted);
+  animation: aria-dot 1.2s ease-in-out infinite;
+}
+.aria-typing span:nth-child(2) { animation-delay: 0.15s; }
+.aria-typing span:nth-child(3) { animation-delay: 0.3s; }
+@keyframes aria-dot {
+  0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
+  40% { transform: scale(1); opacity: 1; }
+}
+
+.aria-compose {
+  padding: 12px 14px 18px;
+  border-top: 1px solid var(--aria-border);
+  flex-shrink: 0;
+}
+.aria-compose-inner {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  background: var(--aria-surface);
+  border: 1px solid var(--aria-border);
+  border-radius: 16px;
+  padding: 10px 12px;
+  transition: border-color 0.2s;
+}
+.aria-compose-inner:focus-within {
+  border-color: rgba(184, 115, 74, 0.45);
+}
+.aria-compose textarea {
+  flex: 1;
+  border: none;
+  background: transparent;
+  color: var(--aria-text);
+  font: inherit;
+  font-size: 0.9rem;
+  line-height: 1.45;
+  resize: none;
+  max-height: 120px;
+  min-height: 24px;
+  outline: none;
+}
+.aria-compose textarea::placeholder { color: var(--aria-muted); }
+.aria-send {
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 10px;
+  background: var(--aria-accent);
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: opacity 0.2s, transform 0.2s;
+}
+.aria-send:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+.aria-send:not(:disabled):hover { transform: scale(1.05); }
+
+.aria-footnote {
+  text-align: center;
+  font-size: 0.68rem;
+  color: var(--aria-muted);
+  margin-top: 8px;
+}
+
+body.aria-open { overflow: hidden; }
+body.page-auth .aria-root,
+body.crm-mode .aria-root { display: none !important; }
+
+@media (max-width: 480px) {
+  .aria-panel { width: 100vw; }
+}

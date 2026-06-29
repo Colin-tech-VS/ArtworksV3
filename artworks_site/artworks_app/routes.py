@@ -1,5 +1,5 @@
 from flask import (Blueprint, render_template, request, redirect, url_for,
-                   flash, current_app, abort)
+                   flash, current_app, abort, jsonify)
 from .models import Artwork, User, Series, CmsPage
 from . import db
 from flask_login import current_user, login_required
@@ -945,3 +945,26 @@ def export_stats():
         mimetype='text/csv',
         headers={'Content-Disposition': 'attachment; filename=stats-artworks.csv'},
     )
+
+
+# ---------- Aria (chatbot vitrine) ----------
+
+
+@bp.route('/api/aria/chat', methods=['POST'])
+def aria_chat():
+    from .aria_assistant import chat, clear_history, aria_enabled
+
+    if not aria_enabled():
+        return jsonify({'error': 'Aria n\'est pas disponible pour le moment.'}), 503
+
+    data = request.get_json(silent=True) or {}
+    if data.get('reset'):
+        clear_history()
+        return jsonify({'ok': True})
+
+    message = (data.get('message') or '').strip()
+    result = chat(message, reset=bool(data.get('reset_conversation')))
+    if result.get('error') and not result.get('reply'):
+        status = 429 if 'Limite' in result['error'] else 400
+        return jsonify(result), status
+    return jsonify(result)

@@ -161,7 +161,15 @@
 
 {% block lightbox %}{% endblock %}
 
+{% if aria_enabled %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/aria.css') }}">
+{% include '_aria_widget.html' %}
+{% endif %}
+
 <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+{% if aria_enabled %}
+<script src="{{ url_for('static', filename='js/aria.js') }}" defer></script>
+{% endif %}
 {% block scripts %}{% endblock %}
 </body>
 </html>
