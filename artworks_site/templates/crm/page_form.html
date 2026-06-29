@@ -1,0 +1,62 @@
+{% extends 'crm/_crm_layout.html' %}
+
+{% block title %}CRM — {{ 'Éditer' if page else 'Nouvelle' }} page{% endblock %}
+
+{% block crm_header %}
+<header class="crm-page-head crm-reveal">
+  <div class="crm-page-head-text">
+    <p class="crm-eyebrow">Pages CMS</p>
+    <h1>{{ 'Éditer la page' if page else 'Nouvelle page' }}</h1>
+    {% if page %}<p class="crm-lead">Slug : <code>/p/{{ page.slug }}</code></p>{% endif %}
+  </div>
+  <div class="crm-page-head-actions">
+    <a href="{{ url_for('crm.pages_list') }}" class="crm-btn-ghost">← Retour</a>
+  </div>
+</header>
+{% endblock %}
+
+{% block crm_content %}
+<div class="crm-split crm-stagger">
+  <div class="crm-panel crm-ai-panel">
+    <div class="crm-panel-head">
+      <div>
+        <h2>Génération IA (Mistral)</h2>
+        <p class="sub">Objectif 100 % SEO & référencement naturel</p>
+      </div>
+      <span class="crm-badge crm-badge-live">SEO</span>
+    </div>
+    <form id="crm-ai-form" class="crm-form" method="post" action="{{ url_for('crm.page_generate_ai') }}">
+      {{ ai_form.hidden_tag() }}
+      <div class="field">{{ ai_form.ai_topic.label }}{{ ai_form.ai_topic(rows=4, class='crm-wysiwyg', placeholder='Ex. Guide pour collectionner l\'art contemporain en ligne en 2026…') }}</div>
+      <div class="field">{{ ai_form.ai_keywords.label }}{{ ai_form.ai_keywords(placeholder='art contemporain, acheter oeuvre, marketplace art') }}</div>
+      <div class="field">{{ ai_form.ai_tone.label }}{{ ai_form.ai_tone() }}</div>
+      <button type="submit" class="btn-solid" id="crm-ai-btn">✦ Générer la page SEO</button>
+      <p class="crm-hint" id="crm-ai-status"></p>
+    </form>
+  </div>
+
+  <div class="crm-panel">
+    <div class="crm-panel-head"><div><h2>Édition manuelle</h2><p class="sub">Affinez le contenu généré ou rédigez from scratch</p></div></div>
+    <form method="post" class="crm-form" id="crm-page-form">
+      {{ form.hidden_tag() }}
+      <div class="field">{{ form.title.label }}{{ form.title() }}</div>
+      <div class="field">
+        {{ form.slug.label }}{{ form.slug() }}
+        <div class="crm-hint">URL : /p/{{ form.slug.data or 'mon-slug' }}</div>
+      </div>
+      <div class="field">{{ form.excerpt.label }}{{ form.excerpt() }}</div>
+      <div class="field">{{ form.meta_title.label }}{{ form.meta_title() }}</div>
+      <div class="field">{{ form.meta_description.label }}{{ form.meta_description() }}</div>
+      <div class="field">{{ form.body.label }}{{ form.body(class='tall crm-wysiwyg') }}</div>
+      <div class="field check">{{ form.published() }} <label for="published">Publier</label></div>
+      <div class="field check">{{ form.show_in_nav() }} <label for="show_in_nav">Menu du site</label></div>
+      {{ form.submit(class='btn-solid') }}
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block crm_scripts %}
+<script src="{{ url_for('static', filename='js/crm-pages.js') }}"></script>
+<script src="{{ url_for('static', filename='js/crm-page-preview.js') }}"></script>
+{% endblock %}

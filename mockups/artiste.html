@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Camille Vasseur — Artworks</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;1,9..144,300;1,9..144,400&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/styles.css">
+<style>
+.banner{ position:relative; height:clamp(220px,30vw,360px); overflow:hidden; background:var(--ink); }
+.banner img{ width:100%; height:100%; object-fit:cover; filter:brightness(.92); }
+.banner::after{ content:""; position:absolute; inset:0; background:linear-gradient(to bottom, rgba(250,248,245,0) 50%, rgba(250,248,245,.55)); }
+
+.profile-head{ position:relative; margin-top:-90px; }
+.profile-top{ display:flex; align-items:flex-end; gap:34px; flex-wrap:wrap; }
+.medallion{
+  width:clamp(140px,16vw,184px); height:clamp(140px,16vw,184px);
+  border-radius:50%; overflow:hidden; border:5px solid var(--bg);
+  box-shadow:0 24px 48px -22px rgba(40,28,22,.45); flex-shrink:0; background:var(--bg-alt);
+}
+.medallion img{ width:100%; height:100%; object-fit:cover; }
+.profile-id{ padding-bottom:8px; flex:1; min-width:240px; }
+.profile-id .name{ font-family:var(--serif); font-weight:300; font-size:clamp(34px,4.6vw,56px); letter-spacing:-.025em; line-height:1; }
+.profile-id .sub{ display:flex; align-items:center; gap:16px; flex-wrap:wrap; color:var(--grey); font-size:14.5px; margin-top:14px; }
+.profile-id .sub .pin{ display:inline-flex; align-items:center; gap:6px; }
+.profile-id .sub .dot{ width:4px; height:4px; border-radius:50%; background:var(--grey-soft); }
+.profile-actions{ display:flex; gap:12px; padding-bottom:10px; }
+
+.stats{ display:flex; gap:clamp(28px,5vw,68px); margin:clamp(40px,5vw,60px) 0; padding:30px 0; border-top:1px solid var(--hair); border-bottom:1px solid var(--hair); }
+.stats .s .n{ font-family:var(--serif); font-size:clamp(26px,3vw,38px); line-height:1; }
+.stats .s .l{ font-size:11px; text-transform:uppercase; letter-spacing:.14em; color:var(--grey); margin-top:8px; }
+
+.about{ display:grid; grid-template-columns:1fr 1.4fr; gap:clamp(40px,6vw,90px); align-items:start; }
+.about .lbl{ position:sticky; top:120px; }
+.about h2{ font-family:var(--serif); font-weight:300; font-size:clamp(26px,3vw,38px); letter-spacing:-.02em; margin:0; line-height:1.1; }
+.about .statement{ font-family:var(--serif); font-weight:300; font-size:clamp(20px,2vw,25px); line-height:1.5; color:var(--ink); }
+.about .statement p{ margin:0 0 1.1em; }
+.about .statement p:first-child::first-letter{ font-size:3.4em; float:left; line-height:.82; padding:6px 14px 0 0; color:var(--accent); font-weight:400; }
+.about .body{ color:var(--grey); font-size:15.5px; line-height:1.7; margin-top:24px; }
+
+/* Tabs */
+.tabs{ display:flex; gap:30px; border-bottom:1px solid var(--hair); margin-bottom:clamp(36px,4vw,52px); }
+.tab{ font-family:var(--sans); font-size:14px; letter-spacing:.04em; color:var(--grey); background:none; border:none; padding:0 0 16px; position:relative; }
+.tab::after{ content:""; position:absolute; left:0; right:100%; bottom:-1px; height:2px; background:var(--accent); transition:right .3s var(--ease); }
+.tab.active{ color:var(--ink); }
+.tab.active::after{ right:0; }
+
+/* Expositions list */
+.expos{ max-width:760px; }
+.expo{ display:grid; grid-template-columns:96px 1fr auto; gap:28px; align-items:baseline; padding:26px 0; border-bottom:1px solid var(--hair); }
+.expo .yr{ font-family:var(--serif); font-size:22px; color:var(--accent); }
+.expo .t{ font-family:var(--serif); font-style:italic; font-size:20px; }
+.expo .v{ color:var(--grey); font-size:14px; margin-top:5px; }
+.expo .city{ font-size:11px; text-transform:uppercase; letter-spacing:.14em; color:var(--grey); white-space:nowrap; }
+
+.followbtn.on{ background:var(--ink); color:var(--bg); }
+
+@media (max-width:820px){
+  .about{ grid-template-columns:1fr; }
+  .about .lbl{ position:static; }
+}
+@media (max-width:560px){
+  .profile-actions{ width:100%; }
+  .profile-actions .btn-line,.profile-actions .btn-solid{ flex:1; text-align:center; }
+  .expo{ grid-template-columns:64px 1fr; }
+  .expo .city{ grid-column:2; }
+}
+</style>
+</head>
+<body>
+
+<!-- ===== HEADER ===== -->
+<header class="site-head">
+  <div class="head-inner">
+    <a href="index.html" class="brand">Artworks<span class="dot">.</span></a>
+    <nav class="nav">
+      <a href="explorer.html">Explorer</a>
+      <a href="artiste.html" class="active">Artistes</a>
+      <a href="explorer.html">Galeries</a>
+    </nav>
+    <div class="head-tools">
+      <label class="search-mini">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+        <input type="text" placeholder="Rechercher une œuvre, un artiste…">
+      </label>
+      <a href="explorer.html" class="icon-btn" aria-label="Favoris">
+        <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 21s-7.5-4.6-9.7-9.2C.9 8.5 2.3 5.2 5.5 5.2c1.9 0 3.4 1.1 4.5 2.8 1.1-1.7 2.6-2.8 4.5-2.8 3.2 0 4.6 3.3 3.2 6.6C19.5 16.4 12 21 12 21z"/></svg>
+        <span class="count" data-fav-count>0</span>
+      </a>
+      <a href="#" class="btn-line">Connexion</a>
+      <a href="#" class="btn-solid">S'inscrire</a>
+    </div>
+    <button class="burger" aria-label="Menu"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 6h18M3 12h18M3 18h18"/></svg></button>
+  </div>
+</header>
+
+<div class="drawer">
+  <div class="top"><span class="brand">Artworks<span class="dot">.</span></span><button class="icon-btn" data-close-drawer aria-label="Fermer"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
+  <nav><a href="explorer.html">Explorer</a><a href="artiste.html">Artistes</a><a href="explorer.html">Galeries</a><a href="explorer.html">Favoris</a></nav>
+  <div class="actions"><a href="#" class="btn-line" style="text-align:center">Connexion</a><a href="#" class="btn-solid" style="text-align:center">S'inscrire</a></div>
+</div>
+
+<main>
+  <!-- ===== BANNER ===== -->
+  <div class="banner"><img src="assets/banner.jpg" alt="Atelier de Camille Vasseur"></div>
+
+  <div class="wrap">
+    <!-- ===== PROFILE HEAD ===== -->
+    <section class="profile-head reveal in">
+      <div class="profile-top">
+        <div class="medallion"><img src="assets/artist-profile.jpg" alt="Portrait de Camille Vasseur"></div>
+        <div class="profile-id">
+          <h1 class="name">Camille Vasseur</h1>
+          <div class="sub">
+            <span>Peinture abstraite · Huile</span>
+            <span class="dot"></span>
+            <span class="pin"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 21s7-6.3 7-12a7 7 0 1 0-14 0c0 5.7 7 12 7 12z"/><circle cx="12" cy="9" r="2.5"/></svg> Marseille, France</span>
+            <span class="dot"></span>
+            <span class="cartel cartel-ink">Galerie Lumen</span>
+          </div>
+        </div>
+        <div class="profile-actions">
+          <button class="btn-line followbtn" id="follow">+ Suivre</button>
+          <a href="#" class="btn-solid">Contacter</a>
+        </div>
+      </div>
+
+      <!-- ===== STATS ===== -->
+      <div class="stats">
+        <div class="s"><div class="n">48</div><div class="l">Œuvres</div></div>
+        <div class="s"><div class="n">2 140</div><div class="l">Abonnés</div></div>
+        <div class="s"><div class="n">17</div><div class="l">Expositions</div></div>
+        <div class="s"><div class="n">2009</div><div class="l">Depuis</div></div>
+      </div>
+    </section>
+
+    <!-- ===== ABOUT / STATEMENT ===== -->
+    <section class="sec" style="padding-top:0">
+      <div class="about reveal">
+        <div class="lbl">
+          <div class="eyebrow" style="display:flex;align-items:center;gap:12px;margin-bottom:18px"><span style="width:34px;height:1px;background:var(--accent);display:inline-block"></span><span class="cartel">Statement</span></div>
+          <h2>L'incandescence<br>du geste</h2>
+        </div>
+        <div>
+          <div class="statement">
+            <p>Je peins ce qui brûle juste avant de disparaître. La couleur n'est pas un décor : c'est une température, une matière qui se souvient du feu et de la terre.</p>
+            <p>Chaque toile commence par un effacement. J'applique, je gratte, je recommence — jusqu'à ce que la surface respire d'elle-même.</p>
+          </div>
+          <p class="body">Née à Marseille en 1981, Camille Vasseur développe depuis quinze ans une peinture abstraite gestuelle où dominent les terres brûlées et les ocres. Diplômée des Beaux-Arts de Marseille, elle expose régulièrement en France et en Italie. Son travail figure dans plusieurs collections privées européennes. Représentée par la Galerie Lumen depuis 2018, elle partage son atelier entre Marseille et la campagne provençale, où la lumière façonne directement sa palette.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== TABS + PORTFOLIO ===== -->
+    <section class="sec" style="padding-top:0" data-tabs>
+      <div class="tabs">
+        <button class="tab active" data-tab="oeuvres">Œuvres</button>
+        <button class="tab" data-tab="expos">Expositions</button>
+        <button class="tab" data-tab="apropos">À propos</button>
+      </div>
+
+      <!-- Panel: Œuvres -->
+      <div data-panel="oeuvres" class="reveal">
+        <div class="artgrid cols-3">
+
+          <article class="art" data-id="a1"><div class="art-frame"><button class="fav" data-id="a1" aria-label="Favori"><svg viewBox="0 0 24 24"><path d="M12 21s-7.5-4.6-9.7-9.2C.9 8.5 2.3 5.2 5.5 5.2c1.9 0 3.4 1.1 4.5 2.8 1.1-1.7 2.6-2.8 4.5-2.8 3.2 0 4.6 3.3 3.2 6.6C19.5 16.4 12 21 12 21z"/></svg></button><a href="oeuvre.html"><img src="assets/art-01.jpg" alt="Embrasement"></a><div class="art-cartel"><div class="t">Embrasement</div><div class="a">2024 · Huile</div></div></div><div class="art-meta"><div class="t">Embrasement</div><div class="a">Huile · 120×90 cm</div><div class="p">4 200 €</div></div></article>
+
+          <article class="art" data-id="a2"><div class="art-frame"><button class="fav" data-id="a2" aria-label="Favori"><svg viewBox="0 0 24 24"><path d="M12 21s-7.5-4.6-9.7-9.2C.9 8.5 2.3 5.2 5.5 5.2c1.9 0 3.4 1.1 4.5 2.8 1.1-1.7 2.6-2.8 4.5-2.8 3.2 0 4.6 3.3 3.2 6.6C19.5 16.4 12 21 12 21z"/></svg></button><a href="oeuvre.html"><img src="assets/art-09.jpg" alt="Aube rouge"></a><div class="art-cartel"><div class="t">Aube rouge</div><div class="a">2023 · Huile</div></div></div><div class="art-meta"><div class="t">Aube rouge</div><div class="a">Huile · 70×95 cm</div><div class="p">3 600 €</div></div></article>
+
+          <article class="art" data-id="a3"><div class="art-frame"><button class="fav" data-id="a3" aria-label="Favori"><svg viewBox="0 0 24 24"><path d="M12 21s-7.5-4.6-9.7-9.2C.9 8.5 2.3 5.2 5.5 5.2c1.9 0 3.4 1.1 4.5 2.8 1.1-1.7 2.6-2.8 4.5-2.8 3.2 0 4.6 3.3 3.2 6.6C19.5 16.4 12 21 12 21z"/></svg></button><a href="oeuvre.html"><img src="assets/art-05.jpg" alt="Terres labourées"></a><div class="art-cartel"><div class="t">Terres labourées</div><div class="a">2022 · Huile</div></div></div><div class="art-meta"><div class="t">Terres labourées</div><div class="a">Huile · 90×130 cm</div><div class="p">5 400 €</div></div></article>
+
+          <article class="art" data-id="a4"><div class="art-frame"><button class="fav" data-id="a4" aria-label="Favori"><svg viewBox="0 0 24 24"><path d="M12 21s-7.5-4.6-9.7-9.2C.9 8.5 2.3 5.2 5.5 5.2c1.9 0 3.4 1.1 4.5 2.8 1.1-1.7 2.6-2.8 4.5-2.8 3.2 0 4.6 3.3 3.2 6.6C19.5 16.4 12 21 12 21z"/></svg></button><a href="oeuvre.html"><img src="assets/art-12.jpg" alt="Sillage"></a><div class="art-cartel"><div class="t">Sillage</div><div class="a">2024 · Huile</div></div></div><div class="art-meta"><div class="t">Sillage</div><div class="a">Huile · 60×40 cm</div><div class="p">1 450 €</div></div></article>
+
+          <article class="art" data-id="a5"><div class="art-frame"><button class="fav" data-id="a5" aria-label="Favori"><svg viewBox="0 0 24 24"><path d="M12 21s-7.5-4.6-9.7-9.2C.9 8.5 2.3 5.2 5.5 5.2c1.9 0 3.4 1.1 4.5 2.8 1.1-1.7 2.6-2.8 4.5-2.8 3.2 0 4.6 3.3 3.2 6.6C19.5 16.4 12 21 12 21z"/></svg></button><a href="oeuvre.html"><img src="assets/art-08.jpg" alt="Carnaval"></a><div class="art-cartel"><div class="t">Carnaval</div><div class="a">2024 · Acrylique</div></div></div><div class="art-meta"><div class="t">Carnaval</div><div class="a">Acrylique · 80×80 cm</div><div class="p">2 300 €</div></div></article>
+
+          <article class="art" data-id="a6"><div class="art-frame"><button class="fav" data-id="a6" aria-label="Favori"><svg viewBox="0 0 24 24"><path d="M12 21s-7.5-4.6-9.7-9.2C.9 8.5 2.3 5.2 5.5 5.2c1.9 0 3.4 1.1 4.5 2.8 1.1-1.7 2.6-2.8 4.5-2.8 3.2 0 4.6 3.3 3.2 6.6C19.5 16.4 12 21 12 21z"/></svg></button><a href="oeuvre.html"><img src="assets/art-11.jpg" alt="Contrepoint"></a><div class="art-cartel"><div class="t">Contrepoint</div><div class="a">2023 · Acrylique</div></div></div><div class="art-meta"><div class="t">Contrepoint</div><div class="a">Acrylique · 75×100 cm</div><div class="p">2 900 €</div></div></article>
+
+        </div>
+      </div>
+
+      <!-- Panel: Expositions -->
+      <div data-panel="expos" style="display:none">
+        <div class="expos">
+          <div class="expo"><div class="yr">2025</div><div><div class="t">Terres incandescentes</div><div class="v">Galerie Lumen — exposition personnelle</div></div><div class="city">Marseille</div></div>
+          <div class="expo"><div class="yr">2024</div><div><div class="t">Abstractions du Sud</div><div class="v">Fondation Carmin — exposition collective</div></div><div class="city">Arles</div></div>
+          <div class="expo"><div class="yr">2023</div><div><div class="t">Materia Prima</div><div class="v">Studio Méridien — duo avec Théo Lambert</div></div><div class="city">Lyon</div></div>
+          <div class="expo"><div class="yr">2022</div><div><div class="t">Il Fuoco</div><div class="v">Galleria Veneta — exposition personnelle</div></div><div class="city">Venise</div></div>
+          <div class="expo"><div class="yr">2021</div><div><div class="t">Jeunes peintures</div><div class="v">Salon de Montrouge — sélection</div></div><div class="city">Paris</div></div>
+        </div>
+      </div>
+
+      <!-- Panel: À propos -->
+      <div data-panel="apropos" style="display:none">
+        <div class="about" style="grid-template-columns:1fr 1.4fr">
+          <div class="lbl"><div class="cartel" style="margin-bottom:14px">Biographie</div><h2>Parcours</h2></div>
+          <div>
+            <p class="body" style="margin-top:0">Camille Vasseur (née en 1981 à Marseille) est une peintre française dont le travail explore la matière, la mémoire et la lumière méditerranéenne. Après des études aux Beaux-Arts de Marseille (2003-2008), elle se consacre exclusivement à la peinture abstraite gestuelle.</p>
+            <p class="body">Formée à la fresque puis à l'huile, elle développe une technique de superposition et d'arrachement qui donne à ses surfaces une profondeur minérale. Ses œuvres figurent dans des collections privées en France, en Italie et en Suisse.</p>
+            <p class="body">Représentée par la Galerie Lumen depuis 2018, elle vit et travaille entre Marseille et l'arrière-pays provençal.</p>
+            <div class="cartel cartel-ink" style="margin-top:30px;display:flex;gap:26px;flex-wrap:wrap">
+              <span>Né·e en 1981</span><span>Marseille, FR</span><span>48 œuvres</span><span>Galerie Lumen</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+</main>
+
+<!-- ===== FOOTER ===== -->
+<footer class="site-foot">
+  <div class="wrap">
+    <div class="foot-grid">
+      <div class="foot-brand"><span class="brand">Artworks<span class="dot">.</span></span><p>La marketplace d'art contemporain qui met l'œuvre au centre. Découvrez, collectionnez, exposez.</p><form class="foot-news" onsubmit="return false"><input type="email" placeholder="Votre adresse e-mail"><button type="submit">S'abonner</button></form></div>
+      <div class="foot-col"><h4>Découvrir</h4><a href="explorer.html">Explorer</a><a href="artiste.html">Artistes</a><a href="explorer.html">Galeries</a><a href="explorer.html">Collections</a></div>
+      <div class="foot-col"><h4>Vendre</h4><a href="artiste.html">Créer un portfolio</a><a href="#">Espace galeries</a><a href="#">Tarifs</a><a href="#">Guide du vendeur</a></div>
+      <div class="foot-col"><h4>Aide</h4><a href="#">Livraison &amp; retours</a><a href="#">Authenticité</a><a href="#">Contact</a><a href="#">FAQ</a></div>
+    </div>
+    <div class="foot-bottom"><span>© 2026 Artworks. Tous droits réservés.</span><div class="socials"><a href="#">Instagram</a><a href="#">Pinterest</a><a href="#">LinkedIn</a><a href="#">Mentions légales</a></div></div>
+  </div>
+</footer>
+
+<script src="assets/app.js"></script>
+<script>
+  // follow toggle
+  var fb=document.getElementById('follow');
+  if(fb) fb.addEventListener('click',function(){ this.classList.toggle('on'); this.textContent=this.classList.contains('on')?'✓ Suivi':'+ Suivre'; });
+</script>
+</body>
+</html>

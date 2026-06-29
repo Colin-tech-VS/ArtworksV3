@@ -1,0 +1,119 @@
+/* Pages offre — Salon Collection */
+
+.page-offer .offer-hero{
+  position:relative; min-height:clamp(400px,52vh,540px);
+  display:flex; align-items:center;
+  padding:clamp(72px,9vw,110px) 0 clamp(44px,5vw,68px);
+  color:#fff; overflow:hidden;
+}
+.page-offer .offer-hero::before{
+  content:""; position:absolute; inset:0;
+  background:
+    linear-gradient(125deg, rgba(26,40,50,.94) 0%, rgba(36,52,66,.72) 55%, rgba(26,40,50,.88) 100%),
+    var(--offer-hero-image, none) center/cover no-repeat;
+}
+.page-offer .offer-hero .wrap{ position:relative; z-index:1; max-width:780px; }
+.page-offer .offer-hero .eyebrow{
+  display:inline-flex; align-items:center; gap:8px;
+  font-size:11px; letter-spacing:.14em; text-transform:uppercase;
+  color:rgba(255,255,255,.65); margin:0 0 20px;
+  padding:6px 14px; border:1px solid rgba(255,255,255,.15);
+  border-radius:var(--radius-pill);
+}
+.page-offer .offer-hero .eyebrow::before{
+  content:""; width:20px; height:2px; background:var(--museum-gold-soft); border-radius:2px;
+}
+.page-offer .offer-hero h1{
+  font-family:var(--serif); font-weight:500;
+  font-size:clamp(34px,5vw,54px); line-height:1.06; margin:0 0 18px;
+  letter-spacing:-.025em;
+}
+.page-offer .offer-hero h1 em{ font-style:italic; color:var(--museum-gold-soft); }
+.page-offer .offer-hero .lead{
+  font-size:clamp(16px,1.5vw,18px); line-height:1.7;
+  color:rgba(255,255,255,.82); margin:0 0 28px; max-width:54ch;
+}
+.page-offer .offer-hero-cta{ display:flex; flex-wrap:wrap; gap:12px; margin-bottom:32px; }
+.page-offer .offer-hero-cta .btn-solid{
+  background:#fff; color:var(--salon-navy); border-color:#fff;
+}
+.page-offer .offer-hero-cta .btn-solid:hover{
+  background:var(--accent); border-color:var(--accent); color:#fff;
+}
+.page-offer .offer-hero-cta .btn-line{
+  border-color:rgba(255,255,255,.4); color:#fff;
+}
+.page-offer .offer-hero-cta .btn-line:hover{ background:#fff; color:var(--salon-navy); }
+.page-offer .offer-trust{
+  display:flex; flex-wrap:wrap; gap:20px 36px;
+  font-size:13px; color:rgba(255,255,255,.65);
+  padding-top:24px; border-top:1px solid rgba(255,255,255,.12);
+}
+.page-offer .offer-trust strong{
+  display:block; color:#fff; font-family:var(--serif);
+  font-size:16px; font-weight:500;
+}
+
+.page-offer .offer-switch{
+  border-bottom:1px solid var(--hair);
+  background:var(--bg-pure);
+}
+.page-offer .offer-switch .wrap{
+  display:flex; flex-wrap:wrap; gap:8px 28px; padding:16px 0;
+}
+.page-offer .offer-switch a{
+  font-size:14px; font-weight:500; color:var(--grey);
+  padding:8px 0; border-bottom:2px solid transparent;
+  transition:color .2s, border-color .2s;
+}
+.page-offer .offer-switch a:hover{ color:var(--ink); }
+.page-offer .offer-switch a.is-active{
+  color:var(--salon-navy); border-color:var(--accent);
+}
+
+.page-offer .offer-section{ padding:clamp(64px,8vw,96px) 0; }
+.page-offer .offer-section--alt{ background:var(--bg-alt); }
+.page-offer .offer-section-head{
+  text-align:center; max-width:58ch;
+  margin:0 auto clamp(40px,4vw,56px);
+}
+.page-offer .offer-section-head h2{
+  font-family:var(--serif); font-weight:500;
+  font-size:clamp(28px,3.5vw,40px); margin:12px 0 12px;
+  letter-spacing:-.02em;
+}
+.page-offer .offer-section-head .muted{ color:var(--grey); line-height:1.65; margin:0; font-size:16px; }
+
+.page-offer .offer-commission{
+  display:inline-flex; align-items:center; gap:10px;
+  padding:12px 20px; border:1px solid var(--hair);
+  border-radius:var(--radius-pill);
+  background:var(--bg-pure); font-size:14px; margin:0 auto 28px;
+  box-shadow:var(--shadow-soft);
+}
+
+.page-offer .offer-faq{ max-width:720px; margin:0 auto; }
+.page-offer .offer-faq details{
+  border-bottom:1px solid var(--hair); padding:20px 0;
+}
+.page-offer .offer-faq summary{
+  cursor:pointer; font-weight:500; list-style:none;
+  font-family:var(--serif); font-size:17px;
+}
+.page-offer .offer-faq summary::-webkit-details-marker{ display:none; }
+.page-offer .offer-faq p{ color:var(--grey); line-height:1.65; margin:14px 0 0; font-size:15px; }
+
+.page-offer .offer-final{
+  text-align:center; padding:clamp(72px,9vw,100px) 0;
+  background:var(--salon-navy); color:rgba(255,255,255,.9);
+}
+.page-offer .offer-final h2{
+  font-family:var(--serif); font-weight:500;
+  font-size:clamp(28px,4vw,42px); margin:0 0 14px;
+}
+.page-offer .offer-final p{
+  opacity:.8; max-width:48ch; margin:0 auto 28px; line-height:1.65; font-size:16px;
+}
+.page-offer .offer-final .btn-solid{
+  background:var(--accent); border-color:var(--accent);
+}

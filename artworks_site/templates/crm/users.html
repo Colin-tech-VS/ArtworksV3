@@ -1,0 +1,66 @@
+{% extends 'crm/_crm_layout.html' %}
+{% from 'crm/_crm_macros.html' import role_badge, plan_badge, stripe_badge, user_cell, crm_empty %}
+
+{% block title %}CRM — Utilisateurs{% endblock %}
+
+{% block crm_header %}
+<header class="crm-page-head">
+  <div class="crm-page-head-text">
+    <p class="crm-eyebrow">Communauté</p>
+    <h1>Utilisateurs</h1>
+    <p class="crm-lead">Gérez artistes, galeries et collectionneurs — formules, accès et profils.</p>
+  </div>
+</header>
+{% endblock %}
+
+{% block crm_content %}
+<div class="crm-toolbar">
+  <form method="get">
+    <div class="crm-search">
+      <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+      <input type="search" name="q" value="{{ q }}" placeholder="Nom, email, @username…">
+    </div>
+    <select name="role" aria-label="Filtrer par rôle">
+      <option value="all">Tous les rôles</option>
+      <option value="artiste" {{ 'selected' if role=='artiste' }}>Artistes</option>
+      <option value="galerie" {{ 'selected' if role=='galerie' }}>Galeries</option>
+      <option value="collectionneur" {{ 'selected' if role=='collectionneur' }}>Collectionneurs</option>
+    </select>
+    <select name="plan" aria-label="Filtrer par formule">
+      <option value="all">Toutes formules</option>
+      <option value="free" {{ 'selected' if plan=='free' }}>Compte / Découverte</option>
+      <option value="portfolio" {{ 'selected' if plan=='portfolio' }}>Portfolio Marketplace</option>
+      <option value="essentiel" {{ 'selected' if plan=='essentiel' }}>Essentiel (legacy)</option>
+      <option value="pro" {{ 'selected' if plan=='pro' }}>Pro</option>
+      <option value="membre" {{ 'selected' if plan=='membre' }}>Membre</option>
+      <option value="patron" {{ 'selected' if plan=='patron' }}>Patron</option>
+    </select>
+    <button type="submit" class="btn-solid">Filtrer</button>
+  </form>
+  <span class="crm-result-count">{{ users|length }} résultat(s)</span>
+</div>
+
+{% if users %}
+<div class="crm-table-wrap">
+  <table class="crm-table">
+    <thead>
+      <tr><th>Compte</th><th>Rôle</th><th>Formule</th><th>Œuvres</th><th>Paiement</th><th></th></tr>
+    </thead>
+    <tbody>
+      {% for u in users %}
+      <tr>
+        <td>{{ user_cell(u) }}</td>
+        <td>{{ role_badge(u.role) }}</td>
+        <td>{{ plan_badge(u.subscription_plan, u.subscription_status) }}</td>
+        <td><span class="crm-panel-badge">{{ artwork_counts.get(u.id, 0) }}</span></td>
+        <td>{{ stripe_badge(u.stripe_customer_id) }}</td>
+        <td><a href="{{ url_for('crm.user_detail', user_id=u.id) }}" class="btn-line" style="font-size:12px;padding:6px 14px">Gérer →</a></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+{{ crm_empty('🔍', 'Aucun résultat', 'Essayez d\'autres filtres ou effacez la recherche.', url_for('crm.users_list'), 'Réinitialiser') }}
+{% endif %}
+{% endblock %}

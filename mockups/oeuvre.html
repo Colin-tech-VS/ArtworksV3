@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Embrasement — Camille Vasseur · Artworks</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;1,9..144,300;1,9..144,400&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/styles.css">
+<style>
+.crumbs{ padding:26px 0 0; font-size:12px; color:var(--grey); display:flex; gap:10px; align-items:center; }
+.crumbs a:hover{ color:var(--accent); }
+.crumbs .sep{ color:var(--hair); }
+
+.oeuvre{ display:grid; grid-template-columns:1.25fr 1fr; gap:clamp(40px,5vw,80px); padding:clamp(30px,4vw,48px) 0 0; align-items:start; }
+
+/* Left: viewer */
+.viewer{ position:sticky; top:104px; }
+.stage{
+  position:relative; background:var(--bg-pure);
+  border:1px solid var(--hair);
+  padding:clamp(34px,5vw,64px) clamp(30px,5vw,72px);
+  display:flex; justify-content:center;
+  cursor:zoom-in;
+}
+.stage img{ width:auto; max-width:100%; max-height:62vh; filter:drop-shadow(var(--shadow-art)); transition:transform .5s var(--ease); }
+.stage:hover img{ transform:scale(1.015); }
+.zoom-hint{ position:absolute; top:16px; right:16px; display:inline-flex; align-items:center; gap:7px; font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:var(--grey); background:rgba(250,248,245,.85); padding:7px 11px; border:1px solid var(--hair); }
+.thumbs{ display:flex; gap:12px; margin-top:16px; }
+.thumb{ width:78px; height:78px; border:1px solid var(--hair); background:var(--bg-pure); padding:6px; cursor:pointer; overflow:hidden; transition:border-color .2s var(--ease); }
+.thumb.active{ border-color:var(--accent); }
+.thumb:hover{ border-color:var(--grey-soft); }
+.thumb img{ width:100%; height:100%; object-fit:contain; }
+
+/* Right: details */
+.detail .artist-line{ display:flex; align-items:center; gap:12px; }
+.detail .artist-line img{ width:44px; height:44px; border-radius:50%; object-fit:cover; border:1px solid var(--hair); }
+.detail .artist-line a{ font-size:15px; }
+.detail .artist-line a:hover{ color:var(--accent); }
+.detail .artist-line .role{ font-size:11px; text-transform:uppercase; letter-spacing:.13em; color:var(--grey); }
+.detail h1{ font-family:var(--serif); font-weight:300; font-size:clamp(34px,4.4vw,52px); font-style:italic; letter-spacing:-.02em; line-height:1.02; margin:22px 0 6px; }
+.detail .year{ color:var(--grey); font-size:15px; }
+
+.cartel-table{ margin:34px 0; border-top:1px solid var(--hair); }
+.cartel-table .row{ display:grid; grid-template-columns:150px 1fr; gap:16px; padding:13px 0; border-bottom:1px solid var(--hair); }
+.cartel-table .row dt{ margin:0; }
+.cartel-table .row dd{ margin:0; font-size:15px; }
+
+.price-block{ display:flex; align-items:baseline; gap:16px; margin:30px 0 8px; }
+.price-block .pr{ font-family:var(--serif); font-size:clamp(30px,3.4vw,42px); }
+.status{ display:inline-flex; align-items:center; gap:8px; font-size:12px; letter-spacing:.1em; text-transform:uppercase; color:#3c7a4e; }
+.status .d{ width:8px; height:8px; border-radius:50%; background:#3c7a4e; }
+.taxes{ font-size:12.5px; color:var(--grey-soft); margin:0 0 26px; }
+
+.buy-row{ display:flex; gap:12px; margin-bottom:14px; }
+.buy-row .btn-solid{ flex:1; padding:15px; font-size:15px; text-align:center; }
+.buy-row .fav-big{
+  width:54px; flex-shrink:0; border:1px solid var(--ink); background:transparent;
+  display:grid; place-items:center; border-radius:2px; transition:all .25s var(--ease);
+}
+.buy-row .fav-big svg{ width:20px; height:20px; stroke:var(--ink); fill:none; stroke-width:1.6; transition:fill .25s var(--ease),stroke .25s var(--ease); }
+.buy-row .fav-big.is-fav{ border-color:var(--accent); }
+.buy-row .fav-big.is-fav svg{ fill:var(--accent); stroke:var(--accent); }
+.buy-row .fav-big:hover{ border-color:var(--accent); }
+.contact-btn{ width:100%; padding:14px; font-size:14.5px; text-align:center; }
+
+.trust{ display:grid; grid-template-columns:1fr 1fr; gap:14px 24px; margin-top:30px; padding-top:26px; border-top:1px solid var(--hair); }
+.trust .t{ display:flex; gap:12px; align-items:flex-start; }
+.trust svg{ flex-shrink:0; width:22px; height:22px; stroke:var(--accent); fill:none; stroke-width:1.4; margin-top:1px; }
+.trust .tt{ font-size:13.5px; line-height:1.4; }
+.trust .tt b{ font-weight:500; display:block; }
+.trust .tt span{ color:var(--grey); font-size:12.5px; }
+
+/* Lightbox */
+.lightbox{ position:fixed; inset:0; z-index:100; background:rgba(26,22,18,.92); display:none; align-items:center; justify-content:center; padding:5vh 5vw; cursor:zoom-out; }
+.lightbox.open{ display:flex; animation:lbin .3s var(--ease); }
+@keyframes lbin{ from{ opacity:0 } to{ opacity:1 } }
+.lightbox img{ max-width:100%; max-height:90vh; box-shadow:0 40px 80px -20px rgba(0,0,0,.6); }
+.lb-close{ position:fixed; top:24px; right:30px; background:none; border:none; color:#fff; padding:8px; }
+.lb-close svg{ width:30px; height:30px; }
+
+@media (max-width:880px){
+  .oeuvre{ grid-template-columns:1fr; }
+  .viewer{ position:static; }
+  .stage img{ max-height:none; }
+}
+</style>
+</head>
+<body>
+
+<!-- ===== HEADER ===== -->
+<header class="site-head">
+  <div class="head-inner">
+    <a href="index.html" class="brand">Artworks<span class="dot">.</span></a>
+    <nav class="nav">
+      <a href="explorer.html">Explorer</a>
+      <a href="artiste.html">Artistes</a>
+      <a href="explorer.html">Galeries</a>
+    </nav>
+    <div class="head-tools">
+      <label class="search-mini">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+        <input type="text" placeholder="Rechercher une œuvre, un artiste…">
+      </label>
+      <a href="explorer.html" class="icon-btn" aria-label="Favoris">
+        <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 21s-7.5-4.6-9.7-9.2C.9 8.5 2.3 5.2 5.5 5.2c1.9 0 3.4 1.1 4.5 2.8 1.1-1.7 2.6-2.8 4.5-2.8 3.2 0 4.6 3.3 3.2 6.6C19.5 16.4 12 21 12 21z"/></svg>
+        <span class="count" data-fav-count>0</span>
+      </a>
+      <a href="#" class="btn-line">Connexion</a>
+      <a href="#" class="btn-solid">S'inscrire</a>
+    </div>
+    <button class="burger" aria-label="Menu"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 6h18M3 12h18M3 18h18"/></svg></button>
+  </div>
+</header>
+
+<div class="drawer">
+  <div class="top"><span class="brand">Artworks<span class="dot">.</span></span><button class="icon-btn" data-close-drawer aria-label="Fermer"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
+  <nav><a href="explorer.html">Explorer</a><a href="artiste.html">Artistes</a><a href="explorer.html">Galeries</a><a href="explorer.html">Favoris</a></nav>
+  <div class="actions"><a href="#" class="btn-line" style="text-align:center">Connexion</a><a href="#" class="btn-solid" style="text-align:center">S'inscrire</a></div>
+</div>
+
+<main>
+  <div class="wrap">
+    <nav class="crumbs">
+      <a href="index.html">Accueil</a><span class="sep">/</span>
+      <a href="explorer.html">Explorer</a><span class="sep">/</span>
+      <a href="explorer.html">Peinture abstraite</a><span class="sep">/</span>
+      <span style="color:var(--ink)">Embrasement</span>
+    </nav>
+
+    <!-- ===== ŒUVRE ===== -->
+    <section class="oeuvre">
+
+      <!-- Viewer -->
+      <div class="viewer reveal in">
+        <div class="stage" data-zoom="assets/oeuvre-main.jpg">
+          <span class="zoom-hint"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3M11 8v6M8 11h6"/></svg> Cliquer pour agrandir</span>
+          <img src="assets/oeuvre-main.jpg" alt="Embrasement — Camille Vasseur" data-main-art>
+        </div>
+        <div class="thumbs">
+          <button class="thumb active" data-thumb="assets/oeuvre-main.jpg"><img src="assets/oeuvre-main.jpg" alt="Vue principale"></button>
+          <button class="thumb" data-thumb="assets/oeuvre-view-1.jpg"><img src="assets/oeuvre-view-1.jpg" alt="Vue de détail"></button>
+          <button class="thumb" data-thumb="assets/oeuvre-view-2.jpg"><img src="assets/oeuvre-view-2.jpg" alt="Vue mise en situation"></button>
+          <button class="thumb" data-thumb="assets/oeuvre-view-3.jpg"><img src="assets/oeuvre-view-3.jpg" alt="Vue de profil"></button>
+        </div>
+      </div>
+
+      <!-- Detail -->
+      <div class="detail reveal in">
+        <div class="artist-line">
+          <img src="assets/artist-profile.jpg" alt="Camille Vasseur">
+          <div>
+            <div class="role">Œuvre originale de</div>
+            <a href="artiste.html">Camille Vasseur</a>
+          </div>
+        </div>
+
+        <h1>Embrasement</h1>
+        <div class="year">2024 · Pièce unique, signée</div>
+
+        <dl class="cartel-table">
+          <div class="row"><dt class="cartel">Technique</dt><dd>Huile sur toile de lin</dd></div>
+          <div class="row"><dt class="cartel">Dimensions</dt><dd>120 × 90 × 4 cm</dd></div>
+          <div class="row"><dt class="cartel">Année</dt><dd>2024</dd></div>
+          <div class="row"><dt class="cartel">Signature</dt><dd>Signée au dos et datée</dd></div>
+          <div class="row"><dt class="cartel">Certificat</dt><dd>Certificat d'authenticité fourni</dd></div>
+          <div class="row"><dt class="cartel">État</dt><dd>Excellent — œuvre neuve</dd></div>
+          <div class="row"><dt class="cartel">Encadrement</dt><dd>Non encadrée — châssis prêt à accrocher</dd></div>
+        </dl>
+
+        <div class="price-block">
+          <span class="pr">4 200 €</span>
+          <span class="status"><span class="d"></span> Disponible</span>
+        </div>
+        <p class="taxes">TVA incluse · Livraison calculée à l'étape suivante</p>
+
+        <div class="buy-row">
+          <button class="btn-solid">Réserver / Acheter</button>
+          <button class="fav-big fav" data-id="oeuvre-main" aria-label="Ajouter aux favoris"><svg viewBox="0 0 24 24"><path d="M12 21s-7.5-4.6-9.7-9.2C.9 8.5 2.3 5.2 5.5 5.2c1.9 0 3.4 1.1 4.5 2.8 1.1-1.7 2.6-2.8 4.5-2.8 3.2 0 4.6 3.3 3.2 6.6C19.5 16.4 12 21 12 21z"/></svg></button>
+        </div>
+        <button class="btn-line contact-btn">Contacter la galerie</button>
+
+        <div class="trust">
+          <div class="t">
+            <svg viewBox="0 0 24 24"><rect x="2" y="7" width="14" height="10" rx="1"/><path d="M16 10h4l2 3v4h-6z"/><circle cx="6" cy="18" r="1.6"/><circle cx="18" cy="18" r="1.6"/></svg>
+            <div class="tt"><b>Livraison sécurisée</b><span>Emballage musée, assurance incluse</span></div>
+          </div>
+          <div class="t">
+            <svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7M3 4v4h4"/></svg>
+            <div class="tt"><b>Retour 14 jours</b><span>Satisfait ou remboursé</span></div>
+          </div>
+          <div class="t">
+            <svg viewBox="0 0 24 24"><path d="M12 2l8 4v6c0 5-3.5 8-8 10-4.5-2-8-5-8-10V6z"/><path d="m9 12 2 2 4-4"/></svg>
+            <div class="tt"><b>Paiement protégé</b><span>Transaction chiffrée, séquestre</span></div>
+          </div>
+          <div class="t">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9 12l2 2 4-5"/></svg>
+            <div class="tt"><b>Authenticité garantie</b><span>Certificat &amp; provenance vérifiés</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== DU MÊME ARTISTE ===== -->
+    <section class="sec">
+      <div class="sec-head reveal">
+        <div><div class="eyebrow" style="display:flex;align-items:center;gap:12px;margin-bottom:14px"><span style="width:34px;height:1px;background:var(--accent);display:inline-block"></span><span class="cartel">Camille Vasseur</span></div><h2 class="sec-title">Du même artiste</h2></div>
+        <a href="artiste.html" class="sec-link">Voir le portfolio →</a>
+      </div>
+      <div class="artgrid cols-4 reveal">
+        <article class="art" data-id="s1"><div class="art-frame"><button class="fav" data-id="s1" aria-label="Favori"><svg viewBox="0 0 24 24"><path d="M12 21s-7.5-4.6-9.7-9.2C.9 8.5 2.3 5.2 5.5 5.2c1.9 0 3.4 1.1 4.5 2.8 1.1-1.7 2.6-2.8 4.5-2.8 3.2 0 4.6 3.3 3.2 6.6C19.5 16.4 12 21 12 21z"/></svg></button><a href="oeuvre.html"><img src="assets/art-09.jpg" alt="Aube rouge"></a><div class="art-cartel"><div class="t">Aube rouge</div><div class="a">Huile · 70×95 cm</div></div></div><div class="art-meta"><div class="t">Aube rouge</div><div class="a">Camille Vasseur</div><div class="p">3 600 €</div></div></article>
+        <article class="art" data-id="s2"><div class="art-frame"><button class="fav" data-id="s2" aria-label="Favori"><svg viewBox="0 0 24 24"><path d="M12 21s-7.5-4.6-9.7-9.2C.9 8.5 2.3 5.2 5.5 5.2c1.9 0 3.4 1.1 4.5 2.8 1.1-1.7 2.6-2.8 4.5-2.8 3.2 0 4.6 3.3 3.2 6.6C19.5 16.4 12 21 12 21z"/></svg></button><a href="oeuvre.html"><img src="assets/art-05.jpg" alt="Terres labourées"></a><div class="art-cartel"><div class="t">Terres labourées</div><div class="a">Huile · 90×130 cm</div></div></div><div class="art-meta"><div class="t">Terres labourées</div><div class="a">Camille Vasseur</div><div class="p">5 400 €</div></div></article>
+        <article class="art" data-id="s3"><div class="art-frame"><button class="fav" data-id="s3" aria-label="Favori"><svg viewBox="0 0 24 24"><path d="M12 21s-7.5-4.6-9.7-9.2C.9 8.5 2.3 5.2 5.5 5.2c1.9 0 3.4 1.1 4.5 2.8 1.1-1.7 2.6-2.8 4.5-2.8 3.2 0 4.6 3.3 3.2 6.6C19.5 16.4 12 21 12 21z"/></svg></button><a href="oeuvre.html"><img src="assets/art-12.jpg" alt="Sillage"></a><div class="art-cartel"><div class="t">Sillage</div><div class="a">Huile · 60×40 cm</div></div></div><div class="art-meta"><div class="t">Sillage</div><div class="a">Camille Vasseur</div><div class="p">1 450 €</div></div></article>
+        <article class="art" data-id="s4"><div class="art-frame"><button class="fav" data-id="s4" aria-label="Favori"><svg viewBox="0 0 24 24"><path d="M12 21s-7.5-4.6-9.7-9.2C.9 8.5 2.3 5.2 5.5 5.2c1.9 0 3.4 1.1 4.5 2.8 1.1-1.7 2.6-2.8 4.5-2.8 3.2 0 4.6 3.3 3.2 6.6C19.5 16.4 12 21 12 21z"/></svg></button><a href="oeuvre.html"><img src="assets/art-08.jpg" alt="Carnaval"></a><div class="art-cartel"><div class="t">Carnaval</div><div class="a">Acrylique · 80×80 cm</div></div></div><div class="art-meta"><div class="t">Carnaval</div><div class="a">Camille Vasseur</div><div class="p">2 300 €</div></div></article>
+      </div>
+    </section>
+
+    <!-- ===== ŒUVRES SIMILAIRES ===== -->
+    <section class="sec" style="padding-top:0">
+      <div class="sec-head reveal">
+        <div><div class="eyebrow" style="display:flex;align-items:center;gap:12px;margin-bottom:14px"><span style="width:34px;height:1px;background:var(--accent);display:inline-block"></span><span class="cartel">Vous aimerez aussi</span></div><h2 class="sec-title">Œuvres similaires</h2></div>
+        <a href="explorer.html" class="sec-link">Explorer →</a>
+      </div>
+      <div class="artgrid cols-4 reveal">
+        <article class="art" data-id="r1"><div class="art-frame"><button class="fav" data-id="r1" aria-label="Favori"><svg viewBox="0 0 24 24"><path d="M12 21s-7.5-4.6-9.7-9.2C.9 8.5 2.3 5.2 5.5 5.2c1.9 0 3.4 1.1 4.5 2.8 1.1-1.7 2.6-2.8 4.5-2.8 3.2 0 4.6 3.3 3.2 6.6C19.5 16.4 12 21 12 21z"/></svg></button><a href="oeuvre.html"><img src="assets/art-02.jpg" alt="Marée basse"></a><div class="art-cartel"><div class="t">Marée basse</div><div class="a">Théo Lambert</div></div></div><div class="art-meta"><div class="t">Marée basse</div><div class="a">Théo Lambert</div><div class="p">3 100 €</div></div></article>
+        <article class="art" data-id="r2"><div class="art-frame"><button class="fav" data-id="r2" aria-label="Favori"><svg viewBox="0 0 24 24"><path d="M12 21s-7.5-4.6-9.7-9.2C.9 8.5 2.3 5.2 5.5 5.2c1.9 0 3.4 1.1 4.5 2.8 1.1-1.7 2.6-2.8 4.5-2.8 3.2 0 4.6 3.3 3.2 6.6C19.5 16.4 12 21 12 21z"/></svg></button><a href="oeuvre.html"><img src="assets/art-04.jpg" alt="Géométrie douce"></a><div class="art-cartel"><div class="t">Géométrie douce</div><div class="a">Marius Hadi</div></div></div><div class="art-meta"><div class="t">Géométrie douce</div><div class="a">Marius Hadi</div><div class="p">2 700 €</div></div></article>
+        <article class="art" data-id="r3"><div class="art-frame"><button class="fav" data-id="r3" aria-label="Favori"><svg viewBox="0 0 24 24"><path d="M12 21s-7.5-4.6-9.7-9.2C.9 8.5 2.3 5.2 5.5 5.2c1.9 0 3.4 1.1 4.5 2.8 1.1-1.7 2.6-2.8 4.5-2.8 3.2 0 4.6 3.3 3.2 6.6C19.5 16.4 12 21 12 21z"/></svg></button><a href="oeuvre.html"><img src="assets/art-11.jpg" alt="Contrepoint"></a><div class="art-cartel"><div class="t">Contrepoint</div><div class="a">Marius Hadi</div></div></div><div class="art-meta"><div class="t">Contrepoint</div><div class="a">Marius Hadi</div><div class="p">2 900 €</div></div></article>
+        <article class="art" data-id="r4"><div class="art-frame"><button class="fav" data-id="r4" aria-label="Favori"><svg viewBox="0 0 24 24"><path d="M12 21s-7.5-4.6-9.7-9.2C.9 8.5 2.3 5.2 5.5 5.2c1.9 0 3.4 1.1 4.5 2.8 1.1-1.7 2.6-2.8 4.5-2.8 3.2 0 4.6 3.3 3.2 6.6C19.5 16.4 12 21 12 21z"/></svg></button><a href="oeuvre.html"><img src="assets/art-10.jpg" alt="Horizon"></a><div class="art-cartel"><div class="t">Horizon</div><div class="a">Inès Caron</div></div></div><div class="art-meta"><div class="t">Horizon</div><div class="a">Inès Caron</div><div class="p">1 700 €</div></div></article>
+      </div>
+    </section>
+  </div>
+</main>
+
+<!-- ===== LIGHTBOX ===== -->
+<div class="lightbox" data-lightbox>
+  <button class="lb-close" data-lb-close aria-label="Fermer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+  <img src="assets/oeuvre-main.jpg" alt="Embrasement agrandie">
+</div>
+
+<!-- ===== FOOTER ===== -->
+<footer class="site-foot">
+  <div class="wrap">
+    <div class="foot-grid">
+      <div class="foot-brand"><span class="brand">Artworks<span class="dot">.</span></span><p>La marketplace d'art contemporain qui met l'œuvre au centre. Découvrez, collectionnez, exposez.</p><form class="foot-news" onsubmit="return false"><input type="email" placeholder="Votre adresse e-mail"><button type="submit">S'abonner</button></form></div>
+      <div class="foot-col"><h4>Découvrir</h4><a href="explorer.html">Explorer</a><a href="artiste.html">Artistes</a><a href="explorer.html">Galeries</a><a href="explorer.html">Collections</a></div>
+      <div class="foot-col"><h4>Vendre</h4><a href="artiste.html">Créer un portfolio</a><a href="#">Espace galeries</a><a href="#">Tarifs</a><a href="#">Guide du vendeur</a></div>
+      <div class="foot-col"><h4>Aide</h4><a href="#">Livraison &amp; retours</a><a href="#">Authenticité</a><a href="#">Contact</a><a href="#">FAQ</a></div>
+    </div>
+    <div class="foot-bottom"><span>© 2026 Artworks. Tous droits réservés.</span><div class="socials"><a href="#">Instagram</a><a href="#">Pinterest</a><a href="#">LinkedIn</a><a href="#">Mentions légales</a></div></div>
+  </div>
+</footer>
+
+<script src="assets/app.js"></script>
+</body>
+</html>

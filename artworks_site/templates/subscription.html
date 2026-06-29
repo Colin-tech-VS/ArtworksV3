@@ -1,0 +1,103 @@
+{% extends '_dashboard_layout.html' %}
+{% from '_pricing_cards.html' import pricing_grid %}
+{% set dash_active = 'subscription' %}
+{% block title %}Abonnement — Artworks{% endblock %}
+
+{% block dash_header %}
+<div class="dash-breadcrumb"><a href="{{ url_for('main.dashboard') }}">Tableau de bord</a> / Abonnement</div>
+<header class="dash-hero sub-hero">
+  <div class="dash-hero-text">
+    <div class="eyebrow"><span class="line"></span><span class="cartel">Offres {{ role_label }}</span></div>
+    <h1>Développez votre présence sur Artworks</h1>
+    <p class="lead">Des formules pensées pour les {{ role_label|lower }}s — chaque avantage listé est actif dès l'activation. Changez ou annulez à tout moment.</p>
+  </div>
+  <div class="dash-hero-actions">
+    <a href="{{ url_for('main.tarifs', profil=current_user.role) }}" class="btn-line">Voir la page publique</a>
+    {% if stripe_ready %}
+    <span class="sub-trust-pill">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      Paiement sécurisé Stripe
+    </span>
+    {% endif %}
+  </div>
+</header>
+{% endblock %}
+
+{% block dash_content %}
+
+<section class="sub-status-card reveal in">
+  <div class="sub-status-main">
+    <div class="cartel sub-status-label">Votre formule</div>
+    <div class="sub-status-title">
+      <span class="sub-plan-name">{{ current_plan.name }}</span>
+      {% if current_plan.badge %}<span class="sub-plan-badge">{{ current_plan.badge }}</span>{% endif %}
+    </div>
+    <p class="sub-status-tagline">{{ current_plan.tagline }}</p>
+    <div class="sub-status-meta">
+      {% if current_user.subscription_status == 'cancelled' %}
+        <span class="dash-badge warn">Annulation programmée</span>
+      {% elif current_user.subscription_status == 'past_due' %}
+        <span class="dash-badge warn">Paiement en attente</span>
+      {% elif current_user.subscription_status == 'expired' %}
+        <span class="dash-badge warn">Expiré</span>
+      {% else %}
+        <span class="dash-badge ok">Actif</span>
+      {% endif %}
+      {% if current_user.subscription_since and current_slug != 'free' %}
+        <span class="sub-since">— depuis le {{ current_user.subscription_since.strftime('%d/%m/%Y') }}</span>
+      {% endif %}
+      {% if current_user.subscription_period_end and current_user.subscription_status == 'cancelled' %}
+        <span class="sub-since">— accès jusqu'au {{ current_user.subscription_period_end.strftime('%d/%m/%Y') }}</span>
+      {% endif %}
+    </div>
+  </div>
+  <div class="sub-status-price">
+    <div class="sub-price-big">{{ price_label(current_plan) }}</div>
+    {% if current_plan.interval %}<div class="sub-price-period">/ mois, sans engagement</div>{% else %}<div class="sub-price-period">Toujours gratuit</div>{% endif %}
+  </div>
+  <div class="sub-status-actions">
+    {% if current_user.stripe_customer_id and stripe_ready %}
+    <form method="post" action="{{ url_for('main.subscription_portal') }}">
+      <button type="submit" class="btn-line">Facturation &amp; moyens de paiement</button>
+    </form>
+    {% endif %}
+    {% if current_slug != 'free' and current_user.subscription_status not in ('cancelled', 'expired') %}
+    <form method="post" action="{{ url_for('main.cancel_subscription') }}" onsubmit="return confirm('Confirmer l\'annulation ?');">
+      <button type="submit" class="btn-line sub-cancel-btn">Annuler l'abonnement</button>
+    </form>
+    {% endif %}
+  </div>
+</section>
+
+{% if connect.show_section|default(false) %}
+{% include '_stripe_connect_panel.html' %}
+{% endif %}
+
+<section class="sub-pricing reveal">
+  <div class="sub-pricing-head">
+    <h2>Choisissez la formule qui vous correspond</h2>
+    <p>Toutes les offres incluent l'hébergement de votre profil et les mises à jour de la plateforme.</p>
+  </div>
+  {{ pricing_grid(plans, price_label, current_slug=current_slug, checkout_url=url_for('main.subscription_checkout')) }}
+</section>
+
+<section class="sub-reassure reveal">
+  <div class="sub-reassure-item">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+    <div><strong>Paiement sécurisé</strong><span>Transactions chiffrées via Stripe.</span></div>
+  </div>
+  <div class="sub-reassure-item">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+    <div><strong>Sans engagement</strong><span>Annulez à tout moment.</span></div>
+  </div>
+  <div class="sub-reassure-item">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20 6 9 17l-5-5"/></svg>
+    <div><strong>Fonctionnalités garanties</strong><span>Chaque point listé est implémenté et actif sur votre compte.</span></div>
+  </div>
+</section>
+
+{% if not stripe_ready %}
+<div class="sub-demo-banner"><strong>Mode démo</strong> — Stripe non configuré ; les changements sont simulés localement.</div>
+{% endif %}
+
+{% endblock %}

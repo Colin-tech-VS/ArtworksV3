@@ -1,0 +1,150 @@
+{% extends 'base.html' %}
+{% from '_macros.html' import artcard %}
+{% from '_seo_meta.html' import seo_head %}
+{% block title %}{{ seo.title if seo else 'Artworks — Galeries & collectionneurs d\'art contemporain' }}{% endblock %}
+{% block meta %}{{ seo_head(seo, canonical=canonical, json_ld=json_ld) }}{% endblock %}
+{% block body_class %}page-home{% endblock %}
+
+{% block page_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/home.css') }}">
+{% endblock %}
+
+{% block content %}
+{% set hero = featured[0] if featured else None %}
+{% set hero_img = img_url(hero.image) if hero else url_for('static', filename='demo/art-09.jpg') %}
+
+<!-- HERO — galeries & collectionneurs -->
+<section class="salon-hero">
+  <div class="wrap salon-hero-grid reveal in">
+    <div class="salon-hero-copy">
+      <p class="salon-kicker">Curation · acquisition · confiance</p>
+      <h1>L'art contemporain, <em>pour galeries & collectionneurs</em></h1>
+      <p class="salon-hero-lead">Découvrez des œuvres originales sélectionnées, accompagnez vos acquisitions avec méthode, et donnez à votre galerie une vitrine curatoriale à la hauteur de votre ligne.</p>
+      <div class="salon-hero-cta">
+        <a href="{{ url_for('main.explorer') }}" class="btn-solid">Parcourir la collection</a>
+        <a href="{{ url_for('main.offre_collectionneur') }}" class="btn-line">Espace collectionneur</a>
+      </div>
+      <ul class="salon-hero-stats">
+        <li><strong>Œuvres</strong><span>Originales certifiées</span></li>
+        <li><strong>Stripe</strong><span>Paiement sécurisé</span></li>
+        <li><strong>Curatorial</strong><span>Accompagnement expert</span></li>
+      </ul>
+    </div>
+    <div class="salon-hero-visual">
+      <img src="{{ hero_img }}" alt="{{ hero.title if hero else 'Œuvre contemporaine' }}" loading="eager">
+      {% if hero %}
+      <div class="salon-hero-visual-cap">
+        <strong>{{ hero.title }}</strong>
+        <span>{{ hero.owner.name if hero.owner else 'Artiste' }}{% if hero.year %} · {{ hero.year }}{% endif %}</span>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</section>
+
+<!-- GALERIE + COLLECTIONNEUR -->
+<section class="salon-audiences" id="pour-qui">
+  <div class="wrap">
+    <header class="salon-audiences-head reveal">
+      <span class="aw-section-badge"><span class="aw-section-badge-icon">◆</span> Votre profil</span>
+      <h2>Conçu pour ceux qui collectionnent et exposent</h2>
+      <p>Deux parcours distincts, une même exigence curatoriale — transparence des prix, provenance claire, outils de suivi.</p>
+    </header>
+    <div class="salon-audience-grid reveal">
+      <article class="salon-audience-card">
+        <p class="salon-audience-role">Galerie</p>
+        <h3>Votre ligne curatoriale, visible et vendable</h3>
+        <p>Présentez vos artistes, structurez vos expositions virtuelles et convertissez l'intérêt en ventes concrètes.</p>
+        <ul class="salon-audience-list">
+          <li>Page galerie premium indexée</li>
+          <li>Matching artistes selon votre ligne</li>
+          <li>CRM collectionneurs & campagnes ciblées</li>
+          <li>Encaissement Stripe Connect intégré</li>
+        </ul>
+        <a href="{{ url_for('main.offre_galerie') }}" class="btn-solid">Découvrir l'offre galerie</a>
+      </article>
+      <article class="salon-audience-card">
+        <p class="salon-audience-role">Collectionneur</p>
+        <h3>Construire une collection avec méthode</h3>
+        <p>Suivez les œuvres qui vous parlent, structurez vos intentions d'achat et avancez vers l'acquisition en confiance.</p>
+        <ul class="salon-audience-list">
+          <li>Favoris & wishlist privée</li>
+          <li>Alertes prix & avant-premières</li>
+          <li>Conseil curatoral (formule Patron)</li>
+          <li>Accès ventes privées</li>
+        </ul>
+        <a href="{{ url_for('main.offre_collectionneur') }}" class="btn-solid">Ouvrir mon espace</a>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- CATALOGUE -->
+{% if featured %}
+<section class="salon-catalog">
+  <div class="wrap">
+    <header class="salon-catalog-head reveal">
+      <p class="salon-kicker">Sélection curatoriale</p>
+      <h2>Œuvres disponibles à l'acquisition</h2>
+      <p>Une vitrine actualisée — peintures, photographies, sculptures originales, prix affichés.</p>
+    </header>
+    <div class="salon-catalog-grid reveal">
+      {% for a in featured[:7] %}
+      <a href="{{ url_for('main.artwork_detail', artwork_id=a.id) }}" class="salon-catalog-item">
+        <img src="{{ img_url(a.image) }}" alt="{{ a.title }}" loading="lazy">
+        <div class="salon-catalog-cap">
+          <strong>{{ a.title }}</strong>
+          {{ a.owner.name if a.owner else 'Artiste' }}{% if a.price %} · {{ a.price_str }}{% endif %}
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+    <div class="salon-catalog-actions reveal">
+      <a href="{{ url_for('main.explorer') }}" class="btn-solid">Voir toute la collection</a>
+      <a href="{{ url_for('auth.register', role='collectionneur') }}" class="btn-line">Créer un compte collectionneur</a>
+    </div>
+  </div>
+</section>
+{% endif %}
+
+<!-- SERVICES -->
+<section class="salon-services">
+  <div class="wrap">
+    <header class="salon-audiences-head reveal" style="text-align:center;margin-left:auto;margin-right:auto">
+      <span class="aw-section-badge"><span class="aw-section-badge-icon">✦</span> Accompagnement</span>
+      <h2>Une expérience d'acquisition sereine</h2>
+    </header>
+    <div class="salon-services-grid reveal">
+      <article class="salon-service">
+        <div class="salon-service-num">01</div>
+        <h3>Provenance vérifiée</h3>
+        <p>Chaque œuvre est documentée : artiste, technique, dimensions, certificat d'authenticité quand applicable.</p>
+      </article>
+      <article class="salon-service">
+        <div class="salon-service-num">02</div>
+        <h3>Paiement sécurisé</h3>
+        <p>Transactions chiffrées via Stripe. Commission transparente à la vente uniquement.</p>
+      </article>
+      <article class="salon-service">
+        <div class="salon-service-num">03</div>
+        <h3>Suivi curatoral</h3>
+        <p>Alertes, favoris, wishlist partageable — les outils pour avancer dans votre collection.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ARTISTE (secondaire) -->
+<section class="salon-artist-cta">
+  <div class="wrap">
+    <div class="salon-artist-inner reveal">
+      <div>
+        <p class="salon-audience-role" style="margin-bottom:8px">Artiste</p>
+        <h2>Vous créez ? Rejoignez le réseau</h2>
+        <p>Portfolio public SEO, vente en ligne — {{ pricing.portfolio_price_label }}/mois, commission {{ pricing.commission_label }} à la vente.</p>
+      </div>
+      <a href="{{ url_for('main.offre_artiste') }}" class="btn-line">Offre artiste</a>
+    </div>
+  </div>
+</section>
+{% endblock %}

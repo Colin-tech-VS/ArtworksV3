@@ -1,0 +1,69 @@
+{# Panneau Stripe Connect — encaissement des ventes #}
+{% if connect.show_section|default(false) %}
+<section class="dash-stripe-panel reveal in" id="encaissements">
+  <div class="dash-stripe-inner {{ 'is-ready' if connect.ready else 'is-pending' if connect.pending else 'is-missing' if connect.needs_connect else 'is-waiting' }}">
+    <div class="dash-stripe-icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
+    </div>
+    <div class="dash-stripe-body">
+      <p class="dash-stripe-eyebrow">Encaissement des ventes</p>
+
+      {% if connect.needs_subscription %}
+      <h2>Abonnement requis avant Stripe</h2>
+      <p>
+        {% if current_user.role == 'artiste' %}
+        Activez d'abord <strong>Portfolio Marketplace</strong>, puis connectez Stripe pour encaisser vos ventes.
+        Sans Stripe Connect, votre portfolio <strong>ne sera pas visible</strong> sur le site.
+        {% else %}
+        Passez en <strong>Galerie Pro</strong> pour vendre en ligne, puis connectez Stripe pour encaisser.
+        {% endif %}
+      </p>
+
+      {% elif connect.ready %}
+      <h2>Compte Stripe connecté</h2>
+      <p>{{ connect_payout_label }} Votre portfolio public est en ligne sur Artworks.</p>
+
+      {% elif connect.pending %}
+      <h2>Finalisez votre compte Stripe</h2>
+      <p>{{ connect_payout_label }} Quelques informations manquent — <strong>obligatoire</strong> pour publier votre portfolio.</p>
+
+      {% else %}
+      <h2>Connectez Stripe pour encaisser</h2>
+      <p>
+        {{ connect_payout_label }}
+        <strong>Obligatoire pour que votre portfolio apparaisse sur le site</strong> et pour recevoir vos ventes.
+      </p>
+      {% if connect.portfolio_public_blocked %}
+      <p class="dash-stripe-warn">⚠ Votre portfolio est masqué tant que Stripe n'est pas connecté.</p>
+      {% endif %}
+      {% endif %}
+    </div>
+
+    <div class="dash-stripe-actions">
+      {% if connect.needs_subscription %}
+      <a href="{{ url_for('main.subscription') }}" class="btn-solid">Voir les abonnements</a>
+
+      {% elif connect.ready %}
+      <span class="dash-stripe-badge is-ok">● Actif — portfolio public</span>
+      {% if connect.stripe_configured and not connect.demo_mode %}
+      <form method="post" action="{{ url_for('main.stripe_connect_dashboard') }}">
+        <button type="submit" class="btn-line">Ouvrir Stripe</button>
+      </form>
+      {% endif %}
+
+      {% elif connect.can_connect %}
+      <form method="post" action="{{ url_for('main.stripe_connect_start') }}">
+        <button type="submit" class="btn-solid">
+          {% if connect.pending %}Compléter Stripe{% else %}Connecter Stripe{% endif %}
+        </button>
+      </form>
+      {% if can_simulate_connect|default(false) %}
+      <form method="post" action="{{ url_for('main.stripe_connect_simulate') }}">
+        <button type="submit" class="btn-line" title="Dev local — simule un compte connecté">Simulation locale</button>
+      </form>
+      {% endif %}
+      {% endif %}
+    </div>
+  </div>
+</section>
+{% endif %}

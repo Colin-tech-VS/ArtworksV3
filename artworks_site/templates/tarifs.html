@@ -1,0 +1,99 @@
+{% extends 'base.html' %}
+{% from '_pricing_cards.html' import pricing_grid %}
+{% from '_seo_meta.html' import seo_head %}
+{% set active = 'tarifs' %}
+{% block title %}{{ seo.title if seo else 'Tarifs — Artworks' }}{% endblock %}
+{% block meta %}{{ seo_head(seo, canonical=canonical) }}{% endblock %}
+
+{% block page_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+<style>
+.tarifs-hero{
+  padding:clamp(56px,8vw,100px) 0 clamp(40px,5vw,64px);
+  text-align:center;
+}
+.tarifs-hero h1{
+  font-family:var(--serif); font-weight:300;
+  font-size:clamp(38px,5.5vw,64px); letter-spacing:-.03em; line-height:1.02; margin:0 0 16px;
+}
+.tarifs-hero .lead{ color:var(--grey); font-size:clamp(16px,1.5vw,18px); max-width:54ch; margin:0 auto 36px; line-height:1.65; }
+.tarifs-tabs{
+  display:inline-flex; gap:6px; padding:6px; border:1px solid var(--hair);
+  border-radius:var(--radius-pill); background:#fff; margin-bottom:clamp(40px,5vw,56px);
+}
+.tarifs-tabs a{
+  padding:10px 22px; border-radius:var(--radius-pill); font-size:14px;
+  transition:all .25s var(--ease-spring); color:var(--grey);
+}
+.tarifs-tabs a:hover{ color:var(--ink); }
+.tarifs-tabs a.is-on{ background:var(--salon-navy); color:#fff; }
+.tarifs-section{ padding-bottom:clamp(60px,8vw,100px); }
+.tarifs-intro{ text-align:center; max-width:52ch; margin:0 auto 32px; }
+.tarifs-intro h2{ font-family:var(--serif); font-weight:300; font-size:clamp(24px,3vw,32px); margin:0 0 10px; }
+.tarifs-intro p{ color:var(--grey); font-size:15px; line-height:1.6; margin:0; }
+.tarifs-compare{
+  margin-top:48px; padding:32px; border:1px solid var(--hair); border-radius:var(--radius-xl);
+  background:var(--bg-alt); text-align:center;
+}
+.tarifs-compare p{ color:var(--grey); margin:0 0 16px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="tarifs-hero wrap reveal in">
+  <div class="eyebrow" style="display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:22px">
+    <span style="width:42px;height:1px;background:var(--accent)"></span>
+    <span class="cartel">Tarifs transparents</span>
+    <span style="width:42px;height:1px;background:var(--accent)"></span>
+  </div>
+  <h1>Des formules pour <em style="font-style:italic;color:var(--accent)">galeries & collectionneurs</em></h1>
+  <p class="lead">Accompagnement curatoral, outils de vente et espace collection — chaque offre inclut exactement ce qui est annoncé. Paiement sécurisé Stripe.</p>
+
+  <nav class="tarifs-tabs" aria-label="Type de profil">
+    {% for r, label in roles %}
+    <a href="{{ url_for('main.tarifs', profil=r) }}" class="{{ 'is-on' if r == role else '' }}">{{ label }}s</a>
+    {% endfor %}
+  </nav>
+</section>
+
+<section class="tarifs-section wrap">
+  <div class="tarifs-intro reveal">
+    <h2>Offres {{ role_label }}s</h2>
+    <p>{{ role_intro }}</p>
+  </div>
+
+  {{ pricing_grid(plans, price_label, current_slug=current_slug, public=true, role=role, role_label=role_label) }}
+
+  <div class="sub-reassure reveal" style="margin-top:40px">
+    <div class="sub-reassure-item">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      <div><strong>Paiement Stripe</strong><span>Facturation mensuelle sécurisée, annulable à tout moment.</span></div>
+    </div>
+    <div class="sub-reassure-item">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+      <div><strong>Promesses tenues</strong><span>Chaque fonctionnalité listée est active dès l'activation de la formule.</span></div>
+    </div>
+    <div class="sub-reassure-item">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      <div><strong>Questions ?</strong><span>contact@artworksdigital.fr — réponse sous 48 h.</span></div>
+    </div>
+  </div>
+
+  {% if current_user is defined and current_user.is_authenticated and current_user.role != role %}
+  <div class="tarifs-compare reveal">
+    <p>Vous êtes connecté en tant que <strong>{{ current_user.role }}</strong>. Les offres {{ role_label|lower }}s s'appliquent aux comptes {{ role_label|lower }}s uniquement.</p>
+    <a href="{{ url_for('main.tarifs', profil=current_user.role) }}" class="btn-line">Voir mes offres</a>
+  </div>
+  {% elif current_user is not defined or not current_user.is_authenticated %}
+  <div class="tarifs-compare reveal">
+    {% if role == 'artiste' %}
+    <p>Inscription gratuite — activez Portfolio Marketplace ({{ pricing.portfolio_price_label }}/mois) pour publier et vendre. Commission {{ pricing.commission_label }} uniquement à la vente.</p>
+    <a href="{{ url_for('main.offre_artiste') }}" class="btn-solid">Voir l'offre artiste complète</a>
+    {% else %}
+    <p>Pas encore de compte ? Inscrivez-vous en 2 minutes — l'explorateur reste gratuit.</p>
+    <a href="{{ url_for('auth.register') }}?role={{ role }}" class="btn-solid">Créer un compte {{ role_label|lower }}</a>
+    {% endif %}
+  </div>
+  {% endif %}
+</section>
+{% endblock %}

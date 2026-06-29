@@ -1,0 +1,77 @@
+{% extends 'crm/_crm_layout.html' %}
+
+{% block title %}CRM — {{ 'Éditer' if campaign else 'Nouvelle' }} campagne{% endblock %}
+
+{% block crm_header %}
+<header class="crm-page-head">
+  <div class="crm-page-head-text">
+    <p class="crm-eyebrow">Emails</p>
+    <h1>{{ campaign.name if campaign else 'Nouvelle campagne' }}</h1>
+    <p class="crm-lead">Rédigez, prévisualisez, puis envoyez à un segment, un groupe ou des utilisateurs.</p>
+  </div>
+  <div class="crm-page-head-actions">
+    <a href="{{ url_for('crm.campaigns_list') }}" class="crm-btn-ghost">← Retour</a>
+  </div>
+</header>
+{% endblock %}
+
+{% block crm_content %}
+<div class="crm-email-editor">
+  <div class="crm-split crm-stagger">
+    <div class="crm-panel crm-ai-panel">
+      <div class="crm-panel-head">
+        <div><h2>Génération IA (Mistral)</h2><p class="sub">Créez le contenu de la campagne</p></div>
+      </div>
+      <form id="crm-email-ai-form" class="crm-form" data-ai-url="{{ url_for('crm.campaign_generate_ai') }}">
+        {{ ai_form.hidden_tag() }}
+        <div class="field">{{ ai_form.ai_brief.label }}{{ ai_form.ai_brief(rows=4, class='crm-wysiwyg', placeholder='Ex. Newsletter mars — nouvelles œuvres et artistes à découvrir…') }}</div>
+        <div class="field">{{ ai_form.ai_tone.label }}{{ ai_form.ai_tone() }}</div>
+        <button type="submit" class="btn-solid" id="crm-email-ai-btn">✦ Générer l'email</button>
+        <p class="crm-hint" id="crm-email-ai-status"></p>
+      </form>
+    </div>
+
+    <div class="crm-panel">
+      <div class="crm-panel-head"><div><h2>Campagne</h2></div></div>
+      <form method="post" class="crm-form" id="crm-campaign-form" data-preview-url="{{ url_for('crm.email_preview_api') }}">
+        {{ form.hidden_tag() }}
+        <div class="field">{{ form.name.label }}{{ form.name(placeholder='Nom interne — ex. Newsletter mars') }}</div>
+        <div class="field">{{ form.subject.label }}{{ form.subject(id='email-subject', placeholder='Objet visible') }}</div>
+        <div class="field">{{ form.preview_text.label }}{{ form.preview_text(id='email-preview-text', placeholder='Preheader') }}</div>
+
+        <div class="field">{{ form.recipient_mode.label }}{{ form.recipient_mode(id='recipient-mode') }}</div>
+        <div class="field crm-recipient-field" data-mode="segment">{{ form.segment_id.label }}{{ form.segment_id(id='segment-id') }}</div>
+        <div class="field crm-recipient-field" data-mode="role" style="display:none">{{ form.recipient_role.label }}{{ form.recipient_role(id='recipient-role') }}</div>
+        <div class="field crm-recipient-field" data-mode="users" style="display:none">
+          {{ form.recipient_user_ids.label }}
+          {{ form.recipient_user_ids(id='recipient-users', size=8, style='min-height:160px') }}
+          <p class="crm-hint">Maintenez Ctrl (Cmd) pour sélectionner plusieurs contacts.</p>
+        </div>
+        {% if recipient_preview_count %}
+        <p class="crm-hint"><span class="crm-badge crm-badge-live">{{ recipient_preview_count }} contact(s)</span> correspondent aux critères.</p>
+        {% endif %}
+
+        <div class="field">{{ form.body_html.label }}{{ form.body_html(class='tall crm-wysiwyg', id='email-body') }}</div>
+
+        <div class="crm-panel" style="margin:16px 0;padding:14px;background:var(--crm-bg);box-shadow:none">
+          <p class="crm-hint" style="margin:0">Variables : {% raw %}{{name}}, {{email}}, {{username}}, {{role}}, {{plan}}{% endraw %}</p>
+        </div>
+
+        {{ form.submit(class='btn-solid') }}
+      </form>
+    </div>
+  </div>
+
+  <div class="crm-panel crm-email-preview-panel">
+    <div class="crm-panel-head">
+      <div><h2>Aperçu réel Artworks</h2><p class="sub">Rendu identique à la réception</p></div>
+      <span class="crm-badge crm-badge-live"><span class="crm-dot"></span> Live</span>
+    </div>
+    <iframe id="crm-email-preview-frame" class="crm-email-preview-frame" title="Aperçu email" srcdoc="{{ preview_html|e }}"></iframe>
+  </div>
+</div>
+{% endblock %}
+
+{% block crm_scripts %}
+<script src="{{ url_for('static', filename='js/crm-emails.js') }}"></script>
+{% endblock %}

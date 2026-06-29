@@ -1,0 +1,24 @@
+{% macro heart() %}<svg viewBox="0 0 24 24"><path d="M12 21s-7.5-4.6-9.7-9.2C.9 8.5 2.3 5.2 5.5 5.2c1.9 0 3.4 1.1 4.5 2.8 1.1-1.7 2.6-2.8 4.5-2.8 3.2 0 4.6 3.3 3.2 6.6C19.5 16.4 12 21 12 21z"/></svg>{% endmacro %}
+
+{% macro artcard(a, mode='artist') %}
+{# mode: 'artist' shows artist name under title; 'meta' shows medium/dimensions #}
+<article class="art" data-id="{{ a.id }}" data-tags="{{ a.tags }}" data-price="{{ (a.price or 0)|int }}" data-new="{{ a.id }}" data-rank="{{ a.id }}">
+  <div class="art-frame">
+    <button class="fav" data-id="{{ a.id }}" aria-label="Ajouter aux favoris">{{ heart() }}</button>
+    <a href="{{ url_for('main.artwork_detail', artwork_id=a.id) }}"><img src="{{ img_url(a.image) or url_for('static', filename='demo/art-01.jpg') }}" alt="{{ a.title }}"></a>
+    <div class="art-cartel">
+      <div class="t">{{ a.title }}</div>
+      <div class="a">{{ a.owner.name if a.owner else 'Anonyme' }}{% if a.medium %} · {{ a.medium|capitalize }}{% endif %}{% if a.dimensions %} · {{ a.dimensions }}{% endif %}</div>
+    </div>
+  </div>
+  <div class="art-meta">
+    <div class="t">{{ a.title }}</div>
+    {% if mode == 'meta' %}
+      <div class="a">{{ a.medium|capitalize if a.medium }}{% if a.dimensions %} · {{ a.dimensions }}{% endif %}</div>
+    {% else %}
+      <div class="a">{{ a.owner.name if a.owner else 'Anonyme' }}{% if a.year %} · {{ a.year }}{% endif %}</div>
+    {% endif %}
+    <div class="p">{{ a.price_str }}{% if a.status == 'reserve' %}<span class="dispo">Réservée</span>{% endif %}</div>
+  </div>
+</article>
+{% endmacro %}

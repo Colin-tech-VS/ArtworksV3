@@ -1,0 +1,112 @@
+{% extends '_dashboard_layout.html' %}
+{% set is_edit = (mode|default('create')) == 'edit' %}
+{% set dash_active = 'oeuvres' %}
+{% block title %}{{ 'Modifier l\'œuvre' if is_edit else 'Publier une œuvre' }} — Artworks{% endblock %}
+
+{% block dash_header %}
+<div class="dash-breadcrumb"><a href="{{ url_for('main.dashboard') }}">Tableau de bord</a> / {{ 'Modifier' if is_edit else 'Publier' }}</div>
+<header class="dash-hero">
+  <div class="dash-hero-text">
+    <div class="eyebrow"><span class="line"></span><span class="cartel">{{ role_meta.eyebrow }}</span></div>
+    <h1>{{ 'Modifier l\'œuvre' if is_edit else role_meta.publish }}</h1>
+    <p class="lead">Présentez votre pièce comme dans une galerie — titre, cartel, prix et format.</p>
+  </div>
+</header>
+{% endblock %}
+
+{% block dash_content %}
+<div class="dash-form-panel">
+  <form method="post" enctype="multipart/form-data" novalidate>
+    {{ form.hidden_tag() }}
+
+    <div class="form-section" style="margin-top:0;padding-top:0;border-top:0">
+      <h3>Informations principales</h3>
+      <p>Titre et description visibles sur la fiche œuvre.</p>
+    </div>
+
+    <div class="field">
+      {{ form.title.label }}
+      {{ form.title(placeholder="Titre de l'œuvre") }}
+      {% for e in form.title.errors %}<div class="err">{{ e }}</div>{% endfor %}
+    </div>
+    <div class="field">
+      {{ form.description.label }}
+      {{ form.description(placeholder="Décrivez la démarche, la matière, l'intention…") }}
+      {% for e in form.description.errors %}<div class="err">{{ e }}</div>{% endfor %}
+    </div>
+
+    <div class="form-section">
+      <h3>Cartel &amp; tarification</h3>
+      <p>Prix, dimensions et format d'accrochage.</p>
+    </div>
+
+    <div class="form-grid">
+      <div class="field">
+        {{ form.price.label }}
+        {{ form.price(placeholder="ex. 2400") }}
+      </div>
+      <div class="field">
+        {{ form.year.label }}
+        {{ form.year(placeholder="ex. 2024") }}
+      </div>
+        <div class="field">
+          {{ form.discipline.label }}
+          {{ form.discipline() }}
+        </div>
+      <div class="field">
+        {{ form.medium.label }}
+        {{ form.medium(placeholder="huile / acrylique / photo") }}
+      </div>
+      <div class="field">
+        {{ form.dimensions.label }}
+        {{ form.dimensions(placeholder="ex. 120 × 90 cm") }}
+      </div>
+      <div class="field">
+        {{ form.format.label }}
+        {{ form.format() }}
+      </div>
+    </div>
+
+    <div class="field">
+      {{ form.series_id.label }}
+      {{ form.series_id() }}
+      <div style="margin-top:8px;font-size:13px;color:var(--grey)">
+        Pas encore de série ? <a href="{{ url_for('main.create_series') }}" style="color:var(--accent)">Créer une série →</a>
+      </div>
+    </div>
+
+    <div class="form-section">
+      <h3>Visuel</h3>
+      <p>Image principale de l'œuvre (JPG, PNG).</p>
+    </div>
+
+    <div class="field">
+      {{ form.image.label }}
+      {% if is_edit and artwork.image %}
+        <div style="margin-bottom:10px"><img src="{{ img_url(artwork.image) }}" alt="" style="max-height:160px;border:1px solid var(--hair)"></div>
+      {% endif %}
+      {{ form.image() }}
+      {% for e in form.image.errors %}<div class="err">{{ e }}</div>{% endfor %}
+    </div>
+
+    {% if ent is defined and ent.private_sales %}
+    <div class="field" style="margin-top:8px">
+      <label style="display:flex;align-items:center;gap:10px;cursor:pointer;text-transform:none;letter-spacing:0;font-size:14px;color:var(--ink)">
+        <input type="checkbox" name="early_access" value="1" {% if is_edit and artwork.early_access %}checked{% endif %}>
+        Vente privée (visible uniquement par les abonnés Patron / Galerie Premium)
+      </label>
+    </div>
+    {% endif %}
+
+    <button type="submit" class="btn-full">{{ 'Enregistrer les modifications' if is_edit else "Publier l'œuvre" }}</button>
+  </form>
+
+  {% if is_edit %}
+  <form method="post" action="{{ url_for('main.delete_artwork', artwork_id=artwork.id) }}"
+        onsubmit="return confirm('Supprimer définitivement cette œuvre ?');"
+        style="margin-top:20px;padding-top:20px;border-top:1px solid var(--hair)">
+    <button type="submit" class="btn-line" style="width:100%;border-color:var(--error);color:var(--error)">Supprimer l'œuvre</button>
+  </form>
+  {% endif %}
+</div>
+{% endblock %}

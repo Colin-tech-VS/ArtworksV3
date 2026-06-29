@@ -1,0 +1,51 @@
+{% extends '_dashboard_layout.html' %}
+{% set dash_active = 'series' %}
+{% block title %}{{ 'Modifier la série' if mode == 'edit' else 'Nouvelle série' }} — Artworks{% endblock %}
+
+{% block dash_header %}
+<div class="dash-breadcrumb"><a href="{{ url_for('main.dashboard') }}">Tableau de bord</a> / Série</div>
+<header class="dash-hero">
+  <div class="dash-hero-text">
+    <div class="eyebrow"><span class="line"></span><span class="cartel">{{ role_meta.eyebrow }}</span></div>
+    <h1>{{ 'Modifier la série' if mode == 'edit' else 'Nouvelle série' }}</h1>
+    <p class="lead">{{ role_meta.series_sub }}</p>
+  </div>
+</header>
+{% endblock %}
+
+{% block dash_content %}
+<div class="dash-form-panel" style="max-width:620px">
+  <form method="post" enctype="multipart/form-data" novalidate>
+    {{ form.hidden_tag() }}
+    <div class="field">
+      {{ form.name.label }}
+      {{ form.name(placeholder="ex. Terres brûlées") }}
+      {% for e in form.name.errors %}<div class="err">{{ e }}</div>{% endfor %}
+    </div>
+    <div class="field">
+      {{ form.description.label }}
+      {{ form.description(placeholder="Description de la série, intention, contexte…") }}
+    </div>
+    <div class="field">
+      {{ form.year.label }}
+      {{ form.year(placeholder="ex. 2024") }}
+    </div>
+    <div class="field">
+      {{ form.cover.label }}
+      {% if mode == 'edit' and series.cover %}
+        <div style="margin-bottom:10px"><img src="{{ img_url(series.cover) }}" alt="" style="max-height:120px;border:1px solid var(--hair)"></div>
+      {% endif %}
+      {{ form.cover() }}
+    </div>
+    <button type="submit" class="btn-full">Enregistrer la série</button>
+  </form>
+
+  {% if mode == 'edit' %}
+  <form method="post" action="{{ url_for('main.delete_series', series_id=series.id) }}"
+        onsubmit="return confirm('Supprimer cette série ? Les œuvres ne seront pas supprimées.');"
+        style="margin-top:20px;padding-top:20px;border-top:1px solid var(--hair)">
+    <button type="submit" class="btn-line" style="width:100%;border-color:var(--error);color:var(--error)">Supprimer la série</button>
+  </form>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% block title %}Connectez Stripe — Artworks{% endblock %}
+{% block content %}
+<div class="wrap" style="padding:clamp(80px,12vw,140px) 0;text-align:center;max-width:560px;margin:0 auto">
+  <span class="aw-section-badge"><span class="aw-section-badge-icon">✦</span> Encaissement</span>
+  <h1 style="font-family:var(--serif);font-weight:300;font-size:clamp(28px,4vw,40px);margin:20px 0 12px">Une dernière étape pour activer votre portfolio</h1>
+  <p style="color:var(--grey);line-height:1.65;margin:0 0 28px">
+    Votre abonnement est actif. Connectez Stripe pour <strong>encaisser vos ventes</strong> sur votre compte bancaire —
+    c'est obligatoire pour rendre votre portfolio public sur Artworks.
+  </p>
+  <form method="post" action="{{ url_for('main.stripe_connect_start') }}" style="display:inline-block">
+    <button type="submit" class="btn-solid" style="min-width:240px">Connecter Stripe</button>
+  </form>
+  {% if can_simulate_connect|default(false) %}
+  <form method="post" action="{{ url_for('main.stripe_connect_simulate') }}" style="display:inline-block;margin-left:12px">
+    <button type="submit" class="btn-line">Simulation locale (dev)</button>
+  </form>
+  {% endif %}
+  <p style="margin-top:20px;font-size:13px;color:var(--grey)">
+    <a href="{{ url_for('main.dashboard') }}">Retour au tableau de bord</a>
+  </p>
+</div>
+{% endblock %}

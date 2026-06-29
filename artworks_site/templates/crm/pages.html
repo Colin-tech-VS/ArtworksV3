@@ -1,0 +1,47 @@
+{% extends 'crm/_crm_layout.html' %}
+{% from 'crm/_crm_macros.html' import page_status_badge, crm_empty %}
+
+{% block title %}CRM — Pages CMS{% endblock %}
+
+{% block crm_header %}
+<header class="crm-page-head">
+  <div class="crm-page-head-text">
+    <p class="crm-eyebrow">Contenu</p>
+    <h1>Pages CMS</h1>
+    <p class="crm-lead">Créez des pages éditoriales publiées sur <code>/p/slug</code> — option menu inclus.</p>
+  </div>
+  <div class="crm-page-head-actions">
+    <a href="{{ url_for('crm.page_form') }}" class="btn-solid">+ Nouvelle page</a>
+  </div>
+</header>
+{% endblock %}
+
+{% block crm_content %}
+{% if pages %}
+<div class="crm-table-wrap">
+  <table class="crm-table">
+    <thead><tr><th>Page</th><th>URL</th><th>Statut</th><th>Menu</th><th>Mise à jour</th><th></th></tr></thead>
+    <tbody>
+      {% for p in pages %}
+      <tr>
+        <td><strong>{{ p.title }}</strong>{% if p.excerpt %}<br><small style="color:var(--crm-muted)">{{ p.excerpt[:60] }}{% if p.excerpt|length > 60 %}…{% endif %}</small>{% endif %}</td>
+        <td><code style="font-size:12px">/p/{{ p.slug }}</code></td>
+        <td>{{ page_status_badge(p.published) }}</td>
+        <td>{% if p.show_in_nav %}<span class="crm-badge crm-badge-live">Visible</span>{% else %}<span class="crm-badge crm-badge-muted">Masquée</span>{% endif %}</td>
+        <td>{{ p.updated_at.strftime('%d/%m/%Y') if p.updated_at else '—' }}</td>
+        <td class="crm-actions">
+          {% if p.published %}<a href="{{ url_for('main.cms_page', slug=p.slug) }}" class="btn-line" target="_blank">Voir</a>{% endif %}
+          <a href="{{ url_for('crm.page_form', page_id=p.id) }}" class="btn-line">Éditer</a>
+          <form method="post" action="{{ url_for('crm.page_delete', page_id=p.id) }}" onsubmit="return confirm('Supprimer cette page ?')">
+            <button type="submit" class="btn-line">Supprimer</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+{{ crm_empty('📄', 'Aucune page', 'Créez votre première page éditoriale.', url_for('crm.page_form'), 'Créer une page') }}
+{% endif %}
+{% endblock %}

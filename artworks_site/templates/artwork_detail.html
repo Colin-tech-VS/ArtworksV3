@@ -1,0 +1,184 @@
+{% extends 'base.html' %}
+{% from '_macros.html' import artcard, heart %}
+{% block title %}{{ seo.title if seo else artwork.title }}{% endblock %}
+
+{% block meta %}
+{% if seo %}
+<meta name="description" content="{{ seo.description }}">
+<meta name="robots" content="{{ seo.robots }}">
+{% if seo.keywords %}<meta name="keywords" content="{{ seo.keywords }}">{% endif %}
+<meta property="og:title" content="{{ seo.title }}">
+<meta property="og:description" content="{{ seo.description }}">
+<meta property="og:type" content="{{ seo.og_type }}">
+{% endif %}
+{% if json_ld %}{{ json_ld|safe }}{% endif %}
+{% endblock %}
+
+{% block page_css %}
+<style>
+.crumbs{ padding:26px 0 0; font-size:12px; color:var(--grey); display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+.crumbs a:hover{ color:var(--accent); }
+.crumbs .sep{ color:var(--hair); }
+.oeuvre{ display:grid; grid-template-columns:1.25fr 1fr; gap:clamp(40px,5vw,80px); padding:clamp(30px,4vw,48px) 0 0; align-items:start; }
+.viewer{ position:sticky; top:104px; }
+.stage{ position:relative; background:var(--bg-pure); border:1px solid var(--hair); padding:clamp(34px,5vw,64px) clamp(30px,5vw,72px); display:flex; justify-content:center; cursor:zoom-in; border-radius:var(--radius-xl); overflow:hidden; transition:box-shadow .35s var(--ease); }
+.stage:hover{ box-shadow:var(--shadow-soft); }
+.stage img{ width:auto; max-width:100%; max-height:62vh; filter:drop-shadow(var(--shadow-art)); transition:transform .55s var(--ease-spring); border-radius:var(--radius-sm); }
+.stage:hover img{ transform:scale(1.02); }
+.zoom-hint{ position:absolute; top:16px; right:16px; display:inline-flex; align-items:center; gap:7px; font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:var(--grey); background:rgba(250,248,245,.85); padding:7px 12px; border:1px solid var(--hair); border-radius:var(--radius-pill); backdrop-filter:blur(4px); }
+.detail .artist-line{ display:flex; align-items:center; gap:12px; }
+.detail .artist-line img{ width:44px; height:44px; border-radius:50%; object-fit:cover; border:1px solid var(--hair); }
+.detail .artist-line a{ font-size:15px; }
+.detail .artist-line a:hover{ color:var(--accent); }
+.detail .artist-line .role{ font-size:11px; text-transform:uppercase; letter-spacing:.13em; color:var(--grey); }
+.detail h1{ font-family:var(--serif); font-weight:300; font-size:clamp(34px,4.4vw,52px); font-style:italic; letter-spacing:-.02em; line-height:1.02; margin:22px 0 6px; }
+.detail .year{ color:var(--grey); font-size:15px; }
+.cartel-table{ margin:34px 0; border-top:1px solid var(--hair); }
+.cartel-table .row{ display:grid; grid-template-columns:150px 1fr; gap:16px; padding:13px 0; border-bottom:1px solid var(--hair); }
+.cartel-table .row dt{ margin:0; }
+.cartel-table .row dd{ margin:0; font-size:15px; }
+.price-block{ display:flex; align-items:baseline; gap:16px; margin:30px 0 8px; }
+.price-block .pr{ font-family:var(--serif); font-size:clamp(30px,3.4vw,42px); }
+.status{ display:inline-flex; align-items:center; gap:8px; font-size:12px; letter-spacing:.1em; text-transform:uppercase; color:#3c7a4e; }
+.status.reserved{ color:var(--accent); }
+.status .d{ width:8px; height:8px; border-radius:50%; background:currentColor; }
+.taxes{ font-size:12.5px; color:var(--grey-soft); margin:0 0 26px; }
+.buy-row{ display:flex; gap:12px; margin-bottom:14px; }
+.buy-row .btn-solid{ flex:1; padding:15px; font-size:15px; text-align:center; }
+.buy-row .fav-big{ width:54px; flex-shrink:0; border:1px solid var(--ink); background:transparent; display:grid; place-items:center; border-radius:var(--radius-md); transition:all .3s var(--ease-spring); }
+.buy-row .fav-big svg{ width:20px; height:20px; stroke:var(--ink); fill:none; stroke-width:1.6; transition:fill .25s var(--ease),stroke .25s var(--ease); }
+.buy-row .fav-big.is-fav{ border-color:var(--accent); }
+.buy-row .fav-big.is-fav svg{ fill:var(--accent); stroke:var(--accent); }
+.buy-row .fav-big:hover{ border-color:var(--accent); transform:translateY(-2px); }
+.contact-btn{ width:100%; padding:14px; font-size:14.5px; text-align:center; }
+.trust{ display:grid; grid-template-columns:1fr 1fr; gap:14px 24px; margin-top:30px; padding-top:26px; border-top:1px solid var(--hair); }
+.trust .t{ display:flex; gap:12px; align-items:flex-start; }
+.trust svg{ flex-shrink:0; width:22px; height:22px; stroke:var(--accent); fill:none; stroke-width:1.4; margin-top:1px; }
+.trust .tt{ font-size:13.5px; line-height:1.4; }
+.trust .tt b{ font-weight:500; display:block; }
+.trust .tt span{ color:var(--grey); font-size:12.5px; }
+.lightbox{ position:fixed; inset:0; z-index:100; background:rgba(26,22,18,.92); display:none; align-items:center; justify-content:center; padding:5vh 5vw; cursor:zoom-out; }
+.lightbox.open{ display:flex; animation:lbin .3s var(--ease); }
+@keyframes lbin{ from{ opacity:0 } to{ opacity:1 } }
+.lightbox img{ max-width:100%; max-height:90vh; box-shadow:0 40px 80px -20px rgba(0,0,0,.6); }
+.lb-close{ position:fixed; top:24px; right:30px; background:none; border:none; color:#fff; padding:8px; }
+.lb-close svg{ width:30px; height:30px; }
+@media (max-width:880px){ .oeuvre{ grid-template-columns:1fr; } .viewer{ position:static; } .stage img{ max-height:none; } }
+</style>
+{% endblock %}
+
+{% block content %}
+{% set imgsrc = img_url(artwork.image) or url_for('static', filename='demo/art-01.jpg') %}
+<div class="wrap">
+  <nav class="crumbs">
+    <a href="{{ url_for('main.index') }}">Accueil</a><span class="sep">/</span>
+    <a href="{{ url_for('main.explorer') }}">Explorer</a><span class="sep">/</span>
+    {% if artwork.discipline %}<a href="{{ url_for('main.explorer') }}?q={{ artwork.discipline }}">{{ artwork.discipline|capitalize }}</a><span class="sep">/</span>{% endif %}
+    <span style="color:var(--ink)">{{ artwork.title }}</span>
+  </nav>
+
+  <section class="oeuvre">
+    <div class="viewer reveal in">
+      <div class="stage" data-zoom="{{ imgsrc }}">
+        <span class="zoom-hint"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3M11 8v6M8 11h6"/></svg> Cliquer pour agrandir</span>
+        <img src="{{ imgsrc }}" alt="{{ artwork.title }} — {{ artwork.owner.name if artwork.owner else '' }}" data-main-art>
+      </div>
+    </div>
+
+    <div class="detail reveal in">
+      <div class="artist-line">
+        <img src="{{ img_url(artwork.owner.avatar) if artwork.owner else None or url_for('static', filename='demo/artist-01.jpg') }}" alt="{{ artwork.owner.name if artwork.owner else '' }}">
+        <div>
+          <div class="role">Œuvre originale de</div>
+          {% if artwork.owner %}<a href="{{ url_for('main.artist', artist_id=artwork.owner.id) }}">{{ artwork.owner.name }}</a>{% else %}<span>Anonyme</span>{% endif %}
+        </div>
+      </div>
+
+      <h1>{{ artwork.title }}</h1>
+      <div class="year">{% if artwork.year %}{{ artwork.year }} · {% endif %}Pièce unique{% if artwork.signed %}, signée{% endif %}</div>
+
+      <dl class="cartel-table">
+        {% if artwork.technique or artwork.medium %}<div class="row"><dt class="cartel">Technique</dt><dd>{{ artwork.technique or artwork.medium|capitalize }}</dd></div>{% endif %}
+        {% if artwork.dimensions %}<div class="row"><dt class="cartel">Dimensions</dt><dd>{{ artwork.dimensions }}</dd></div>{% endif %}
+        {% if artwork.year %}<div class="row"><dt class="cartel">Année</dt><dd>{{ artwork.year }}</dd></div>{% endif %}
+        <div class="row"><dt class="cartel">Signature</dt><dd>{{ 'Signée au dos et datée' if artwork.signed else 'Non signée' }}</dd></div>
+        <div class="row"><dt class="cartel">Certificat</dt><dd>{{ "Certificat d'authenticité fourni" if artwork.certificate else 'Non fourni' }}</dd></div>
+        {% if artwork.condition %}<div class="row"><dt class="cartel">État</dt><dd>{{ artwork.condition }}</dd></div>{% endif %}
+        {% if artwork.framing %}<div class="row"><dt class="cartel">Encadrement</dt><dd>{{ artwork.framing }}</dd></div>{% endif %}
+      </dl>
+
+      {% if artwork.description %}<p style="color:var(--grey);line-height:1.7;margin:-10px 0 26px">{{ artwork.description }}</p>{% endif %}
+
+      <div class="price-block">
+        <span class="pr">{{ artwork.price_str }}</span>
+        {% if artwork.status == 'reserve' %}
+          <span class="status reserved"><span class="d"></span> Réservée</span>
+        {% else %}
+          <span class="status"><span class="d"></span> Disponible</span>
+        {% endif %}
+      </div>
+      <p class="taxes">TVA incluse · Livraison calculée à l'étape suivante{% if owner_ent.marketplace_enabled %} · Commission plateforme {{ commission_label }} incluse{% endif %}</p>
+
+      <div class="buy-row">
+        {% if owner_ent.marketplace_enabled and artwork.status != 'reserve' and artwork.price %}
+        <form method="post" action="{{ url_for('main.purchase_artwork', artwork_id=artwork.id) }}" style="flex:1;display:flex;gap:8px">
+          {% if not current_user.is_authenticated %}
+          <input type="email" name="email" required placeholder="Votre email" style="flex:1;padding:14px;border:1px solid var(--hair);border-radius:var(--radius-md);font-size:14px">
+          {% endif %}
+          <button type="submit" class="btn-solid" style="flex:1;padding:15px;font-size:15px">Acheter — {{ artwork.price_str }}</button>
+        </form>
+        {% elif artwork.status != 'reserve' %}
+        <a href="mailto:{{ artwork.owner.email if artwork.owner else 'contact@artworksdigital.fr' }}?subject=Intérêt pour {{ artwork.title }}" class="btn-solid" style="flex:1;text-align:center">Demander le prix</a>
+        {% else %}
+        <button class="btn-solid" disabled style="flex:1;opacity:.5">Œuvre réservée</button>
+        {% endif %}
+        <button class="fav-big fav" data-id="{{ artwork.id }}" aria-label="Ajouter aux favoris">{{ heart() }}</button>
+      </div>
+      {% if current_user.is_authenticated and current_user.role == 'collectionneur' and user_ent.price_alerts %}
+      <form method="post" action="{{ url_for('main.price_alert', artwork_id=artwork.id) }}" style="margin-bottom:14px">
+        <button type="submit" class="btn-line contact-btn">🔔 Activer / désactiver l'alerte prix</button>
+      </form>
+      {% endif %}
+      <a href="mailto:{{ artwork.owner.email if artwork.owner else 'contact@artworksdigital.fr' }}?subject={{ artwork.title }}" class="btn-line contact-btn">Contacter {{ 'la galerie' if artwork.owner and artwork.owner.role == 'galerie' else "l'artiste" }}</a>
+
+      <div class="trust">
+        <div class="t"><svg viewBox="0 0 24 24"><rect x="2" y="7" width="14" height="10" rx="1"/><path d="M16 10h4l2 3v4h-6z"/><circle cx="6" cy="18" r="1.6"/><circle cx="18" cy="18" r="1.6"/></svg><div class="tt"><b>Livraison sécurisée</b><span>Emballage musée, assurance incluse</span></div></div>
+        <div class="t"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7M3 4v4h4"/></svg><div class="tt"><b>Retour 14 jours</b><span>Satisfait ou remboursé</span></div></div>
+        <div class="t"><svg viewBox="0 0 24 24"><path d="M12 2l8 4v6c0 5-3.5 8-8 10-4.5-2-8-5-8-10V6z"/><path d="m9 12 2 2 4-4"/></svg><div class="tt"><b>Paiement protégé</b><span>Transaction chiffrée, séquestre</span></div></div>
+        <div class="t"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9 12l2 2 4-5"/></svg><div class="tt"><b>Authenticité garantie</b><span>Certificat &amp; provenance vérifiés</span></div></div>
+      </div>
+    </div>
+  </section>
+
+  {% if same_artist %}
+  <section class="sec">
+    <div class="sec-head reveal">
+      <div><div class="eyebrow" style="display:flex;align-items:center;gap:12px;margin-bottom:14px"><span style="width:34px;height:1px;background:var(--accent);display:inline-block"></span><span class="cartel">{{ artwork.owner.name }}</span></div><h2 class="sec-title">Du même artiste</h2></div>
+      <a href="{{ url_for('main.artist', artist_id=artwork.owner.id) }}" class="sec-link">Voir le portfolio →</a>
+    </div>
+    <div class="artgrid cols-4 reveal">
+      {% for a in same_artist %}{{ artcard(a) }}{% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  {% if similar %}
+  <section class="sec" style="padding-top:0">
+    <div class="sec-head reveal">
+      <div><div class="eyebrow" style="display:flex;align-items:center;gap:12px;margin-bottom:14px"><span style="width:34px;height:1px;background:var(--accent);display:inline-block"></span><span class="cartel">Vous aimerez aussi</span></div><h2 class="sec-title">Œuvres similaires</h2></div>
+      <a href="{{ url_for('main.explorer') }}" class="sec-link">Explorer →</a>
+    </div>
+    <div class="artgrid cols-4 reveal">
+      {% for a in similar %}{{ artcard(a) }}{% endfor %}
+    </div>
+  </section>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block lightbox %}
+<div class="lightbox" data-lightbox>
+  <button class="lb-close" data-lb-close aria-label="Fermer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+  <img src="{{ imgsrc }}" alt="{{ artwork.title }} agrandie">
+</div>
+{% endblock %}

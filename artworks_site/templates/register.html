@@ -1,0 +1,112 @@
+{% extends 'base.html' %}
+{% block title %}Créer un compte — Artworks{% endblock %}
+{% block body_class %}page-auth{% endblock %}
+{% block page_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/auth.css') }}">
+{% endblock %}
+
+{% set roleinfo = [
+  ('Découvrir, suivre et acquérir des œuvres avec méthode.',
+   '<svg viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>'),
+  ('Représenter vos artistes et vendre en ligne.',
+   '<svg viewBox="0 0 24 24"><path d="M3 9l9-5 9 5M5 9v9M19 9v9M9 9v9M15 9v9M3 21h18"/></svg>'),
+  ('Publier votre portfolio et encaisser vos ventes.',
+   '<svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 0 18c1.4 0 2-1 2-2 0-1.4 1-2 2-2h2a3 3 0 0 0 3-3c0-5-4-9-11-9z"/><circle cx="7.5" cy="10.5" r="1"/><circle cx="12" cy="8" r="1"/><circle cx="16" cy="10.5" r="1"/></svg>')
+] %}
+
+{% set auth_kicker = 'Rejoindre le salon' %}
+{% set auth_quote = "« Galeries et collectionneurs au cœur d'un écosystème curatorial exigeant. »" %}
+{% set auth_quote_by = 'Acquisition · curation · confiance' %}
+{% set auth_image = url_for('static', filename='demo/art-03.jpg') %}
+{% set auth_features = [
+  {'title': 'Données protégées', 'text': 'Chiffrement · jamais revendues', 'icon': '<svg viewBox="0 0 24 24"><path d="M12 2l8 4v6c0 5-3.5 8-8 10-4.5-2-8-5-8-10V6z"/><path d="m9 12 2 2 4-4"/></svg>'},
+  {'title': 'Inscription gratuite', 'text': 'Espace immédiat pour galeries & collectionneurs', 'icon': '<svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>'},
+  {'title': 'Communauté vérifiée', 'text': 'Artistes, galeries et acheteurs de confiance', 'icon': '<svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>'}
+] %}
+
+{% block content %}
+<div class="auth-shell">
+  {% include '_auth_sidebar.html' %}
+
+  <div class="auth-panel">
+    <div class="auth-panel-inner auth-panel-inner--wide">
+      <div class="auth-panel-mobile-brand">
+        <a href="{{ url_for('main.index') }}" class="brand">Artworks<span class="brand-tag">Salon</span></a>
+      </div>
+
+      <a href="{{ url_for('main.index') }}" class="auth-back">
+        <svg viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        Retour au salon
+      </a>
+
+      <h1 class="auth-form-title">Créer un compte</h1>
+      <p class="auth-form-lead">Choisissez votre profil, votre formule, puis inscrivez-vous en quelques secondes.</p>
+
+      <form class="auth-form" method="post" novalidate id="register-form">
+        {{ form.hidden_tag() }}
+
+        <span class="auth-roles-label">Vous êtes</span>
+        <div class="auth-roles roles">
+          {% for subfield in form.role %}
+          {% set info = roleinfo[loop.index0] %}
+          <label class="role-card">
+            {{ subfield() }}
+            {{ info[1]|safe }}
+            <span class="rt">{{ subfield.label.text }}</span>
+            <span class="rd">{{ info[0] }}</span>
+          </label>
+          {% endfor %}
+        </div>
+        {% for e in form.role.errors %}<div class="err" style="margin:-12px 0 14px">{{ e }}</div>{% endfor %}
+
+        <span class="auth-plans-label">Votre formule</span>
+        <input type="hidden" name="plan" id="plan" value="{{ form.plan.data or 'free' }}">
+        <div class="auth-plans" id="auth-plans" aria-live="polite"></div>
+        {% for e in form.plan.errors %}<div class="err" style="margin:-8px 0 14px">{{ e }}</div>{% endfor %}
+        <p class="auth-plan-note">Les formules payantes sont activées après paiement sécurisé Stripe. Vous pouvez commencer gratuitement.</p>
+
+        {% set google_href = url_for('auth.google_start', action='register', role=form.role.data, plan=form.plan.data or 'free') %}
+        {% set google_register = true %}
+        {% include '_auth_google.html' %}
+
+        <div class="field">
+          <label for="username">Nom d'utilisateur</label>
+          {{ form.username(id="username", placeholder="Nom personnel ou de galerie") }}
+          {% for e in form.username.errors %}<div class="err">{{ e }}</div>{% endfor %}
+        </div>
+        <div class="field">
+          <label for="email">Email</label>
+          {{ form.email(id="email", placeholder="vous@exemple.com") }}
+          {% for e in form.email.errors %}<div class="err">{{ e }}</div>{% endfor %}
+        </div>
+        <div class="form-grid">
+          <div class="field">
+            <label for="password">Mot de passe</label>
+            {{ form.password(id="password", placeholder="8 caractères min.") }}
+            {% for e in form.password.errors %}<div class="err">{{ e }}</div>{% endfor %}
+          </div>
+          <div class="field">
+            <label for="password2">Confirmer</label>
+            {{ form.password2(id="password2", placeholder="••••••••") }}
+            {% for e in form.password2.errors %}<div class="err">{{ e }}</div>{% endfor %}
+          </div>
+        </div>
+        <button type="submit" class="auth-submit">Créer mon compte</button>
+      </form>
+
+      <p class="auth-secure">
+        <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        En créant un compte, vous acceptez nos conditions
+      </p>
+
+      <p class="auth-switch">Déjà inscrit ? <a href="{{ url_for('auth.login') }}">Se connecter</a></p>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>window.__AUTH_PLANS__ = {{ plans_by_role|tojson }};</script>
+<script src="{{ url_for('static', filename='js/auth.js') }}"></script>
+{% endblock %}

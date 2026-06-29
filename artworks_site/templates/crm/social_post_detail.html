@@ -1,0 +1,44 @@
+{% extends 'crm/_crm_layout.html' %}
+{% block title %}CRM — {{ post.name }}{% endblock %}
+{% block crm_header %}
+<header class="crm-page-head">
+  <div class="crm-page-head-text">
+    <p class="crm-eyebrow">Réseaux sociaux</p>
+    <h1>{{ post.name }}</h1>
+    <p class="crm-lead">{{ post.subject }}</p>
+  </div>
+  <div class="crm-page-head-actions">
+    <a href="{{ url_for('crm.social_post_form', post_id=post.id) }}" class="crm-btn-ghost">Éditer</a>
+    {% if post.status != 'published' %}
+    <form method="post" action="{{ url_for('crm.social_post_publish', post_id=post.id) }}">
+      <button type="submit" class="btn-solid">Publier</button>
+    </form>
+    {% endif %}
+  </div>
+</header>
+{% endblock %}
+{% block crm_content %}
+<div class="crm-split crm-stagger">
+  <div class="crm-panel">
+    <h2>Détails</h2>
+    <p><strong>Statut :</strong> {{ post.status }}</p>
+    <p><strong>Clients ciblés :</strong> {{ target_count }}</p>
+    <p><strong>Plateformes :</strong> {{ post.platforms|join(', ') }}</p>
+    {% if post.published_at %}<p><strong>Publié :</strong> {{ post.published_at.strftime('%d/%m/%Y %H:%M') }}</p>{% endif %}
+    {% if post.publish_results %}
+    <h3 style="margin-top:20px">Résultats</h3>
+    <ul>{% for k,v in post.publish_results.items() %}
+      <li>{{ k }} : {% if v.ok %}✓ {{ v.post_id }}{% else %}✗ {{ v.error }}{% endif %}</li>
+    {% endfor %}</ul>
+    {% endif %}
+  </div>
+  <div class="crm-panel crm-social-preview-panel">
+    <h2>Aperçu</h2>
+    {% set facebook_text = post.facebook_text or post.subject %}
+    {% set instagram_text = post.instagram_text or post.facebook_text %}
+    {% set image_url = preview_image %}
+    {% set destination_url = post.destination_url or '' %}
+    {% include 'crm/_social_preview_fragment.html' %}
+  </div>
+</div>
+{% endblock %}

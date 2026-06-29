@@ -1,0 +1,129 @@
+{% extends 'crm/_crm_layout.html' %}
+
+{% block title %}CRM — Tarifs & commission{% endblock %}
+
+{% block crm_css %}
+<style>
+.crm-pricing-grid{ display:grid; gap:24px; }
+.crm-pricing-block{
+  background:#fff; border:1px solid var(--hair, #e8e4df); border-radius:12px; padding:24px;
+}
+.crm-pricing-block h2{
+  font-family:var(--serif, Georgia, serif); font-weight:400; font-size:22px; margin:0 0 6px;
+}
+.crm-pricing-block .sub{ color:var(--grey, #6b6b66); font-size:14px; margin:0 0 20px; }
+.crm-pricing-table{ width:100%; border-collapse:collapse; font-size:14px; }
+.crm-pricing-table th{
+  text-align:left; font-size:11px; text-transform:uppercase; letter-spacing:.12em;
+  color:var(--grey); padding:10px 12px; border-bottom:1px solid var(--hair);
+}
+.crm-pricing-table td{ padding:14px 12px; border-bottom:1px solid var(--hair); vertical-align:middle; }
+.crm-pricing-table tr:last-child td{ border-bottom:none; }
+.crm-price-input{
+  width:110px; padding:8px 12px; border:1px solid var(--hair); border-radius:8px; font-size:14px;
+}
+.crm-price-input:focus{ outline:none; border-color:var(--accent, #b8734a); }
+.crm-commission-box{
+  display:flex; align-items:flex-end; gap:16px; flex-wrap:wrap; margin-top:8px;
+}
+.crm-commission-box label{ display:block; font-size:12px; color:var(--grey); margin-bottom:6px; }
+.crm-commission-box input{
+  width:100px; padding:10px 14px; border:1px solid var(--hair); border-radius:8px; font-size:18px;
+}
+.crm-pricing-note{
+  margin-top:20px; padding:14px 16px; background:#faf8f5; border-radius:8px;
+  font-size:13px; color:var(--grey); line-height:1.55;
+}
+.crm-badge-override{
+  display:inline-block; font-size:10px; text-transform:uppercase; letter-spacing:.1em;
+  padding:3px 8px; border-radius:999px; background:rgba(184,115,74,.1); color:var(--accent);
+}
+.crm-pricing-actions{ display:flex; gap:12px; flex-wrap:wrap; margin-top:28px; }
+</style>
+{% endblock %}
+
+{% block crm_header %}
+<header class="crm-page-head crm-reveal">
+  <div class="crm-page-head-text">
+    <p class="crm-eyebrow">Système</p>
+    <h1>Tarifs & commission</h1>
+    <p class="crm-lead">Modifiez les prix des abonnements et la commission marketplace — appliqués en direct sur le site, les pages tarifs et les checkouts Stripe.</p>
+  </div>
+  <div class="crm-page-head-actions">
+    <a href="{{ url_for('main.tarifs') }}" class="btn-line" target="_blank">Voir tarifs publics</a>
+  </div>
+</header>
+{% endblock %}
+
+{% block crm_content %}
+<form method="post" class="crm-pricing-grid crm-reveal">
+  <section class="crm-pricing-block">
+    <h2>Commission marketplace</h2>
+    <p class="sub">Prélevée sur chaque vente d'œuvre via Stripe (checkout œuvre + Connect).</p>
+    <div class="crm-commission-box">
+      <div>
+        <label for="commission_percent">Taux de commission (%)</label>
+        <input type="text" id="commission_percent" name="commission_percent"
+               value="{{ '%.2f'|format(commission_percent)|replace('.00','') }}" required>
+      </div>
+      <div style="padding-bottom:10px;color:var(--grey);font-size:14px">
+        Actuellement : <strong>{{ commission_percent }} %</strong>
+        {% if commission_updated %}<br><span style="font-size:12px">Modifié le {{ commission_updated.strftime('%d/%m/%Y %H:%M') }}</span>{% endif %}
+      </div>
+    </div>
+  </section>
+
+  {% set roles = plans|map(attribute='role')|unique|list %}
+  {% for role in ['artiste', 'galerie', 'collectionneur'] %}
+  {% set role_plans = plans|selectattr('role', 'equalto', role)|list %}
+  {% if role_plans %}
+  <section class="crm-pricing-block">
+    <h2>Offres {{ role_plans[0].role_label }}s</h2>
+    <p class="sub">Prix mensuels TTC affichés sur le site. La formule gratuite n'est pas éditable ici.</p>
+    <table class="crm-pricing-table">
+      <thead>
+        <tr>
+          <th>Formule</th>
+          <th>Défaut code</th>
+          <th>Prix live (€/mois)</th>
+          <th>Statut</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in role_plans %}
+        <tr>
+          <td><strong>{{ p.name }}</strong><br><span style="font-size:12px;color:var(--grey)">{{ p.slug }}</span></td>
+          <td>{{ p.default_label }}</td>
+          <td>
+            <input class="crm-price-input" type="text" name="{{ p.field_name }}"
+                   value="{{ '%.2f'|format(p.effective_cents / 100)|replace('.00','') }}"
+                   aria-label="Prix {{ p.name }}">
+          </td>
+          <td>
+            {% if p.is_overridden %}<span class="crm-badge-override">Personnalisé</span>
+            {% else %}<span style="color:var(--grey);font-size:12px">Défaut</span>{% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+  {% endif %}
+  {% endfor %}
+
+  <div class="crm-pricing-note">
+    <strong>Application immédiate :</strong> tarifs publics (/tarifs, /offre), cartes abonnement, calcul MRR CRM,
+    commission sur achats d'œuvres et montants Stripe Checkout (nouvelles sessions).
+    Les abonnements Stripe déjà actifs conservent leur prix jusqu'au prochain cycle.
+    {% if prices_updated %}<br>Dernier changement tarifs : {{ prices_updated.strftime('%d/%m/%Y %H:%M') }}.{% endif %}
+  </div>
+
+  <div class="crm-pricing-actions">
+    <button type="submit" name="action" value="save" class="btn-solid">Enregistrer</button>
+    <button type="submit" name="action" value="reset" class="btn-line"
+            onclick="return confirm('Réinitialiser tous les tarifs CRM aux valeurs par défaut du code ?')">
+      Réinitialiser aux défauts
+    </button>
+  </div>
+</form>
+{% endblock %}

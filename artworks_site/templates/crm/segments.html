@@ -1,0 +1,50 @@
+{% extends 'crm/_crm_layout.html' %}
+{% from 'crm/_crm_macros.html' import crm_empty %}
+
+{% block title %}CRM — Segmentation{% endblock %}
+
+{% block crm_header %}
+<header class="crm-page-head">
+  <div class="crm-page-head-text">
+    <p class="crm-eyebrow">Marketing</p>
+    <h1>Segmentation</h1>
+    <p class="crm-lead">Segments automatiques + segments manuels pour cibler vos campagnes email.</p>
+  </div>
+  <div class="crm-page-head-actions">
+    <form method="post" action="{{ url_for('crm.segments_reclassify') }}" style="display:inline">
+      <button type="submit" class="btn-line">↻ Reclasser tous</button>
+    </form>
+    <a href="{{ url_for('crm.segment_form') }}" class="btn-solid">+ Nouveau segment</a>
+  </div>
+</header>
+{% endblock %}
+
+{% block crm_content %}
+{% if segments %}
+<div class="crm-table-wrap">
+  <table class="crm-table">
+    <thead><tr><th>Segment</th><th>Type</th><th>Contacts</th><th>Description</th><th></th></tr></thead>
+    <tbody>
+      {% for s in segments %}
+      <tr>
+        <td>
+          <strong>{{ s.name }}</strong>
+          {% if s.is_system %}<span class="crm-badge crm-badge-live" style="margin-left:6px">Auto</span>{% endif %}
+        </td>
+        <td>{% if s.is_system %}<span class="crm-badge crm-badge-muted">Système</span>{% else %}<span class="crm-badge crm-badge-muted">Manuel</span>{% endif %}</td>
+        <td><strong style="font-family:var(--serif);font-size:22px">{{ counts.get(s.id, 0) }}</strong></td>
+        <td style="color:var(--crm-muted)">{{ s.description|safe if s.description else '—' }}</td>
+        <td class="crm-actions">
+          <a href="{{ url_for('crm.segment_detail', segment_id=s.id) }}" class="btn-line">Aperçu</a>
+          <a href="{{ url_for('crm.campaign_form') }}?segment={{ s.id }}" class="btn-solid" style="font-size:12px;padding:6px 14px">Email →</a>
+          <a href="{{ url_for('crm.segment_form', segment_id=s.id) }}" class="btn-line">Éditer</a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+{{ crm_empty('🎯', 'Aucun segment', 'Créez des audiences pour vos campagnes email.', url_for('crm.segment_form'), 'Créer un segment') }}
+{% endif %}
+{% endblock %}

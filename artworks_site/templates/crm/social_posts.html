@@ -1,0 +1,28 @@
+{% extends 'crm/_crm_layout.html' %}
+{% block title %}CRM — Posts sociaux{% endblock %}
+{% block crm_header %}
+<header class="crm-page-head">
+  <div class="crm-page-head-text"><p class="crm-eyebrow">Réseaux sociaux</p><h1>Tous les posts</h1></div>
+  <a href="{{ url_for('crm.social_post_form') }}" class="btn-solid">+ Nouveau</a>
+</header>
+{% endblock %}
+{% block crm_content %}
+<div class="crm-panel">
+  <table class="crm-table">
+    <thead><tr><th>Nom</th><th>Sujet</th><th>Statut</th><th>Créé</th><th></th></tr></thead>
+    <tbody>
+      {% for p in posts %}
+      <tr>
+        <td><a href="{{ url_for('crm.social_post_detail', post_id=p.id) }}">{{ p.name }}</a></td>
+        <td>{{ p.subject[:60] }}</td>
+        <td><span class="crm-badge">{{ p.status }}</span></td>
+        <td>{{ p.created_at.strftime('%d/%m/%Y %H:%M') if p.created_at else '—' }}</td>
+        <td><a href="{{ url_for('crm.social_post_form', post_id=p.id) }}" class="crm-btn-ghost crm-btn-sm">Éditer</a></td>
+      </tr>
+      {% else %}
+      <tr><td colspan="5" class="crm-hint">Aucun post.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

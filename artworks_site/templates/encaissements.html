@@ -1,0 +1,42 @@
+{% extends '_dashboard_layout.html' %}
+{% set dash_active = 'payouts' %}
+{% block title %}Encaissements — Artworks{% endblock %}
+
+{% block dash_header %}
+<div class="dash-breadcrumb"><a href="{{ url_for('main.dashboard') }}">Tableau de bord</a> / Encaissements</div>
+<header class="dash-hero">
+  <div class="dash-hero-text">
+    <div class="eyebrow"><span class="line"></span><span class="cartel">Stripe Connect</span></div>
+    <h1>Encaisser vos ventes</h1>
+    <p class="lead">Connectez votre compte bancaire via Stripe pour recevoir le paiement de vos ventes. Obligatoire pour publier votre portfolio sur Artworks.</p>
+  </div>
+</header>
+{% endblock %}
+
+{% block dash_content %}
+{% include '_stripe_connect_panel.html' %}
+
+{% if connect.show_section and connect.needs_subscription %}
+<section class="dash-panel reveal in">
+  <div class="dash-panel-body">
+    <h2 style="font-family:var(--serif);font-weight:400;margin:0 0 12px">Comment ça marche ?</h2>
+    <ol style="margin:0;padding-left:20px;color:var(--grey);line-height:1.8">
+      <li>Choisissez votre abonnement (Portfolio Marketplace ou Galerie Pro)</li>
+      <li>Connectez Stripe — onboarding sécurisé en 2 minutes</li>
+      <li>Votre portfolio devient visible sur l'explorateur et Google</li>
+      <li>Les acheteurs paient en ligne, vous encaissez sur votre compte</li>
+    </ol>
+  </div>
+</section>
+{% elif connect.portfolio_public_blocked %}
+<section class="dash-panel reveal in" style="border-color:rgba(184,115,74,.25)">
+  <div class="dash-panel-body">
+    <p style="margin:0;color:var(--grey);line-height:1.65">
+      <strong style="color:var(--ink)">Portfolio masqué :</strong>
+      tant que Stripe n'est pas connecté, votre profil et vos œuvres n'apparaissent pas
+      sur l'explorateur, la homepage ni Google — même avec un abonnement actif.
+    </p>
+  </div>
+</section>
+{% endif %}
+{% endblock %}

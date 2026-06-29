@@ -1,0 +1,30 @@
+<div class="crm-social-mock-grid">
+  <div class="crm-fb-mock">
+    <div class="crm-fb-mock-head">
+      <span class="crm-fb-avatar">A</span>
+      <div><strong>Artworks</strong><span class="crm-hint">À l'instant · 🌐</span></div>
+    </div>
+    <p class="crm-fb-text" id="preview-fb-text">{{ facebook_text|default('Votre texte Facebook…')|e }}</p>
+    {% if image_url %}
+    <div class="crm-fb-image"><img src="{{ image_url }}" alt=""></div>
+    {% else %}
+    <div class="crm-fb-image crm-fb-image-ph">Image œuvre / upload</div>
+    {% endif %}
+    {% if destination_url %}
+    <p class="crm-hint crm-fb-link">{{ destination_url }}</p>
+    {% endif %}
+  </div>
+
+  <div class="crm-ig-mock">
+    <div class="crm-ig-mock-head">
+      <span class="crm-fb-avatar">A</span>
+      <strong>artworksdigital</strong>
+    </div>
+    {% if image_url %}
+    <div class="crm-ig-image"><img src="{{ image_url }}" alt=""></div>
+    {% else %}
+    <div class="crm-ig-image crm-fb-image-ph">1:1 · HTTPS requis</div>
+    {% endif %}
+    <p class="crm-ig-caption" id="preview-ig-text">{{ instagram_text|default('Votre caption Instagram…')|e }}</p>
+  </div>
+</div>

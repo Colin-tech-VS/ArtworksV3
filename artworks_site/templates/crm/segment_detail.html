@@ -1,0 +1,41 @@
+{% extends 'crm/_crm_layout.html' %}
+{% from 'crm/_crm_macros.html' import role_badge, plan_badge, user_cell %}
+
+{% block title %}CRM — {{ segment.name }}{% endblock %}
+
+{% block crm_header %}
+<header class="crm-page-head">
+  <div class="crm-page-head-text">
+    <p class="crm-eyebrow">Segment</p>
+    <h1>{{ segment.name }}</h1>
+    <p class="crm-lead">
+      <span class="crm-badge crm-badge-live"><span class="crm-dot"></span> {{ total }} contact(s)</span>
+      {% if segment.description %} — {{ segment.description }}{% endif %}
+    </p>
+  </div>
+  <div class="crm-page-head-actions">
+    <a href="{{ url_for('crm.campaign_form') }}?segment={{ segment.id }}" class="btn-solid">Créer une campagne</a>
+    <a href="{{ url_for('crm.segments_list') }}" class="crm-btn-ghost">← Retour</a>
+  </div>
+</header>
+{% endblock %}
+
+{% block crm_content %}
+<div class="crm-table-wrap">
+  <table class="crm-table">
+    <thead><tr><th>Contact</th><th>Rôle</th><th>Formule</th></tr></thead>
+    <tbody>
+      {% for u in users %}
+      <tr>
+        <td>{{ user_cell(u) }}</td>
+        <td>{{ role_badge(u.role) }}</td>
+        <td>{{ plan_badge(u.subscription_plan) }}</td>
+      </tr>
+      {% endfor %}
+      {% if total > users|length %}
+      <tr><td colspan="3" style="text-align:center;color:var(--crm-muted)"><em>… et {{ total - users|length }} autres (aperçu limité à 100)</em></td></tr>
+      {% endif %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

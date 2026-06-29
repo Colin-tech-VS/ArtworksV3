@@ -1,0 +1,42 @@
+{% extends 'crm/_crm_layout.html' %}
+
+{% block title %}CRM — {{ segment.name if segment else 'Nouveau segment' }}{% endblock %}
+
+{% block crm_header %}
+<header class="crm-page-head">
+  <div class="crm-page-head-text">
+    <p class="crm-eyebrow">Segmentation</p>
+    <h1>{{ segment.name if segment else 'Nouveau segment' }}</h1>
+    <p class="crm-lead">
+      {% if preview_count is defined and preview_count is not none %}
+      <span class="crm-badge crm-badge-live"><span class="crm-dot"></span> {{ preview_count }} contact(s) correspondent</span>
+      {% endif %}
+    </p>
+  </div>
+  <div class="crm-page-head-actions">
+    <a href="{{ url_for('crm.segments_list') }}" class="crm-btn-ghost">← Retour</a>
+  </div>
+</header>
+{% endblock %}
+
+{% block crm_content %}
+<form method="post" class="crm-form crm-panel">
+  {{ form.hidden_tag() }}
+  <div class="field">{{ form.name.label }}{{ form.name(placeholder='Ex. Artistes Pro actifs') }}</div>
+  <div class="field">{{ form.description.label }}{{ form.description(class='crm-wysiwyg', placeholder='Usage interne — optionnel') }}</div>
+
+  <div class="crm-panel" style="background:var(--crm-bg);box-shadow:none;margin:20px 0">
+    <h2 style="font-size:16px;margin:0 0 16px">Critères de ciblage</h2>
+    <div class="crm-split">
+      <div class="field">{{ form.role.label }}{{ form.role() }}</div>
+      <div class="field">{{ form.plan.label }}{{ form.plan() }}</div>
+    </div>
+    <div class="field">{{ form.subscription_status.label }}{{ form.subscription_status() }}</div>
+    <div class="field check">{{ form.paid_only() }} <label for="paid_only">Abonnés payants uniquement</label></div>
+    <div class="field">{{ form.min_artworks.label }}{{ form.min_artworks(placeholder='0') }}</div>
+    <div class="field check">{{ form.has_stripe() }} <label for="has_stripe">Client Stripe enregistré</label></div>
+  </div>
+
+  {{ form.submit(class='btn-solid') }}
+</form>
+{% endblock %}

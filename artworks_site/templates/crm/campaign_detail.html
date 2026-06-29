@@ -1,0 +1,64 @@
+{% extends 'crm/_crm_layout.html' %}
+{% from 'crm/_crm_macros.html' import campaign_status_badge, user_cell %}
+
+{% block title %}CRM — {{ campaign.name }}{% endblock %}
+
+{% block crm_header %}
+<header class="crm-page-head">
+  <div class="crm-page-head-text">
+    <p class="crm-eyebrow">Campagne email</p>
+    <h1>{{ campaign.name }}</h1>
+    <p class="crm-lead">Objet : <em>{{ campaign.subject }}</em></p>
+  </div>
+  <div class="crm-page-head-actions">
+    {% if campaign.status != 'sent' %}
+    <a href="{{ url_for('crm.campaign_form', campaign_id=campaign.id) }}" class="btn-line">Éditer</a>
+    <a href="{{ url_for('crm.campaign_preview_send', campaign_id=campaign.id) }}" class="btn-solid">Aperçu & envoi →</a>
+    {% endif %}
+    <a href="{{ url_for('crm.campaigns_list') }}" class="crm-btn-ghost">← Retour</a>
+  </div>
+</header>
+{% endblock %}
+
+{% block crm_content %}
+<div class="crm-split">
+  <div class="crm-panel">
+    <div class="crm-panel-head"><div><h2>Résumé</h2></div>{{ campaign_status_badge(campaign.status) }}</div>
+    <div class="crm-stat-row"><span>Destinataires</span><strong>{{ recipient_label }}</strong></div>
+    <div class="crm-stat-row"><span>Contacts</span><strong>{{ recipient_count }}</strong></div>
+    <div class="crm-stat-row"><span>Envoyés</span><strong>{{ campaign.sent_count or 0 }}</strong></div>
+    {% if campaign.failed_count %}<div class="crm-stat-row"><span>Échecs</span><strong style="color:#c62828">{{ campaign.failed_count }}</strong></div>{% endif %}
+    {% if campaign.sent_at %}<div class="crm-stat-row"><span>Date d'envoi</span><strong>{{ campaign.sent_at.strftime('%d/%m/%Y %H:%M') }}</strong></div>{% endif %}
+    {% if campaign.preview_confirmed_at %}<div class="crm-stat-row"><span>Aperçu validé</span><strong>{{ campaign.preview_confirmed_at.strftime('%d/%m/%Y %H:%M') }}</strong></div>{% endif %}
+    {% if campaign.status != 'sent' %}
+    <form method="post" action="{{ url_for('crm.campaign_delete', campaign_id=campaign.id) }}" style="margin-top:18px" onsubmit="return confirm('Supprimer ce brouillon ?')">
+      <button type="submit" class="btn-line">Supprimer le brouillon</button>
+    </form>
+    {% endif %}
+  </div>
+
+  <div class="crm-panel crm-email-preview-panel">
+    <div class="crm-panel-head"><div><h2>Aperçu Artworks</h2><p class="sub">Rendu final du message</p></div></div>
+    <iframe class="crm-email-preview-frame" title="Aperçu email" srcdoc="{{ preview_html|e }}"></iframe>
+  </div>
+</div>
+
+{% if recipients %}
+<div class="crm-panel">
+  <div class="crm-panel-head">
+    <div><h2>Destinataires</h2><p class="sub">Contacts ciblés</p></div>
+    <span class="crm-panel-badge">{{ recipient_count }} total</span>
+  </div>
+  <div class="crm-table-wrap">
+    <table class="crm-table">
+      <thead><tr><th>Contact</th></tr></thead>
+      <tbody>
+        {% for u in recipients[:50] %}
+        <tr><td>{{ user_cell(u) }}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

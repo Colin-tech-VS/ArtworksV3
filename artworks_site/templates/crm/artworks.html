@@ -1,0 +1,70 @@
+{% extends 'crm/_crm_layout.html' %}
+{% from 'crm/_crm_macros.html' import artwork_status_badge, early_badge, role_badge, crm_empty %}
+
+{% block title %}CRM — Portfolio{% endblock %}
+
+{% block crm_header %}
+<header class="crm-page-head">
+  <div class="crm-page-head-text">
+    <p class="crm-eyebrow">Catalogue</p>
+    <h1>Portfolio & œuvres</h1>
+    <p class="crm-lead">Modérez le catalogue, gérez les avant-premières et consultez les performances.</p>
+  </div>
+</header>
+{% endblock %}
+
+{% block crm_content %}
+<div class="crm-toolbar">
+  <form method="get">
+    <div class="crm-search">
+      <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+      <input type="search" name="q" value="{{ q }}" placeholder="Titre ou artiste…">
+    </div>
+    <select name="status">
+      <option value="all">Tous statuts</option>
+      <option value="dispo" {{ 'selected' if status=='dispo' }}>Disponible</option>
+      <option value="reserve" {{ 'selected' if status=='reserve' }}>Réservé</option>
+      <option value="vendu" {{ 'selected' if status=='vendu' }}>Vendu</option>
+    </select>
+    <button type="submit" class="btn-solid">Filtrer</button>
+  </form>
+  <span class="crm-result-count">{{ artworks|length }} œuvre(s)</span>
+</div>
+
+{% if artworks %}
+<div class="crm-table-wrap">
+  <table class="crm-table">
+    <thead>
+      <tr><th>Œuvre</th><th>Artiste</th><th>Prix</th><th>Statut</th><th>Vues</th><th>Options</th><th></th></tr>
+    </thead>
+    <tbody>
+      {% for a in artworks %}
+      <tr>
+        <td>
+          <div class="crm-art-cell">
+            <div class="crm-art-thumb">{% if a.image %}<img src="{{ img_url(a.image) }}" alt="">{% endif %}</div>
+            <strong>{{ a.title }}</strong>
+          </div>
+        </td>
+        <td>
+          {% if a.owner %}{{ role_badge(a.owner.role) }}<br><small>{{ a.owner.name }}</small>{% else %}—{% endif %}
+        </td>
+        <td>{{ a.price_str }}</td>
+        <td>{{ artwork_status_badge(a.status) }}</td>
+        <td><strong>{{ a.view_count or 0 }}</strong></td>
+        <td>{{ early_badge(a.early_access) }}</td>
+        <td class="crm-actions">
+          <a href="{{ url_for('main.artwork_detail', artwork_id=a.id) }}" class="btn-line" target="_blank">Voir</a>
+          <form method="post" action="{{ url_for('crm.artwork_toggle_early', artwork_id=a.id) }}">
+            <button type="submit" class="btn-line">{{ 'Retirer AP' if a.early_access else '★ Avant-première' }}</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+{{ crm_empty('🖼', 'Aucune œuvre', 'Aucun résultat pour ces filtres.', url_for('crm.artworks_list'), 'Réinitialiser') }}
+{% endif %}
+{% endblock %}

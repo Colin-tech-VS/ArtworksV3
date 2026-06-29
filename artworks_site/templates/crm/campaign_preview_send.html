@@ -1,0 +1,63 @@
+{% extends 'crm/_crm_layout.html' %}
+{% from 'crm/_crm_macros.html' import user_cell %}
+
+{% block title %}CRM — Aperçu & envoi{% endblock %}
+
+{% block crm_header %}
+<header class="crm-page-head">
+  <div class="crm-page-head-text">
+    <p class="crm-eyebrow">Validation obligatoire</p>
+    <h1>Aperçu avant envoi</h1>
+    <p class="crm-lead">{{ campaign.name }} — <strong>{{ recipient_count }}</strong> destinataire(s) · {{ recipient_label }}</p>
+  </div>
+  <div class="crm-page-head-actions">
+    <a href="{{ url_for('crm.campaign_form', campaign_id=campaign.id) }}" class="btn-line">← Modifier</a>
+  </div>
+</header>
+{% endblock %}
+
+{% block crm_content %}
+<div class="crm-mail-banner" style="border-color:#1565c0;background:rgba(33,150,243,.06)">
+  Vérifiez l'aperçu ci-dessous. L'envoi ne sera effectué qu'après votre confirmation explicite.
+</div>
+
+<div class="crm-split">
+  <div class="crm-panel crm-email-preview-panel" style="grid-column:1/-1">
+    <div class="crm-panel-head">
+      <div>
+        <h2>Ce que recevront vos contacts</h2>
+        <p class="sub">Objet : <em>{{ campaign.subject }}</em>{% if campaign.preview_text %} · Preheader : {{ campaign.preview_text }}{% endif %}</p>
+      </div>
+    </div>
+    <iframe class="crm-email-preview-frame crm-email-preview-frame-lg" title="Aperçu email" srcdoc="{{ preview_html|e }}"></iframe>
+  </div>
+</div>
+
+<div class="crm-panel">
+  <div class="crm-panel-head">
+    <div><h2>Liste des destinataires</h2><p class="sub">{{ recipient_count }} contact(s)</p></div>
+  </div>
+  <div class="crm-table-wrap" style="max-height:280px;overflow:auto">
+    <table class="crm-table">
+      <thead><tr><th>Contact</th><th>Rôle</th></tr></thead>
+      <tbody>
+        {% for u in recipients[:100] %}
+        <tr>
+          <td>{{ user_cell(u) }}</td>
+          <td><span class="crm-badge crm-badge-muted">{{ u.role }}</span></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% if recipient_count > 100 %}
+  <p class="crm-hint">… et {{ recipient_count - 100 }} autre(s) contact(s).</p>
+  {% endif %}
+</div>
+
+<form method="post" class="crm-panel" style="text-align:center;padding:28px" onsubmit="return confirm('Confirmer l\'envoi à {{ recipient_count }} contact(s) ?')">
+  <input type="hidden" name="confirm" value="1">
+  <p style="margin:0 0 16px;color:var(--crm-muted)">En cliquant ci-dessous, vous confirmez avoir vérifié l'aperçu.</p>
+  <button type="submit" class="btn-solid" style="font-size:15px;padding:14px 32px">✉ Envoyer à {{ recipient_count }} contact(s)</button>
+</form>
+{% endblock %}

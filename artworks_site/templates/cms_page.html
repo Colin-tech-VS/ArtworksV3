@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% set active = 'cms' %}
+
+{% block title %}{{ page.meta_title or page.title }} — Artworks{% endblock %}
+{% block meta %}
+<meta name="description" content="{{ page.meta_description or page.excerpt or '' }}">
+{% endblock %}
+
+{% block content %}
+<article class="cms-page wrap" style="padding:clamp(40px,5vw,80px) 0;max-width:760px">
+  <header style="margin-bottom:32px">
+    <p class="eyebrow" style="font-size:11px;text-transform:uppercase;letter-spacing:.14em;color:var(--accent);margin-bottom:12px">Artworks Salon</p>
+    <h1 style="font-family:var(--serif);font-weight:300;font-size:clamp(32px,5vw,48px);line-height:1.05;margin:0 0 16px">{{ page.title }}</h1>
+    {% if page.excerpt %}<p style="color:var(--grey);font-size:18px;line-height:1.5">{{ page.excerpt }}</p>{% endif %}
+  </header>
+  <div class="cms-body" style="font-size:17px;line-height:1.7;color:var(--ink)">
+    {{ page.body|safe }}
+  </div>
+</article>
+{% endblock %}

@@ -1,0 +1,36 @@
+{% extends 'crm/_crm_layout.html' %}
+
+{% block title %}CRM — Templates transactionnels{% endblock %}
+
+{% block crm_header %}
+<header class="crm-page-head">
+  <div class="crm-page-head-text">
+    <p class="crm-eyebrow">Emails transactionnels</p>
+    <h1>Templates Artworks</h1>
+    <p class="crm-lead">Design unifié pour bienvenue, abonnement, annulation — éditables manuellement ou via IA.</p>
+  </div>
+  <div class="crm-page-head-actions">
+    <a href="{{ url_for('crm.campaigns_list') }}" class="crm-btn-ghost">← Campagnes</a>
+  </div>
+</header>
+{% endblock %}
+
+{% block crm_content %}
+<div class="crm-table-wrap">
+  <table class="crm-table">
+    <thead><tr><th>Template</th><th>Slug</th><th>Objet</th><th>Statut</th><th>Envoi auto</th><th></th></tr></thead>
+    <tbody>
+      {% for t in templates %}
+      <tr>
+        <td><strong>{{ t.name }}</strong></td>
+        <td><code>{{ t.slug }}</code></td>
+        <td style="color:var(--crm-muted)">{{ t.subject }}</td>
+        <td>{% if t.active %}<span class="crm-badge crm-badge-live">Actif</span>{% else %}<span class="crm-badge crm-badge-muted">Inactif</span>{% endif %}</td>
+        <td>{% if t.auto_send %}Oui{% else %}Non{% endif %}</td>
+        <td><a href="{{ url_for('crm.template_form', slug=t.slug) }}" class="btn-line" style="font-size:12px;padding:6px 14px">Éditer & aperçu →</a></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

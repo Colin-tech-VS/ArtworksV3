@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+{% from '_macros.html' import artcard %}
+{% block title %}Mes œuvres — Artworks{% endblock %}
+{% block content %}
+<section class="page-head">
+  <div class="wrap">
+    <div class="eyebrow"><span class="line"></span><span class="cartel">{{ current_user.name }}</span></div>
+    <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:24px;flex-wrap:wrap">
+      <div>
+        <h1>Mes œuvres</h1>
+        <p class="sub">{{ artworks|length }} œuvre{{ 's' if artworks|length != 1 }} dans votre portfolio</p>
+      </div>
+      <div style="display:flex;gap:12px">
+        <a href="{{ url_for('main.artist', artist_id=current_user.id) }}" class="btn-line">Voir mon portfolio public</a>
+        <a href="{{ url_for('main.create_artwork') }}" class="btn-solid">+ Publier</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="sec" style="padding-top:clamp(40px,5vw,64px)">
+  <div class="wrap">
+    {% if artworks %}
+    <div class="artgrid cols-4">
+      {% for a in artworks %}{{ artcard(a, mode='meta') }}{% endfor %}
+    </div>
+    {% else %}
+    <div class="empty">
+      <p>Vous n'avez pas encore publié d'œuvre.</p>
+      <a href="{{ url_for('main.create_artwork') }}" class="btn-solid" style="padding:13px 26px">Publier ma première œuvre</a>
+    </div>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

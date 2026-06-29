@@ -1,0 +1,129 @@
+{# Badges & UI helpers #}
+
+{% macro role_badge(role) %}
+<span class="crm-badge crm-badge-role crm-badge-{{ role|default('unknown') }}">{{ (crm_role_labels|default({})).get(role, role|capitalize) }}</span>
+{% endmacro %}
+
+{% macro plan_badge(plan, status=None) %}
+<span class="crm-badge crm-badge-plan crm-badge-plan-{{ plan|default('free') }}">{{ (crm_plan_labels|default({})).get(plan, plan) }}</span>
+{% if status and status != 'active' %}
+<span class="crm-badge crm-badge-sub crm-badge-sub-{{ status }}">{{ (crm_sub_labels|default({})).get(status, status) }}</span>
+{% endif %}
+{% endmacro %}
+
+{% macro sub_badge(status) %}
+<span class="crm-badge crm-badge-sub crm-badge-sub-{{ status|default('active') }}">{{ (crm_sub_labels|default({})).get(status, status) }}</span>
+{% endmacro %}
+
+{% macro artwork_status_badge(status) %}
+<span class="crm-badge crm-badge-art crm-badge-art-{{ status|default('dispo') }}">{{ (crm_art_labels|default({})).get(status, status) }}</span>
+{% endmacro %}
+
+{% macro campaign_status_badge(status) %}
+<span class="crm-badge crm-badge-camp crm-badge-camp-{{ status|default('draft') }}">{{ (crm_camp_labels|default({})).get(status, status) }}</span>
+{% endmacro %}
+
+{% macro page_status_badge(published) %}
+{% if published %}
+<span class="crm-badge crm-badge-live"><span class="crm-dot"></span> Publiée</span>
+{% else %}
+<span class="crm-badge crm-badge-draft"><span class="crm-dot"></span> Brouillon</span>
+{% endif %}
+{% endmacro %}
+
+{% macro stripe_badge(has_stripe) %}
+{% if has_stripe %}
+<span class="crm-badge crm-badge-stripe" title="Client Stripe">Stripe ✓</span>
+{% else %}
+<span class="crm-badge crm-badge-muted">—</span>
+{% endif %}
+{% endmacro %}
+
+{% macro staff_badge(is_staff) %}
+{% if is_staff %}
+<span class="crm-badge crm-badge-admin"><span class="crm-dot"></span> Admin CRM</span>
+{% endif %}
+{% endmacro %}
+
+{% macro early_badge(on) %}
+{% if on %}
+<span class="crm-badge crm-badge-early">★ Avant-première</span>
+{% endif %}
+{% endmacro %}
+
+{% macro user_avatar(user, size='md') %}
+<div class="crm-avatar crm-avatar-{{ size }}">
+  {% if user.avatar or user.logo %}
+    <img src="{{ img_url(user.avatar or user.logo) }}" alt="">
+  {% else %}
+    <span>{{ user.name[:1]|upper }}</span>
+  {% endif %}
+</div>
+{% endmacro %}
+
+{% macro user_cell(user, show_email=true) %}
+<div class="crm-user-cell">
+  {{ user_avatar(user) }}
+  <div class="crm-user-meta">
+    <strong>{{ user.name }}</strong>
+    {% if show_email %}<span>@{{ user.username }} · {{ user.email }}</span>{% endif %}
+  </div>
+</div>
+{% endmacro %}
+
+{% macro crm_page_head(title, subtitle='', eyebrow='', actions='') %}
+<header class="crm-page-head">
+  <div class="crm-page-head-text">
+    {% if eyebrow %}<p class="crm-eyebrow">{{ eyebrow }}</p>{% endif %}
+    <h1>{{ title }}</h1>
+    {% if subtitle %}<p class="crm-lead">{{ subtitle }}</p>{% endif %}
+  </div>
+  {% if caller %}<div class="crm-page-head-actions">{{ caller() }}</div>{% endif %}
+</header>
+{% endmacro %}
+
+{% macro crm_empty(icon, title, text, cta_url='', cta_label='') %}
+<div class="crm-empty">
+  <div class="crm-empty-icon" aria-hidden="true">{{ icon }}</div>
+  <h3>{{ title }}</h3>
+  <p>{{ text }}</p>
+  {% if cta_url %}<a href="{{ cta_url }}" class="btn-solid">{{ cta_label }}</a>{% endif %}
+</div>
+{% endmacro %}
+
+{% macro crm_panel(title, subtitle='', badge='') %}
+<div class="crm-panel">
+  <div class="crm-panel-head">
+    <div>
+      <h2>{{ title }}</h2>
+      {% if subtitle %}<p class="sub">{{ subtitle }}</p>{% endif %}
+    </div>
+    {% if badge %}<span class="crm-panel-badge">{{ badge }}</span>{% endif %}
+  </div>
+  {{ caller() }}
+</div>
+{% endmacro %}
+
+{% macro nav_count(key) %}
+{% set n = (crm_counts|default({})).get(key, 0) %}
+{% if n %}<span class="crm-nav-count">{{ n }}</span>{% endif %}
+{% endmacro %}
+
+{% macro kpi_card(value, label, hint='', accent=false, icon='') %}
+<div class="crm-kpi {{ 'is-accent' if accent }}">
+  {% if icon %}<div class="crm-kpi-icon" aria-hidden="true">{{ icon|safe }}</div>{% endif %}
+  <div class="crm-kpi-body">
+    <div class="crm-kpi-val">{{ value }}</div>
+    <div class="crm-kpi-lbl">{{ label }}</div>
+    {% if hint %}<div class="crm-kpi-hint">{{ hint }}</div>{% endif %}
+  </div>
+</div>
+{% endmacro %}
+
+{% macro quick_action(url, label, desc, icon_class='') %}
+<a href="{{ url }}" class="crm-quick-card">
+  <span class="crm-quick-icon {{ icon_class }}" aria-hidden="true"></span>
+  <span class="crm-quick-label">{{ label }}</span>
+  <span class="crm-quick-desc">{{ desc }}</span>
+</a>
+{% endmacro %}

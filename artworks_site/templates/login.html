@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+{% block title %}Connexion — Artworks{% endblock %}
+{% block body_class %}page-auth{% endblock %}
+{% block page_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/auth.css') }}">
+{% endblock %}
+
+{% set auth_kicker = 'Espace membre' %}
+{% set auth_quote = '« Une collection se construit œuvre après œuvre, avec exigence et regard. »' %}
+{% set auth_quote_by = 'Galeries & collectionneurs' %}
+{% set auth_features = [
+  {'title': 'Authenticité garantie', 'text': 'Provenance vérifiée sur chaque œuvre', 'icon': '<svg viewBox="0 0 24 24"><path d="M12 2l8 4v6c0 5-3.5 8-8 10-4.5-2-8-5-8-10V6z"/><path d="m9 12 2 2 4-4"/></svg>'},
+  {'title': 'Paiement protégé', 'text': 'Stripe · transaction chiffrée', 'icon': '<svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>'},
+  {'title': 'Livraison assurée', 'text': 'Emballage musée, assurance incluse', 'icon': '<svg viewBox="0 0 24 24"><rect x="2" y="7" width="14" height="10" rx="1"/><path d="M16 10h4l2 3v4h-6z"/><circle cx="6" cy="18" r="1.6"/><circle cx="18" cy="18" r="1.6"/></svg>'}
+] %}
+
+{% block content %}
+<div class="auth-shell">
+  {% include '_auth_sidebar.html' %}
+
+  <div class="auth-panel">
+    <div class="auth-panel-inner">
+      <div class="auth-panel-mobile-brand">
+        <a href="{{ url_for('main.index') }}" class="brand">Artworks<span class="brand-tag">Salon</span></a>
+      </div>
+
+      <a href="{{ url_for('main.index') }}" class="auth-back">
+        <svg viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        Retour au salon
+      </a>
+
+      <h1 class="auth-form-title">Bon retour</h1>
+      <p class="auth-form-lead">Retrouvez vos favoris, alertes prix et votre wishlist curatoriale.</p>
+
+      {% set google_href = url_for('auth.google_start', action='login', next=request.args.get('next', '')) %}
+      {% include '_auth_google.html' %}
+
+      <form class="auth-form" method="post" novalidate>
+        {{ form.hidden_tag() }}
+        <div class="field">
+          <label for="username">Nom d'utilisateur ou email</label>
+          {{ form.username(id="username", placeholder="vous@exemple.com") }}
+          {% for e in form.username.errors %}<div class="err">{{ e }}</div>{% endfor %}
+        </div>
+        <div class="field">
+          <label for="password">Mot de passe</label>
+          {{ form.password(id="password", placeholder="••••••••") }}
+          {% for e in form.password.errors %}<div class="err">{{ e }}</div>{% endfor %}
+        </div>
+        <button type="submit" class="auth-submit">Se connecter</button>
+      </form>
+
+      <p class="auth-secure">
+        <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        Connexion sécurisée · données chiffrées
+      </p>
+
+      <p class="auth-switch">Pas encore de compte ? <a href="{{ url_for('auth.register') }}">Créer un compte gratuit</a></p>
+    </div>
+  </div>
+</div>
+{% endblock %}

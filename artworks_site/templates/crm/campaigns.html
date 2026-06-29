@@ -1,0 +1,89 @@
+{% extends 'crm/_crm_layout.html' %}
+{% from 'crm/_crm_macros.html' import campaign_status_badge, crm_empty %}
+
+{% block title %}CRM — Emails{% endblock %}
+
+{% block crm_header %}
+<header class="crm-page-head">
+  <div class="crm-page-head-text">
+    <p class="crm-eyebrow">Communication</p>
+    <h1>Emails</h1>
+    <p class="crm-lead">Templates transactionnels Artworks + campagnes marketing ciblées.</p>
+  </div>
+  <div class="crm-page-head-actions">
+    <a href="{{ url_for('crm.templates_list') }}" class="btn-line">Templates transactionnels</a>
+    <a href="{{ url_for('crm.campaign_form') }}" class="btn-solid">+ Nouvelle campagne</a>
+  </div>
+</header>
+{% endblock %}
+
+{% block crm_content %}
+{% if mail_enabled %}
+<div class="crm-mail-banner ok">SMTP configuré — les envois sont actifs.</div>
+{% else %}
+<div class="crm-mail-banner">SMTP non configuré. Ajoutez <code>SMTP_HOST</code>, <code>SMTP_USER</code> et <code>SMTP_PASSWORD</code> dans <code>.env</code>.</div>
+{% endif %}
+
+<div class="crm-tabs">
+  <span class="crm-tab is-active">Campagnes</span>
+  <a href="{{ url_for('crm.templates_list') }}" class="crm-tab">Transactionnels ({{ templates|length }})</a>
+</div>
+
+{% if templates %}
+<div class="crm-panel" style="margin-bottom:20px">
+  <div class="crm-panel-head">
+    <div><h2>Emails automatiques Artworks</h2><p class="sub">Design unifié — bienvenue, abonnement, annulation…</p></div>
+  </div>
+  <div class="crm-table-wrap">
+    <table class="crm-table">
+      <thead><tr><th>Template</th><th>Objet</th><th>Auto</th><th></th></tr></thead>
+      <tbody>
+        {% for t in templates if t.kind == 'transactional' %}
+        <tr>
+          <td><strong>{{ t.name }}</strong></td>
+          <td style="color:var(--crm-muted)">{{ t.subject }}</td>
+          <td>{% if t.auto_send %}<span class="crm-badge crm-badge-live">Auto</span>{% else %}—{% endif %}</td>
+          <td><a href="{{ url_for('crm.template_form', slug=t.slug) }}" class="btn-line" style="font-size:12px;padding:6px 14px">Éditer →</a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+{% if campaigns %}
+<div class="crm-table-wrap">
+  <table class="crm-table">
+    <thead><tr><th>Campagne</th><th>Objet</th><th>Destinataires</th><th>Statut</th><th>Performance</th><th></th></tr></thead>
+    <tbody>
+      {% for c in campaigns %}
+      <tr>
+        <td><strong>{{ c.name }}</strong></td>
+        <td style="color:var(--crm-muted)">{{ c.subject }}</td>
+        <td>
+          {% if c.recipient_mode == 'role' %}
+          <span class="crm-badge crm-badge-muted">Groupe {{ c.recipient_role }}</span>
+          {% elif c.recipient_mode == 'users' %}
+          <span class="crm-badge crm-badge-muted">{{ c.recipient_user_ids|length }} utilisateur(s)</span>
+          {% elif c.segment %}
+          <span class="crm-badge crm-badge-muted">{{ c.segment.name }}</span>
+          {% else %}—{% endif %}
+        </td>
+        <td>{{ campaign_status_badge(c.status) }}</td>
+        <td>
+          {% if c.status == 'sent' %}
+          <strong>{{ c.sent_count or 0 }}</strong> / {{ c.recipient_count or 0 }}
+          {% if c.failed_count %}<span class="crm-badge crm-badge-camp-failed" style="margin-left:6px">{{ c.failed_count }} échec(s)</span>{% endif %}
+          {% else %}—{% endif %}
+        </td>
+        <td><a href="{{ url_for('crm.campaign_detail', campaign_id=c.id) }}" class="btn-line" style="font-size:12px;padding:6px 14px">Ouvrir →</a></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+{{ crm_empty('✉', 'Aucune campagne', 'Créez votre première newsletter ou message ciblé.', url_for('crm.campaign_form'), 'Créer une campagne') }}
+{% endif %}
+{% endblock %}

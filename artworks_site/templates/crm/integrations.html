@@ -1,0 +1,76 @@
+{% extends 'crm/_crm_layout.html' %}
+
+{% block title %}CRM — Intégrations{% endblock %}
+
+{% block crm_header %}
+<header class="crm-page-head crm-reveal">
+  <div class="crm-page-head-text">
+    <p class="crm-eyebrow">Système</p>
+    <h1>Intégrations & variables</h1>
+    <p class="crm-lead">Statut des connexions (SMTP, Mistral, Stripe, Google…) — prêt pour la production Scalingo.</p>
+  </div>
+  <div class="crm-page-head-actions">
+    <a href="{{ url_for('crm.integrations') }}" class="btn-line">↻ Actualiser</a>
+  </div>
+</header>
+{% endblock %}
+
+{% block crm_content %}
+<div class="crm-kpis crm-stagger">
+  <div class="crm-kpi is-accent"><div class="crm-kpi-val">{{ overview.connected }}</div><div class="crm-kpi-lbl">Connectées</div></div>
+  <div class="crm-kpi"><div class="crm-kpi-val">{{ overview.configured }}</div><div class="crm-kpi-lbl">Configurées</div></div>
+  <div class="crm-kpi"><div class="crm-kpi-val">{{ overview.errors }}</div><div class="crm-kpi-lbl">Erreurs</div></div>
+  <div class="crm-kpi"><div class="crm-kpi-val">{{ overview.missing }}</div><div class="crm-kpi-lbl">Manquantes</div></div>
+</div>
+
+<div class="crm-integ-grid crm-stagger">
+  {% for item in overview['items'] %}
+  <article class="crm-integ-card crm-integ-{{ item.status }}">
+    <div class="crm-integ-head">
+      <span class="crm-integ-cat">{{ item.category }}</span>
+      <span class="crm-badge crm-integ-status crm-integ-status-{{ item.status }}">
+        {% if item.status == 'connected' %}● Connecté
+        {% elif item.status == 'configured' %}● Configuré
+        {% elif item.status == 'error' %}● Erreur
+        {% elif item.status == 'warning' %}● Attention
+        {% else %}○ Non configuré{% endif %}
+      </span>
+    </div>
+    <h3>{{ item.name }}</h3>
+    <p class="crm-integ-msg">{{ item.message }}</p>
+    {% if item.detail %}<p class="crm-integ-detail">{{ item.detail }}</p>{% endif %}
+    <div class="crm-integ-keys">
+      {% for key in item.env_keys %}
+      <code>{{ key }}</code>
+      {% endfor %}
+    </div>
+    {% if item.id == 'smtp' %}
+    <p class="crm-hint">Scalingo : <code>SMTP_HOST</code>, <code>SMTP_USER</code>, <code>SMTP_PASSWORD</code> (ou Brevo <code>smtp-relay.brevo.com</code>)</p>
+    {% endif %}
+  </article>
+  {% endfor %}
+</div>
+
+<div class="crm-panel crm-reveal">
+  <div class="crm-panel-head"><div><h2>Variables d'environnement</h2><p class="sub">Référence pour déploiement prod (Scalingo / .env local)</p></div></div>
+  <div class="crm-table-wrap">
+    <table class="crm-table">
+      <thead><tr><th>Variable</th><th>Usage</th></tr></thead>
+      <tbody>
+        <tr><td><code>SMTP_HOST</code> / <code>MAIL_SERVER</code></td><td>Serveur email (LWS, Brevo…)</td></tr>
+        <tr><td><code>SMTP_USER</code> / <code>SMTP_PASSWORD</code></td><td>Identifiants SMTP</td></tr>
+        <tr><td><code>MISTRAL_API_KEY</code></td><td>IA curatoriale + pages SEO</td></tr>
+        <tr><td><code>STRIPE_SECRET_KEY</code></td><td>Paiements & abonnements</td></tr>
+        <tr><td><code>STRIPE_WEBHOOK_SECRET</code></td><td>Webhooks Stripe</td></tr>
+        <tr><td><code>GOOGLE_PLACES_API_KEY</code></td><td>Autocomplete villes</td></tr>
+        <tr><td><code>GOOGLE_OAUTH_CLIENT_ID</code></td><td>Connexion / inscription Google</td></tr>
+        <tr><td><code>GOOGLE_OAUTH_CLIENT_SECRET</code></td><td>Secret OAuth Google</td></tr>
+        <tr><td><code>SITE_URL</code></td><td>URL publique du site</td></tr>
+        <tr><td><code>DATABASE_URL</code></td><td>PostgreSQL (prod)</td></tr>
+        <tr><td><code>SECRET_KEY</code></td><td>Sessions Flask</td></tr>
+        <tr><td><code>ADMIN_EMAILS</code></td><td>Accès CRM sans is_staff</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

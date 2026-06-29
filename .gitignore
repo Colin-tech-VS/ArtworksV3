@@ -1,0 +1,16 @@
+.env
+*.db
+app.db
+__pycache__/
+*.pyc
+venv/
+.venv/
+artworks_site/.env
+artworks_site/venv/
+artworks_site/app.db
+artworks_site/static/uploads/*
+!artworks_site/static/uploads/.gitkeep
+.cursor/
+agent-tools/
+tools/scalingo.zip
+tools/scalingo_1.33.0_windows_amd64/

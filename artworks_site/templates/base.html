@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{% block title %}Artworks — Galeries & collectionneurs d'art contemporain{% endblock %}</title>
+{% block meta %}{% endblock %}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/site.css') }}">
+{% block page_css %}{% endblock %}
+</head>
+<body class="{% block body_class %}{% endblock %}"{% if google_places_key %} data-google-places-key="{{ google_places_key }}"{% endif %}>
+
+{% set active = active|default('') %}
+
+<!-- ===== HEADER ===== -->
+<header class="site-head">
+  <div class="head-inner">
+    <a href="{{ url_for('main.index') }}" class="brand">Artworks<span class="brand-tag">Salon</span></a>
+    <nav class="nav">
+      <a href="{{ url_for('main.explorer') }}" class="{{ 'active' if active=='explorer' }}">Collection</a>
+      <a href="{{ url_for('main.offre_galerie') }}" class="{{ 'active' if active=='galerie' }}">Galeries</a>
+      <a href="{{ url_for('main.offre_collectionneur') }}" class="{{ 'active' if active=='collectionneur' }}">Collectionneurs</a>
+      <a href="{{ url_for('main.tarifs') }}" class="{{ 'active' if active=='tarifs' }}">Formules</a>
+      {% for p in cms_nav_pages|default([]) %}
+      <a href="{{ url_for('main.cms_page', slug=p.slug) }}">{{ p.title }}</a>
+      {% endfor %}
+    </nav>
+    <div class="head-tools">
+      <form class="search-mini" method="get" action="{{ url_for('main.explorer') }}">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+        <input type="text" name="q" placeholder="Œuvre, artiste, galerie…" value="{{ q if q is defined else '' }}">
+      </form>
+      <a href="{{ url_for('main.explorer') }}" class="icon-btn" aria-label="Favoris">
+        <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 21s-7.5-4.6-9.7-9.2C.9 8.5 2.3 5.2 5.5 5.2c1.9 0 3.4 1.1 4.5 2.8 1.1-1.7 2.6-2.8 4.5-2.8 3.2 0 4.6 3.3 3.2 6.6C19.5 16.4 12 21 12 21z"/></svg>
+        <span class="count" data-fav-count>0</span>
+      </a>
+      {% if current_user.is_authenticated %}
+        {% if is_staff_user|default(false) %}
+        <a href="{{ url_for('crm.index') }}" class="btn-line">CRM</a>
+        {% endif %}
+        <a href="{{ url_for('main.dashboard') }}" class="btn-line">Tableau de bord</a>
+        <a href="{{ url_for('main.create_artwork') }}" class="btn-solid">+ Publier</a>
+        <a href="{{ url_for('auth.logout') }}" class="icon-btn" aria-label="Déconnexion" title="Déconnexion ({{ current_user.name }})">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M15 4h4v16h-4M11 16l4-4-4-4M3 12h12"/></svg>
+        </a>
+      {% else %}
+        <a href="{{ url_for('auth.login') }}" class="btn-line">Connexion</a>
+        <a href="{{ url_for('auth.register') }}" class="btn-solid">S'inscrire</a>
+      {% endif %}
+    </div>
+    <button class="burger" aria-label="Menu">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+    </button>
+  </div>
+</header>
+
+<!-- mobile drawer -->
+<div class="drawer">
+  <div class="top">
+    <span class="brand">Artworks<span class="brand-tag">Salon</span></span>
+    <button class="icon-btn" data-close-drawer aria-label="Fermer">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 6l12 12M18 6 6 18"/></svg>
+    </button>
+  </div>
+  <nav>
+    <a href="{{ url_for('main.explorer') }}">Collection</a>
+    <a href="{{ url_for('main.offre_galerie') }}">Galeries</a>
+    <a href="{{ url_for('main.offre_collectionneur') }}">Collectionneurs</a>
+    <a href="{{ url_for('main.tarifs') }}">Formules</a>
+    {% if current_user.is_authenticated %}
+      <a href="{{ url_for('main.dashboard') }}">Tableau de bord</a>
+      <a href="{{ url_for('main.edit_profile') }}">Profil</a>
+    {% else %}
+      <a href="{{ url_for('main.explorer') }}">Favoris</a>
+    {% endif %}
+  </nav>
+  <div class="actions">
+    {% if current_user.is_authenticated %}
+      <a href="{{ url_for('main.create_artwork') }}" class="btn-solid" style="text-align:center">+ Publier une œuvre</a>
+      <a href="{{ url_for('auth.logout') }}" class="btn-line" style="text-align:center">Déconnexion</a>
+    {% else %}
+      <a href="{{ url_for('auth.login') }}" class="btn-line" style="text-align:center">Connexion</a>
+      <a href="{{ url_for('auth.register') }}" class="btn-solid" style="text-align:center">S'inscrire</a>
+    {% endif %}
+  </div>
+</div>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+  <div class="toast-stack" aria-live="polite" aria-atomic="false">
+    {% for category, message in messages %}
+    <div class="toast toast-{{ category if category in ['success','error','warning'] else 'info' }}" role="alert" data-toast>
+      <span class="toast-icon" aria-hidden="true">
+        {% if category == 'success' %}
+        <svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>
+        {% elif category == 'error' %}
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>
+        {% elif category == 'warning' %}
+        <svg viewBox="0 0 24 24"><path d="M12 3 2 20h20L12 3z"/><path d="M12 10v4M12 17h.01"/></svg>
+        {% else %}
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg>
+        {% endif %}
+      </span>
+      <span class="toast-msg">{{ message }}</span>
+      <button type="button" class="toast-close" aria-label="Fermer" data-toast-close>
+        <svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg>
+      </button>
+      <span class="toast-bar"></span>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+{% endwith %}
+
+<main>
+{% block content %}{% endblock %}
+</main>
+
+<!-- ===== FOOTER ===== -->
+<footer class="site-foot">
+  <div class="wrap">
+    <div class="foot-grid">
+      <div class="foot-brand">
+        <span class="brand">Artworks<span class="brand-tag">Salon</span></span>
+        <p>La plateforme de référence pour galeries et collectionneurs d'art contemporain — acquisition, curation et vente en toute confiance.</p>
+        <form class="foot-news" onsubmit="return false">
+          <input type="email" placeholder="Votre adresse e-mail">
+          <button type="submit">S'abonner</button>
+        </form>
+      </div>
+      <div class="foot-col">
+        <h4>Collectionner</h4>
+        <a href="{{ url_for('main.explorer') }}">Parcourir les œuvres</a>
+        <a href="{{ url_for('main.offre_collectionneur') }}">Espace collectionneur</a>
+        <a href="{{ url_for('main.tarifs', profil='collectionneur') }}">Formules Membre</a>
+      </div>
+      <div class="foot-col">
+        <h4>Galeries</h4>
+        <a href="{{ url_for('main.offre_galerie') }}">Présence galerie</a>
+        <a href="{{ url_for('main.tarifs', profil='galerie') }}">Offres Pro & Premium</a>
+        <a href="{{ url_for('auth.register', role='galerie') }}">Créer un compte</a>
+      </div>
+      <div class="foot-col">
+        <h4>Confiance</h4>
+        <a href="#">Authenticité & provenance</a>
+        <a href="#">Livraison assurée</a>
+        <a href="#">Contact curatoral</a>
+      </div>
+    </div>
+    <div class="foot-bottom">
+      <span>© 2026 Artworks. Tous droits réservés.</span>
+      <div class="socials">
+        <a href="#">Instagram</a><a href="#">Pinterest</a><a href="#">LinkedIn</a><a href="#">Mentions légales</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+{% block lightbox %}{% endblock %}
+
+<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

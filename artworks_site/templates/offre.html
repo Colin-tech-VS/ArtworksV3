@@ -1,0 +1,87 @@
+{% extends 'base.html' %}
+{% from '_pricing_cards.html' import pricing_grid %}
+{% set active = 'tarifs' %}
+{% block body_class %}page-static page-offer{% endblock %}
+{% block title %}{{ seo_title }}{% endblock %}
+
+{% block meta %}
+<meta name="description" content="{{ seo_description }}">
+<meta name="keywords" content="{{ seo_keywords }}">
+<meta name="robots" content="index, follow">
+<meta property="og:title" content="{{ seo_title }}">
+<meta property="og:description" content="{{ seo_description }}">
+<meta property="og:type" content="website">
+<link rel="canonical" href="{{ canonical_url }}">
+{% if json_ld %}{{ json_ld|safe }}{% endif %}
+{% endblock %}
+
+{% block page_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/offer.css') }}">
+{% endblock %}
+
+{% block content %}
+<section class="offer-hero" style="--offer-hero-image:url('{{ hero_image }}');">
+  <div class="wrap">
+    <p class="eyebrow">{{ hero_eyebrow }}</p>
+    <h1>{{ hero_title }}</h1>
+    <p class="lead">{{ hero_lead }}</p>
+    <div class="offer-hero-cta">
+      <a href="{{ url_for('auth.register', role=role) }}" class="btn-solid">Créer mon compte {{ role_label|lower }}</a>
+      <a href="{{ url_for('main.tarifs', profil=role) }}" class="btn-line" style="border-color:rgba(255,255,255,.45);color:#fff">Voir les tarifs</a>
+    </div>
+    <div class="offer-trust">
+      <div><strong>{{ commission_label }}</strong><span>Commission uniquement à la vente</span></div>
+      <div><strong>Stripe</strong><span>Paiement sécurisé</span></div>
+      <div><strong>SEO</strong><span>Indexation Google incluse</span></div>
+    </div>
+  </div>
+</section>
+
+<nav class="offer-switch" aria-label="Navigation offres">
+  <div class="wrap">
+    {% for r, label, path in siblings %}
+    <a href="{{ path }}" class="{{ 'is-active' if r == role else '' }}" {% if r == role %}aria-current="page"{% endif %}>{{ label }}s</a>
+    {% endfor %}
+  </div>
+</nav>
+
+<section class="offer-section offer-section--alt">
+  <div class="wrap">
+    <header class="offer-section-head reveal">
+      <span class="aw-section-badge"><span class="aw-section-badge-icon">✦</span> Formules {{ role_label }}s</span>
+      <h2>Tarifs transparents, sans engagement</h2>
+      <p class="muted">Chaque fonctionnalité listée est active dès l'activation. Annulable à tout moment.</p>
+      <div class="offer-commission">💳 Commission plateforme : <strong>{{ commission_label }}</strong> sur ventes conclues via Artworks</div>
+    </header>
+    {{ pricing_grid(plans, price_label, public=true, role=role, role_label=role_label) }}
+  </div>
+</section>
+
+{% if faq %}
+<section class="offer-section">
+  <div class="wrap">
+    <header class="offer-section-head reveal">
+      <p class="eyebrow cartel">FAQ</p>
+      <h2>Questions fréquentes</h2>
+    </header>
+    <div class="offer-faq reveal">
+      {% for q, a in faq %}
+      <details>
+        <summary>{{ q }}</summary>
+        <p>{{ a }}</p>
+      </details>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+
+<section class="offer-final">
+  <div class="wrap reveal">
+    <h2>Prêt à {{ 'vendre vos œuvres' if role == 'artiste' else ('développer votre galerie' if role == 'galerie' else 'affiner votre collection') }} ?</h2>
+    <p>Inscription en 2 minutes — activez la formule adaptée quand vous le souhaitez.</p>
+    <a href="{{ url_for('auth.register', role=role) }}" class="btn-solid">Commencer maintenant</a>
+  </div>
+</section>
+{% endblock %}

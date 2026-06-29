@@ -1,0 +1,152 @@
+{% extends 'base.html' %}
+{% from '_macros.html' import artcard %}
+{% set active = 'artistes' %}
+{% block title %}{{ seo.title if seo else artist.name }}{% endblock %}
+
+{% block meta %}
+{% if seo %}
+<meta name="description" content="{{ seo.description }}">
+<meta name="robots" content="{{ seo.robots }}">
+<meta property="og:title" content="{{ seo.title }}">
+<meta property="og:description" content="{{ seo.description }}">
+<meta property="og:type" content="{{ seo.og_type }}">
+{% endif %}
+{% if json_ld %}{{ json_ld|safe }}{% endif %}
+{% endblock %}
+
+{% block page_css %}
+<style>
+.banner{ position:relative; height:clamp(220px,30vw,360px); overflow:hidden; background:var(--ink); }
+.banner img{ width:100%; height:100%; object-fit:cover; filter:brightness(.92); }
+.banner::after{ content:""; position:absolute; inset:0; background:linear-gradient(to bottom, rgba(250,248,245,0) 50%, rgba(250,248,245,.55)); }
+.profile-head{ position:relative; margin-top:-90px; }
+.profile-top{ display:flex; align-items:flex-end; gap:34px; flex-wrap:wrap; }
+.medallion{ width:clamp(140px,16vw,184px); height:clamp(140px,16vw,184px); border-radius:50%; overflow:hidden; border:5px solid var(--bg); box-shadow:0 24px 48px -22px rgba(40,28,22,.45); flex-shrink:0; background:var(--bg-alt); }
+.medallion img{ width:100%; height:100%; object-fit:cover; }
+.profile-id{ padding-bottom:8px; flex:1; min-width:240px; }
+.profile-id .name{ font-family:var(--serif); font-weight:300; font-size:clamp(34px,4.6vw,56px); letter-spacing:-.025em; line-height:1; }
+.profile-id .sub{ display:flex; align-items:center; gap:16px; flex-wrap:wrap; color:var(--grey); font-size:14.5px; margin-top:14px; }
+.profile-id .sub .pin{ display:inline-flex; align-items:center; gap:6px; }
+.profile-badge{ font-size:10px; text-transform:uppercase; letter-spacing:.12em; font-weight:600; padding:4px 10px; border-radius:var(--radius-pill); }
+.profile-badge--pro{ background:rgba(184,115,74,.12); color:var(--accent); border:1px solid rgba(184,115,74,.3); }
+.profile-badge--verified{ background:rgba(45,106,79,.1); color:var(--success); border:1px solid rgba(45,106,79,.3); }
+.profile-id .sub .dot{ width:4px; height:4px; border-radius:50%; background:var(--grey-soft); }
+.profile-actions{ display:flex; gap:12px; padding-bottom:10px; }
+.stats{ display:flex; gap:clamp(28px,5vw,68px); margin:clamp(40px,5vw,60px) 0; padding:30px 0; border-top:1px solid var(--hair); border-bottom:1px solid var(--hair); }
+.stats .s .n{ font-family:var(--serif); font-size:clamp(26px,3vw,38px); line-height:1; }
+.stats .s .l{ font-size:11px; text-transform:uppercase; letter-spacing:.14em; color:var(--grey); margin-top:8px; }
+.about{ display:grid; grid-template-columns:1fr 1.4fr; gap:clamp(40px,6vw,90px); align-items:start; }
+.about .lbl{ position:sticky; top:120px; }
+.about h2{ font-family:var(--serif); font-weight:300; font-size:clamp(26px,3vw,38px); letter-spacing:-.02em; margin:0; line-height:1.1; }
+.about .statement{ font-family:var(--serif); font-weight:300; font-size:clamp(20px,2vw,25px); line-height:1.5; color:var(--ink); }
+.about .statement p{ margin:0 0 1.1em; }
+.about .statement p:first-child::first-letter{ font-size:3.4em; float:left; line-height:.82; padding:6px 14px 0 0; color:var(--accent); font-weight:400; }
+.about .body{ color:var(--grey); font-size:15.5px; line-height:1.7; margin-top:24px; }
+.tabs{ display:flex; gap:30px; border-bottom:1px solid var(--hair); margin-bottom:clamp(36px,4vw,52px); }
+.tab{ font-family:var(--sans); font-size:14px; letter-spacing:.04em; color:var(--grey); background:none; border:none; padding:0 0 16px; position:relative; }
+.tab::after{ content:""; position:absolute; left:0; right:100%; bottom:-1px; height:2px; background:var(--accent); transition:right .3s var(--ease); }
+.tab.active{ color:var(--ink); }
+.tab.active::after{ right:0; }
+.followbtn.on{ background:var(--ink); color:var(--bg); }
+@media (max-width:820px){ .about{ grid-template-columns:1fr; } .about .lbl{ position:static; } }
+@media (max-width:560px){ .profile-actions{ width:100%; } .profile-actions .btn-line,.profile-actions .btn-solid{ flex:1; text-align:center; } }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="banner"><img src="{{ img_url(artist.cover) or url_for('static', filename='demo/banner.jpg') }}" alt="Atelier de {{ artist.name }}"></div>
+
+<div class="wrap">
+  <section class="profile-head reveal in">
+    <div class="profile-top">
+      <div class="medallion"><img src="{{ img_url(artist.avatar) or url_for('static', filename='demo/artist-01.jpg') }}" alt="Portrait de {{ artist.name }}"></div>
+      <div class="profile-id">
+        <h1 class="name">{{ artist.name }}</h1>
+        <div class="sub">
+          {% if artist_ent.pro_badge %}<span class="profile-badge profile-badge--pro">Artiste Pro</span>{% endif %}
+          {% if artist_ent.verified_badge %}<span class="profile-badge profile-badge--verified">Galerie vérifiée</span>{% endif %}
+          {% if artist.discipline %}<span>{{ artist.discipline }}</span><span class="dot"></span>{% endif %}
+          {% if artist.location %}<span class="pin"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 21s7-6.3 7-12a7 7 0 1 0-14 0c0 5.7 7 12 7 12z"/><circle cx="12" cy="9" r="2.5"/></svg> {{ artist.location }}</span>{% endif %}
+          {% if artist.gallery %}<span class="dot"></span><span class="cartel cartel-ink">{{ artist.gallery }}</span>{% endif %}
+        </div>
+      </div>
+      <div class="profile-actions">
+        <button class="btn-line followbtn" id="follow">+ Suivre</button>
+        <a href="mailto:{{ artist.email }}?subject=Contact via Artworks — {{ artist.name }}" class="btn-solid">Contacter</a>
+      </div>
+    </div>
+
+    <div class="stats">
+      <div class="s"><div class="n" data-count="{{ artworks|length }}">0</div><div class="l">Œuvres</div></div>
+      <div class="s"><div class="n" data-count="{{ artist.followers or 0 }}">0</div><div class="l">Abonnés</div></div>
+      <div class="s"><div class="n" data-count="{{ artist.expos or 0 }}">0</div><div class="l">Expositions</div></div>
+      {% if artist.since %}<div class="s"><div class="n">{{ artist.since }}</div><div class="l">Depuis</div></div>{% endif %}
+    </div>
+  </section>
+
+  {% if artist.curatorial_note %}
+  <section class="sec" style="padding-top:0;padding-bottom:0">
+    <div class="about reveal" style="grid-template-columns:1fr 1.6fr">
+      <div class="lbl">
+        <div class="eyebrow" style="display:flex;align-items:center;gap:12px;margin-bottom:18px"><span style="width:34px;height:1px;background:var(--accent);display:inline-block"></span><span class="cartel">Note curatoriale</span></div>
+      </div>
+      <blockquote style="margin:0;font-family:var(--serif);font-weight:300;font-size:clamp(18px,2vw,22px);line-height:1.6;font-style:italic;color:var(--ink)">« {{ artist.curatorial_note }} »</blockquote>
+    </div>
+  </section>
+  {% endif %}
+
+  {% if artist.statement or artist.bio %}
+  <section class="sec" style="padding-top:0">
+    <div class="about reveal">
+      <div class="lbl">
+        <div class="eyebrow" style="display:flex;align-items:center;gap:12px;margin-bottom:18px"><span style="width:34px;height:1px;background:var(--accent);display:inline-block"></span><span class="cartel">Statement</span></div>
+        <h2>{{ artist.name }}</h2>
+      </div>
+      <div>
+        {% if artist.statement %}
+        <div class="statement">
+          {% for para in artist.statement.split('\n') if para.strip() %}<p>{{ para }}</p>{% endfor %}
+        </div>
+        {% endif %}
+        {% if artist.bio %}<p class="body">{{ artist.bio }}</p>{% endif %}
+      </div>
+    </div>
+  </section>
+  {% endif %}
+
+  <section class="sec" style="padding-top:0" data-tabs>
+    <div class="tabs">
+      <button class="tab active" data-tab="oeuvres">Œuvres</button>
+      <button class="tab" data-tab="apropos">À propos</button>
+    </div>
+
+    <div data-panel="oeuvres" class="reveal">
+      <div class="artgrid cols-3">
+        {% for a in artworks %}{{ artcard(a, mode='meta') }}{% else %}<p>Aucune œuvre publiée pour le moment.</p>{% endfor %}
+      </div>
+    </div>
+
+    <div data-panel="apropos" style="display:none">
+      <div class="about" style="grid-template-columns:1fr 1.4fr">
+        <div class="lbl"><div class="cartel" style="margin-bottom:14px">Biographie</div><h2>Parcours</h2></div>
+        <div>
+          <p class="body" style="margin-top:0">{{ artist.bio or "Cet artiste n'a pas encore renseigné sa biographie." }}</p>
+          <div class="cartel cartel-ink" style="margin-top:30px;display:flex;gap:26px;flex-wrap:wrap">
+            {% if artist.since %}<span>Depuis {{ artist.since }}</span>{% endif %}
+            {% if artist.location %}<span>{{ artist.location }}</span>{% endif %}
+            <span>{{ artworks|length }} œuvres</span>
+            {% if artist.gallery %}<span>{{ artist.gallery }}</span>{% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  var fb=document.getElementById('follow');
+  if(fb) fb.addEventListener('click',function(){ this.classList.toggle('on'); this.textContent=this.classList.contains('on')?'✓ Suivi':'+ Suivre'; });
+</script>
+{% endblock %}

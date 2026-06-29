@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+{% block title %}Portfolio non activé — Artworks{% endblock %}
+{% block content %}
+<div class="wrap" style="padding:clamp(80px,12vw,140px) 0;text-align:center;max-width:560px;margin:0 auto">
+  <span class="aw-section-badge"><span class="aw-section-badge-icon">✦</span> Portfolio Marketplace</span>
+  <h1 style="font-family:var(--serif);font-weight:300;font-size:clamp(28px,4vw,40px);margin:20px 0 12px">Votre portfolio n'est pas encore public</h1>
+  <p style="color:var(--grey);line-height:1.65;margin:0 0 28px">
+    Activez la formule <strong>Portfolio Marketplace</strong> ({{ pricing.portfolio_price_label }}/mois) pour publier vos œuvres,
+    apparaître sur Google et vendre en ligne. Commission {{ pricing.commission_label }} uniquement à la vente.
+  </p>
+  <div style="display:flex;flex-wrap:wrap;gap:12px;justify-content:center">
+    <a href="{{ url_for('main.subscription') }}" class="btn-solid">Activer mon portfolio</a>
+    <a href="{{ url_for('main.offre_artiste') }}" class="btn-line">Voir l'offre détaillée</a>
+  </div>
+</div>
+{% endblock %}

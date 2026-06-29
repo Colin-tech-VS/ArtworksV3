@@ -1,0 +1,27 @@
+{# Sidebar éditoriale — connexion & inscription #}
+<aside class="auth-visual" aria-hidden="false">
+  <div class="auth-visual-bg">
+    <img src="{{ auth_image|default(url_for('static', filename='demo/art-09.jpg')) }}" alt="" loading="eager">
+  </div>
+  <div class="auth-visual-inner">
+    <a href="{{ url_for('main.index') }}" class="auth-visual-brand">Artworks<em>Salon</em></a>
+
+    <div class="auth-visual-body">
+      <p class="auth-visual-kicker">{{ auth_kicker }}</p>
+      <blockquote class="auth-visual-quote">{{ auth_quote }}</blockquote>
+      <p class="auth-visual-quote-by">{{ auth_quote_by }}</p>
+    </div>
+
+    <div class="auth-visual-features">
+      {% for feat in auth_features %}
+      <div class="auth-feature">
+        <div class="auth-feature-icon">{{ feat.icon|safe }}</div>
+        <div class="auth-feature-text">
+          <b>{{ feat.title }}</b>
+          <span>{{ feat.text }}</span>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</aside>

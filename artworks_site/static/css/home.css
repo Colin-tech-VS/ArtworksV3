@@ -1,0 +1,261 @@
+/* Homepage — Salon Collection (galeries & collectionneurs) */
+
+body.page-home .site-foot{ margin-top:0; }
+
+/* ----- Hero éditorial clair ----- */
+.salon-hero{
+  position:relative;
+  padding:clamp(56px,9vw,100px) 0 clamp(48px,7vw,80px);
+  background:var(--bg-pure);
+  border-bottom:1px solid var(--hair);
+  overflow:hidden;
+}
+.salon-hero::after{
+  content:"";
+  position:absolute; right:-8%; top:-20%; width:min(52vw,620px); height:min(52vw,620px);
+  border-radius:50%;
+  background:radial-gradient(circle, rgba(184,115,74,.12) 0%, transparent 70%);
+  pointer-events:none;
+}
+.salon-hero-grid{
+  display:grid;
+  grid-template-columns:1.05fr .95fr;
+  gap:clamp(32px,5vw,64px);
+  align-items:center;
+}
+.salon-hero-copy .salon-kicker{
+  display:inline-flex; align-items:center; gap:10px;
+  font-size:11px; font-weight:600; letter-spacing:.14em; text-transform:uppercase;
+  color:var(--salon-sage); margin-bottom:20px;
+}
+.salon-hero-copy .salon-kicker::before{
+  content:""; width:28px; height:2px; background:var(--accent); border-radius:2px;
+}
+.salon-hero-copy h1{
+  font-family:var(--serif); font-weight:500;
+  font-size:clamp(2.4rem,5.8vw,4.2rem);
+  line-height:1.06; letter-spacing:-.03em;
+  margin:0 0 20px; color:var(--ink);
+  max-width:14ch;
+}
+.salon-hero-copy h1 em{
+  font-style:italic; color:var(--accent); font-weight:500;
+}
+.salon-hero-lead{
+  font-size:clamp(16px,1.5vw,18px); line-height:1.7;
+  color:var(--grey); max-width:48ch; margin:0 0 32px;
+}
+.salon-hero-cta{ display:flex; flex-wrap:wrap; gap:12px; margin-bottom:36px; }
+.salon-hero-stats{
+  display:flex; flex-wrap:wrap; gap:clamp(20px,4vw,40px);
+  padding-top:28px; border-top:1px solid var(--hair);
+  list-style:none; margin:0; padding-left:0;
+}
+.salon-hero-stats li{ display:flex; flex-direction:column; gap:4px; }
+.salon-hero-stats strong{
+  font-family:var(--serif); font-size:1.5rem; font-weight:500; color:var(--salon-navy);
+}
+.salon-hero-stats span{ font-size:12px; color:var(--grey-soft); letter-spacing:.02em; }
+
+.salon-hero-visual{
+  position:relative; border-radius:var(--radius-xl);
+  overflow:hidden; aspect-ratio:4/5; max-height:560px;
+  box-shadow:var(--shadow-lift);
+}
+.salon-hero-visual img{
+  width:100%; height:100%; object-fit:cover;
+}
+.salon-hero-visual-cap{
+  position:absolute; left:16px; right:16px; bottom:16px;
+  padding:16px 18px; background:rgba(255,252,247,.94);
+  backdrop-filter:blur(8px);
+  border-radius:var(--radius-md);
+  border:1px solid var(--hair);
+}
+.salon-hero-visual-cap strong{
+  display:block; font-family:var(--serif); font-size:18px; font-weight:500;
+}
+.salon-hero-visual-cap span{ font-size:12px; color:var(--grey); }
+
+/* ----- Audiences : galerie + collectionneur ----- */
+.salon-audiences{
+  padding:var(--section-y) 0;
+  background:var(--bg);
+}
+.salon-audiences-head{
+  max-width:640px; margin-bottom:clamp(36px,5vw,56px);
+}
+.salon-audiences-head h2{
+  font-family:var(--serif); font-weight:500;
+  font-size:clamp(2rem,3.5vw,2.75rem);
+  letter-spacing:-.025em; margin:12px 0 14px;
+}
+.salon-audiences-head p{ color:var(--grey); font-size:16px; margin:0; line-height:1.65; }
+
+.salon-audience-grid{
+  display:grid; grid-template-columns:repeat(2,1fr);
+  gap:clamp(20px,3vw,28px);
+}
+.salon-audience-card{
+  position:relative;
+  background:var(--bg-pure);
+  border:1px solid var(--hair);
+  border-radius:var(--radius-xl);
+  padding:clamp(28px,4vw,40px);
+  display:flex; flex-direction:column;
+  min-height:340px;
+  transition:transform .3s var(--ease), box-shadow .3s var(--ease), border-color .3s;
+  overflow:hidden;
+}
+.salon-audience-card::before{
+  content:""; position:absolute; top:0; left:0; right:0; height:4px;
+  background:linear-gradient(90deg, var(--accent), var(--museum-gold-soft));
+}
+.salon-audience-card:hover{
+  transform:translateY(-6px);
+  box-shadow:var(--shadow-lift);
+  border-color:rgba(184,115,74,.25);
+}
+.salon-audience-role{
+  font-size:11px; font-weight:700; letter-spacing:.14em; text-transform:uppercase;
+  color:var(--accent); margin:0 0 12px;
+}
+.salon-audience-card h3{
+  font-family:var(--serif); font-weight:500;
+  font-size:clamp(1.5rem,2.5vw,2rem); line-height:1.15;
+  margin:0 0 14px; max-width:18ch;
+}
+.salon-audience-card > p{
+  color:var(--grey); font-size:15px; line-height:1.65; margin:0 0 20px; flex:1;
+}
+.salon-audience-list{
+  margin:0 0 24px; padding:0; list-style:none;
+  display:flex; flex-direction:column; gap:10px;
+}
+.salon-audience-list li{
+  font-size:14px; color:var(--ink);
+  padding-left:20px; position:relative; line-height:1.45;
+}
+.salon-audience-list li::before{
+  content:""; position:absolute; left:0; top:.55em;
+  width:6px; height:6px; border-radius:50%; background:var(--salon-sage);
+}
+
+/* ----- Catalogue sélection ----- */
+.salon-catalog{
+  padding:var(--section-y) 0;
+  background:var(--salon-navy);
+  color:#fff;
+}
+.salon-catalog-head{ margin-bottom:clamp(32px,4vw,48px); }
+.salon-catalog-head .salon-kicker{ color:rgba(255,255,255,.55); }
+.salon-catalog-head .salon-kicker::before{ background:var(--museum-gold-soft); }
+.salon-catalog-head h2{
+  font-family:var(--serif); font-weight:500;
+  font-size:clamp(2rem,3.5vw,2.6rem); margin:12px 0 10px; color:#fff;
+}
+.salon-catalog-head p{ color:rgba(255,255,255,.6); margin:0; max-width:48ch; }
+
+.salon-catalog-grid{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:14px;
+}
+.salon-catalog-item{
+  position:relative; display:block; overflow:hidden;
+  border-radius:var(--radius-md);
+  aspect-ratio:3/4;
+  background:rgba(255,255,255,.06);
+}
+.salon-catalog-item:first-child{
+  grid-column:span 2; grid-row:span 2; aspect-ratio:auto;
+}
+.salon-catalog-item img{
+  width:100%; height:100%; object-fit:cover;
+  transition:transform .5s var(--ease);
+}
+.salon-catalog-item:hover img{ transform:scale(1.05); }
+.salon-catalog-cap{
+  position:absolute; inset:auto 0 0 0;
+  padding:40px 14px 14px;
+  background:linear-gradient(0deg, rgba(26,40,50,.9), transparent);
+  font-size:12px; line-height:1.4;
+}
+.salon-catalog-cap strong{ display:block; font-family:var(--serif); font-size:15px; font-weight:500; }
+.salon-catalog-actions{ margin-top:32px; display:flex; gap:12px; flex-wrap:wrap; }
+.salon-catalog .btn-line{
+  border-color:rgba(255,255,255,.35); color:#fff;
+}
+.salon-catalog .btn-line:hover{ background:#fff; color:var(--salon-navy); border-color:#fff; }
+.salon-catalog .btn-solid{ background:#fff; color:var(--salon-navy); border-color:#fff; }
+.salon-catalog .btn-solid:hover{ background:var(--accent); border-color:var(--accent); color:#fff; }
+
+/* ----- Services curatoriaux ----- */
+.salon-services{
+  padding:var(--section-y) 0;
+  background:var(--bg-pure);
+  border-top:1px solid var(--hair);
+}
+.salon-services-grid{
+  display:grid; grid-template-columns:repeat(3,1fr); gap:20px;
+}
+.salon-service{
+  padding:28px 24px;
+  border:1px solid var(--hair);
+  border-radius:var(--radius-lg);
+  background:var(--bg);
+  transition:background .25s, border-color .25s;
+}
+.salon-service:hover{ background:var(--bg-pure); border-color:rgba(184,115,74,.3); }
+.salon-service-num{
+  font-family:var(--serif); font-size:2rem; font-weight:500;
+  color:var(--accent); line-height:1; margin-bottom:12px;
+}
+.salon-service h3{
+  font-family:var(--serif); font-size:1.25rem; font-weight:500;
+  margin:0 0 10px;
+}
+.salon-service p{ font-size:14px; color:var(--grey); margin:0; line-height:1.6; }
+
+/* ----- CTA artiste (secondaire) ----- */
+.salon-artist-cta{
+  padding:clamp(48px,7vw,72px) 0;
+  background:var(--bg-alt);
+  border-top:1px solid var(--hair);
+}
+.salon-artist-inner{
+  display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between;
+  gap:24px; padding:clamp(28px,4vw,36px);
+  background:var(--bg-pure); border:1px solid var(--hair);
+  border-radius:var(--radius-xl);
+}
+.salon-artist-inner h2{
+  font-family:var(--serif); font-weight:500;
+  font-size:clamp(1.4rem,2.5vw,1.85rem); margin:0 0 8px;
+}
+.salon-artist-inner p{ color:var(--grey); margin:0; font-size:14px; max-width:42ch; }
+
+/* legacy class aliases */
+.aw-section-badge{
+  display:inline-flex; align-items:center; gap:8px;
+  padding:6px 14px 6px 10px;
+  background:rgba(36,52,66,.07); color:var(--salon-navy);
+  border:1px solid var(--hair); border-radius:var(--radius-pill);
+  font-size:11px; font-weight:600; letter-spacing:.1em; text-transform:uppercase;
+  margin-bottom:14px;
+}
+.aw-section-badge-icon{ color:var(--accent); }
+
+@media (max-width:960px){
+  .salon-hero-grid{ grid-template-columns:1fr; }
+  .salon-hero-visual{ max-height:400px; aspect-ratio:16/10; }
+  .salon-audience-grid{ grid-template-columns:1fr; }
+  .salon-catalog-grid{ grid-template-columns:repeat(2,1fr); }
+  .salon-catalog-item:first-child{ grid-column:span 2; grid-row:span 1; aspect-ratio:16/10; }
+  .salon-services-grid{ grid-template-columns:1fr; }
+}
+@media (max-width:560px){
+  .salon-hero-copy h1{ max-width:none; }
+  .salon-catalog-grid{ grid-template-columns:1fr; }
+  .salon-catalog-item:first-child{ grid-column:span 1; }
+}

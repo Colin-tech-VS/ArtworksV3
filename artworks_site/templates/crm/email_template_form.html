@@ -1,0 +1,61 @@
+{% extends 'crm/_crm_layout.html' %}
+
+{% block title %}CRM — {{ template.name }}{% endblock %}
+
+{% block crm_header %}
+<header class="crm-page-head">
+  <div class="crm-page-head-text">
+    <p class="crm-eyebrow">Template transactionnel</p>
+    <h1>{{ template.name }}</h1>
+    <p class="crm-lead"><code>{{ template.slug }}</code> — rendu Artworks identique à l'envoi réel.</p>
+  </div>
+  <div class="crm-page-head-actions">
+    <a href="{{ url_for('crm.templates_list') }}" class="crm-btn-ghost">← Retour</a>
+  </div>
+</header>
+{% endblock %}
+
+{% block crm_content %}
+<div class="crm-email-editor">
+  <div class="crm-split crm-stagger">
+    <div class="crm-panel crm-ai-panel">
+      <div class="crm-panel-head">
+        <div><h2>Génération IA</h2><p class="sub">Rédigez ou régénérez le contenu avec Mistral</p></div>
+      </div>
+      <form id="crm-email-ai-form" class="crm-form" data-ai-url="{{ url_for('crm.template_generate_ai', slug=template.slug) }}">
+        {{ ai_form.hidden_tag() }}
+        <div class="field">{{ ai_form.ai_brief.label }}{{ ai_form.ai_brief(rows=4, class='crm-wysiwyg', placeholder='Ex. Email de bienvenue chaleureux pour un nouvel artiste…') }}</div>
+        <div class="field">{{ ai_form.ai_tone.label }}{{ ai_form.ai_tone() }}</div>
+        <button type="submit" class="btn-solid" id="crm-email-ai-btn">✦ Générer avec Mistral</button>
+        <p class="crm-hint" id="crm-email-ai-status"></p>
+      </form>
+    </div>
+
+    <div class="crm-panel">
+      <div class="crm-panel-head"><div><h2>Édition manuelle</h2></div></div>
+      <form method="post" class="crm-form" id="crm-template-form" data-preview-url="{{ url_for('crm.email_preview_api') }}">
+        {{ form.hidden_tag() }}
+        <div class="field">{{ form.name.label }}{{ form.name() }}</div>
+        <div class="field">{{ form.subject.label }}{{ form.subject(id='email-subject') }}</div>
+        <div class="field">{{ form.preview_text.label }}{{ form.preview_text(id='email-preview-text') }}</div>
+        <div class="field">{{ form.body_html.label }}{{ form.body_html(class='tall crm-wysiwyg', id='email-body') }}</div>
+        <div class="field check">{{ form.active() }} <label for="active">Template actif</label></div>
+        <div class="field check">{{ form.auto_send() }} <label for="auto_send">Envoi automatique</label></div>
+        {{ form.submit(class='btn-solid') }}
+      </form>
+    </div>
+  </div>
+
+  <div class="crm-panel crm-email-preview-panel">
+    <div class="crm-panel-head">
+      <div><h2>Aperçu réel</h2><p class="sub">Exactement ce que recevra l'utilisateur (design Artworks)</p></div>
+      <span class="crm-badge crm-badge-live"><span class="crm-dot"></span> Live</span>
+    </div>
+    <iframe id="crm-email-preview-frame" class="crm-email-preview-frame" title="Aperçu email" srcdoc="{{ preview_html|e }}"></iframe>
+  </div>
+</div>
+{% endblock %}
+
+{% block crm_scripts %}
+<script src="{{ url_for('static', filename='js/crm-emails.js') }}"></script>
+{% endblock %}

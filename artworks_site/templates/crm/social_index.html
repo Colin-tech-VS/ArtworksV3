@@ -1,0 +1,103 @@
+{% extends 'crm/_crm_layout.html' %}
+{% block title %}CRM — Réseaux sociaux{% endblock %}
+
+{% block crm_header %}
+<header class="crm-page-head">
+  <div class="crm-page-head-text">
+    <p class="crm-eyebrow">Marketing</p>
+    <h1>Réseaux sociaux</h1>
+    <p class="crm-lead">Facebook, Instagram, Pinterest, DeviantArt — publication CRM et auto-syndication des œuvres.</p>
+  </div>
+  <div class="crm-page-head-actions">
+    <a href="{{ url_for('crm.social_post_form') }}" class="btn-solid">+ Nouveau post</a>
+    <form method="post" action="{{ url_for('crm.social_sync_deviantart') }}" style="display:inline">
+      <button type="submit" class="crm-btn-ghost">↻ Sync stats DeviantArt</button>
+    </form>
+  </div>
+</header>
+{% endblock %}
+
+{% block crm_content %}
+<div class="crm-kpi-row crm-stagger">
+  {% set cards = [
+    ('DeviantArt', status.deviantart, 'deviantart'),
+    ('Pinterest', status.pinterest, 'pinterest'),
+    ('Facebook', status.facebook, 'facebook'),
+    ('Instagram', status.instagram, 'instagram'),
+  ] %}
+  {% for label, st, key in cards %}
+  <article class="crm-kpi-card">
+    <p class="crm-kpi-label">{{ label }}</p>
+    <p class="crm-kpi-val">
+      {% if key in ('deviantart','pinterest') %}
+        {% if st.connected %}<span class="crm-dot ok"></span> Connecté{% elif st.configured %}<span class="crm-dot warn"></span> OAuth requis{% else %}<span class="crm-dot off"></span> Non configuré{% endif %}
+      {% else %}
+        {% if st.configured and not st.error %}<span class="crm-dot ok"></span> OK{% elif st.configured %}<span class="crm-dot warn"></span> Erreur{% else %}<span class="crm-dot off"></span> .env{% endif %}
+      {% endif %}
+    </p>
+    <p class="crm-hint">
+      {% if st.username %}@{{ st.username }}{% elif st.page_name %}{{ st.page_name }}{% elif st.error %}{{ st.error[:60] }}{% else %}—{% endif %}
+    </p>
+    {% if key == 'deviantart' and st.configured %}
+      {% if st.connected %}
+      <form method="post" action="{{ url_for('crm.social_oauth_disconnect', platform='deviantart') }}"><button type="submit" class="crm-btn-ghost crm-btn-sm">Déconnecter</button></form>
+      {% else %}
+      <a href="{{ url_for('crm.social_oauth_connect', platform='deviantart') }}" class="crm-btn-ghost crm-btn-sm">Connecter</a>
+      {% endif %}
+    {% elif key == 'pinterest' and st.configured %}
+      {% if st.connected %}
+      <form method="post" action="{{ url_for('crm.social_oauth_disconnect', platform='pinterest') }}"><button type="submit" class="crm-btn-ghost crm-btn-sm">Déconnecter</button></form>
+      {% else %}
+      <a href="{{ url_for('crm.social_oauth_connect', platform='pinterest') }}" class="crm-btn-ghost crm-btn-sm">Connecter</a>
+      {% endif %}
+    {% endif %}
+  </article>
+  {% endfor %}
+</div>
+
+<div class="crm-split crm-stagger" style="margin-top:24px">
+  <div class="crm-panel">
+    <div class="crm-panel-head"><h2>Posts CRM</h2><a href="{{ url_for('crm.social_posts_list') }}" class="crm-btn-ghost crm-btn-sm">Tout voir</a></div>
+    {% if posts %}
+    <table class="crm-table">
+      <thead><tr><th>Nom</th><th>Statut</th><th>Date</th></tr></thead>
+      <tbody>
+        {% for p in posts %}
+        <tr>
+          <td><a href="{{ url_for('crm.social_post_detail', post_id=p.id) }}">{{ p.name }}</a></td>
+          <td><span class="crm-badge">{{ p.status }}</span></td>
+          <td>{{ p.created_at.strftime('%d/%m/%Y') if p.created_at else '—' }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p class="crm-hint">Aucun post — <a href="{{ url_for('crm.social_post_form') }}">créer le premier</a>.</p>
+    {% endif %}
+  </div>
+
+  <div class="crm-panel">
+    <div class="crm-panel-head"><h2>Publications récentes</h2></div>
+    {% if logs %}
+    <table class="crm-table crm-table-compact">
+      <thead><tr><th>Plateforme</th><th>Statut</th><th>Aperçu</th></tr></thead>
+      <tbody>
+        {% for l in logs %}
+        <tr>
+          <td>{{ l.platform }}</td>
+          <td><span class="crm-badge {{ 'crm-badge-live' if l.status == 'published' else '' }}">{{ l.status }}</span></td>
+          <td class="crm-hint">{{ (l.content_preview or '')[:70] }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p class="crm-hint">Les publications apparaîtront ici (CRM + auto-publish œuvres).</p>
+    {% endif %}
+  </div>
+</div>
+
+<p class="crm-hint" style="margin-top:20px">
+  OAuth callback DeviantArt : <code>{{ da_redirect }}</code> · Pinterest : <code>{{ pt_redirect }}</code>
+</p>
+{% endblock %}

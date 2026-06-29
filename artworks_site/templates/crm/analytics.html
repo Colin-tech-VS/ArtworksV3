@@ -1,0 +1,98 @@
+{% extends 'crm/_crm_layout.html' %}
+{% from 'crm/_crm_macros.html' import kpi_card %}
+
+{% block title %}CRM — Analytics{% endblock %}
+
+{% block crm_header %}
+<header class="crm-page-head crm-reveal">
+  <div class="crm-page-head-text">
+    <p class="crm-eyebrow">Pilotage · GA4</p>
+    <h1>Analytics</h1>
+    <p class="crm-lead">Utilisateurs actifs, sessions, pages vues, acquisition et engagement — comme Google Analytics 4.</p>
+  </div>
+  <div class="crm-page-head-actions">
+    <div class="crm-filter-chips">
+      <a href="{{ url_for('crm.analytics', days=7) }}" class="crm-chip {{ 'is-on' if days == 7 }}">7 jours</a>
+      <a href="{{ url_for('crm.analytics', days=30) }}" class="crm-chip {{ 'is-on' if days == 30 }}">30 jours</a>
+      <a href="{{ url_for('crm.analytics', days=90) }}" class="crm-chip {{ 'is-on' if days == 90 }}">90 jours</a>
+    </div>
+  </div>
+</header>
+{% endblock %}
+
+{% block crm_content %}
+<div class="crm-kpis crm-stagger">
+  <div class="crm-kpi is-accent crm-kpi-live">
+    <div class="crm-kpi-icon"><span class="crm-pulse"></span></div>
+    <div class="crm-kpi-body">
+      <div class="crm-kpi-val" data-count="{{ stats.active_now }}">{{ stats.active_now }}</div>
+      <div class="crm-kpi-lbl">Utilisateurs actifs</div>
+      <div class="crm-kpi-hint">30 dernières minutes</div>
+    </div>
+  </div>
+  {{ kpi_card(stats.users_24h, 'Utilisateurs (24h)', icon='<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>') }}
+  {{ kpi_card(stats.sessions, 'Sessions', stats.page_views ~ ' pages vues', false, '<svg viewBox="0 0 24 24"><path d="M3 12h18M8 6v12M16 6v12"/></svg>') }}
+  {{ kpi_card(stats.bounce_rate ~ '%', 'Taux de rebond', stats.pages_per_session ~ ' pages/session', false, '<svg viewBox="0 0 24 24"><path d="M4 19V5M4 19h16"/></svg>') }}
+</div>
+
+<div class="crm-panel crm-reveal">
+  <div class="crm-panel-head">
+    <div><h2>Trafic — pages vues</h2><p class="sub">Évolution sur {{ days }} jours</p></div>
+  </div>
+  <div class="crm-chart" id="crm-traffic-chart"
+       data-labels='{{ stats.chart_labels|tojson }}'
+       data-values='{{ stats.chart_values|tojson }}'>
+    <div class="crm-chart-bars"></div>
+  </div>
+</div>
+
+<div class="crm-split crm-stagger">
+  <div class="crm-panel">
+    <div class="crm-panel-head"><div><h2>Pages les plus consultées</h2></div></div>
+    <div class="crm-table-wrap">
+      <table class="crm-table">
+        <thead><tr><th>Page</th><th>Vues</th></tr></thead>
+        <tbody>
+          {% for path, cnt in stats.top_pages %}
+          <tr><td><code>{{ path }}</code></td><td><strong>{{ cnt }}</strong></td></tr>
+          {% else %}
+          <tr><td colspan="2">Pas encore de données — naviguez sur le site pour alimenter les stats.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <div class="crm-panel">
+    <div class="crm-panel-head"><div><h2>Acquisition</h2><p class="sub">Source du trafic</p></div></div>
+    {% set max_src = stats.sources.values()|max if stats.sources else 1 %}
+    {% for src, cnt in stats.sources.items() %}
+    <div class="crm-stat-row"><span>{{ src|capitalize }}</span><strong>{{ cnt }}</strong></div>
+    <div class="crm-stat-bar-wrap"><div class="crm-stat-bar"><span style="width:{{ (cnt / max_src * 100)|int }}%"></span></div></div>
+    {% else %}
+    <p class="sub">Aucune source enregistrée.</p>
+    {% endfor %}
+  </div>
+</div>
+
+<div class="crm-split crm-stagger">
+  <div class="crm-panel">
+    <div class="crm-panel-head"><div><h2>Événements</h2></div></div>
+    {% for ev, cnt in stats.events_by_type.items() %}
+    <div class="crm-stat-row"><span>{{ ev }}</span><strong>{{ cnt }}</strong></div>
+    {% endfor %}
+  </div>
+  <div class="crm-panel">
+    <div class="crm-panel-head"><div><h2>Œuvres populaires</h2></div></div>
+    {% for title, views, aid in stats.artwork_views %}
+    <div class="crm-stat-row">
+      <span>{{ title }}</span>
+      <strong>{{ views or 0 }} vues</strong>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}
+
+{% block crm_scripts %}
+<script src="{{ url_for('static', filename='js/crm-analytics.js') }}"></script>
+{% endblock %}

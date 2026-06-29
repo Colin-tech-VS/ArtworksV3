@@ -1,0 +1,82 @@
+{% extends 'crm/_crm_layout.html' %}
+{% from 'crm/_crm_macros.html' import role_badge, plan_badge, staff_badge, user_avatar, artwork_status_badge, early_badge, crm_empty %}
+
+{% block title %}CRM — {{ user.name }}{% endblock %}
+
+{% block crm_header %}
+<div class="crm-profile-hero">
+  {{ user_avatar(user, 'lg') }}
+  <div style="flex:1;min-width:200px">
+    <p class="crm-eyebrow">Fiche utilisateur</p>
+    <h1 style="font-family:var(--serif);font-weight:300;font-size:28px;margin:0 0 6px">{{ user.name }}</h1>
+    <p class="crm-lead" style="margin:0">@{{ user.username }} · {{ user.email }}</p>
+    <div class="crm-profile-badges">
+      {{ role_badge(user.role) }}
+      {{ plan_badge(user.subscription_plan, user.subscription_status) }}
+      {{ staff_badge(user.is_staff) }}
+    </div>
+  </div>
+  <div class="crm-page-head-actions">
+    <a href="{{ url_for('main.artist', artist_id=user.id) }}" class="btn-line" target="_blank">Profil public</a>
+    <a href="{{ url_for('crm.users_list') }}" class="crm-btn-ghost">← Retour</a>
+  </div>
+</div>
+{% endblock %}
+
+{% block crm_content %}
+<div class="crm-split">
+  <div class="crm-panel">
+    <div class="crm-panel-head"><div><h2>Modifier le compte</h2><p class="sub">Rôle, formule et accès admin</p></div></div>
+    <form method="post" class="crm-form">
+      {{ form.hidden_tag() }}
+      <div class="field">{{ form.display_name.label }}{{ form.display_name() }}</div>
+      <div class="field">{{ form.email.label }}{{ form.email() }}</div>
+      <div class="field">{{ form.role.label }}{{ form.role() }}</div>
+      <div class="field">{{ form.subscription_plan.label }}{{ form.subscription_plan() }}</div>
+      <div class="field">{{ form.subscription_status.label }}{{ form.subscription_status() }}</div>
+      <div class="field check">
+        {{ form.is_staff() }}
+        <label for="is_staff">Accès CRM (administrateur)</label>
+      </div>
+      {{ form.submit(class='btn-solid') }}
+    </form>
+    {% if user_segments %}
+    <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--crm-hair)">
+      <p class="crm-hint" style="margin:0 0 8px">Segments automatiques</p>
+      <div style="display:flex;flex-wrap:wrap;gap:6px">
+        {% for s in user_segments %}
+        <a href="{{ url_for('crm.segment_detail', segment_id=s.id) }}" class="crm-badge crm-badge-muted">{{ s.name }}</a>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="crm-panel">
+    <div class="crm-panel-head">
+      <div><h2>Portfolio</h2><p class="sub">Œuvres publiées par ce compte</p></div>
+      <span class="crm-panel-badge">{{ artworks|length }} œuvre(s)</span>
+    </div>
+    {% if artworks %}
+    <div class="crm-table-wrap">
+      <table class="crm-table">
+        <thead><tr><th>Œuvre</th><th>Statut</th><th>Prix</th><th>Vues</th><th></th></tr></thead>
+        <tbody>
+          {% for a in artworks %}
+          <tr>
+            <td><strong>{{ a.title }}</strong></td>
+            <td>{{ artwork_status_badge(a.status) }}</td>
+            <td>{{ a.price_str }}</td>
+            <td>{{ a.view_count or 0 }}</td>
+            <td><a href="{{ url_for('main.artwork_detail', artwork_id=a.id) }}" class="btn-line" style="font-size:12px;padding:6px 12px" target="_blank">Voir</a></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    {{ crm_empty('🖼', 'Aucune œuvre', 'Ce compte n\'a pas encore publié.') }}
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

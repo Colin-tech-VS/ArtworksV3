@@ -1,0 +1,69 @@
+{# Cartes tarifaires — réutilisées dashboard + page publique #}
+{% macro pricing_grid(plans, price_label, current_slug=none, checkout_url=none, public=false, role_label='', role='') %}
+<div class="sub-plans-grid cols-{{ plans|length }}">
+  {% for plan in plans %}
+  {% set is_current = current_slug and plan.slug == current_slug %}
+  <article class="sub-plan-card {{ 'is-current' if is_current }} {{ 'is-featured' if plan.highlight }}">
+    {% if plan.highlight and not is_current %}<div class="sub-plan-ribbon">Recommandé</div>{% endif %}
+    {% if is_current %}<div class="sub-plan-ribbon sub-plan-ribbon--current">Formule actuelle</div>{% endif %}
+
+    <header class="sub-plan-head">
+      <h3>{{ plan.name }}</h3>
+      <p class="sub-plan-tagline">{{ plan.tagline }}</p>
+      <div class="sub-plan-price">
+        <span class="amount">{{ price_label(plan) }}</span>
+        {% if plan.interval %}<span class="period">/ mois</span>{% endif %}
+      </div>
+    </header>
+
+    <ul class="sub-plan-features">
+      {% for f in plan.features %}
+      <li>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg>
+        {{ f }}
+      </li>
+      {% endfor %}
+      {% if plan.missing and not public %}
+      {% for m in plan.missing %}
+      <li class="is-muted">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        {{ m }}
+      </li>
+      {% endfor %}
+      {% endif %}
+    </ul>
+
+    <footer class="sub-plan-foot">
+      {% if public %}
+        {% if current_user is defined and current_user.is_authenticated and current_user.role == role %}
+          {% if is_current %}
+            <a href="{{ url_for('main.subscription') }}" class="btn-line sub-btn-secondary" style="display:block;text-align:center">Gérer mon abonnement</a>
+          {% else %}
+            <form method="post" action="{{ url_for('main.subscription_checkout') }}">
+              <input type="hidden" name="plan" value="{{ plan.slug }}">
+              <button type="submit" class="btn-full {{ 'sub-btn-primary' if plan.highlight else '' }}">{{ plan.cta }}</button>
+            </form>
+          {% endif %}
+        {% else %}
+          <a href="{{ url_for('auth.register', role=role, plan=plan.slug) }}" class="btn-full {{ 'sub-btn-primary' if plan.highlight else '' }}">Créer un compte {{ role_label|lower }}</a>
+        {% endif %}
+      {% elif checkout_url %}
+        {% if is_current %}
+          <button type="button" class="btn-full sub-btn-current" disabled>Formule en cours</button>
+        {% elif plan.slug == 'free' %}
+          <form method="post" action="{{ checkout_url }}">
+            <input type="hidden" name="plan" value="free">
+            <button type="submit" class="btn-line sub-btn-secondary">Revenir à Découverte</button>
+          </form>
+        {% else %}
+          <form method="post" action="{{ checkout_url }}">
+            <input type="hidden" name="plan" value="{{ plan.slug }}">
+            <button type="submit" class="btn-full {{ 'sub-btn-primary' if plan.highlight else '' }}">{{ plan.cta }}</button>
+          </form>
+        {% endif %}
+      {% endif %}
+    </footer>
+  </article>
+  {% endfor %}
+</div>
+{% endmacro %}
