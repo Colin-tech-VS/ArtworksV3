@@ -51,50 +51,75 @@
   function mdToHtml(text) {
     var lines = text.split('\n');
     var html = [];
-    var inList = false;
+    var listTag = null;
 
     function closeList() {
-      if (inList) {
-        html.push('</ul>');
-        inList = false;
+      if (listTag) {
+        html.push('</' + listTag + '>');
+        listTag = null;
+      }
+    }
+
+    function openList(tag) {
+      if (listTag !== tag) {
+        closeList();
+        html.push('<' + tag + '>');
+        listTag = tag;
       }
     }
 
     function inline(s) {
       s = escapeHtml(s);
-      s = s.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+      s = s.replace(/`([^`]+)`/g, '<code>$1</code>');
+      s = s.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+      s = s.replace(/\*([^*\n]+)\*/g, '<em>$1</em>');
+      s = s.replace(/_([^_\n]+)_/g, '<em>$1</em>');
       s = s.replace(/\[([^\]]+)\]\(([^)]+)\)/g, function (_, label, href) {
-        var url = href;
-        if (href.charAt(0) === '/') {
-          url = siteUrl + href;
-        }
+        var url = href.charAt(0) === '/' ? siteUrl + href : href;
         return '<a href="' + escapeHtml(url) + '" target="_blank" rel="noopener">' + label + '</a>';
       });
       return s;
     }
 
     for (var i = 0; i < lines.length; i++) {
-      var line = lines[i].trim();
+      var raw = lines[i];
+      var line = raw.trim();
       if (!line) {
         closeList();
         continue;
       }
-      if (/^[-*•]\s+/.test(line)) {
-        if (!inList) {
-          html.push('<ul>');
-          inList = true;
-        }
-        html.push('<li>' + inline(line.replace(/^[-*•]\s+/, '')) + '</li>');
-      } else if (/^\d+\.\s+/.test(line)) {
-        if (!inList) {
-          html.push('<ol>');
-          inList = true;
-        }
-        html.push('<li>' + inline(line.replace(/^\d+\.\s+/, '')) + '</li>');
-      } else {
+      if (/^-{3,}$/.test(line)) {
         closeList();
-        html.push('<p>' + inline(line) + '</p>');
+        html.push('<hr class="aria-hr">');
+        continue;
       }
+      if (/^###\s+/.test(line)) {
+        closeList();
+        html.push('<h4 class="aria-h">' + inline(line.replace(/^###\s+/, '')) + '</h4>');
+        continue;
+      }
+      if (/^##\s+/.test(line)) {
+        closeList();
+        html.push('<h3 class="aria-h">' + inline(line.replace(/^##\s+/, '')) + '</h3>');
+        continue;
+      }
+      if (/^#\s+/.test(line)) {
+        closeList();
+        html.push('<h3 class="aria-h aria-h-lg">' + inline(line.replace(/^#\s+/, '')) + '</h3>');
+        continue;
+      }
+      if (/^[-*•]\s+/.test(line)) {
+        openList('ul');
+        html.push('<li>' + inline(line.replace(/^[-*•]\s+/, '')) + '</li>');
+        continue;
+      }
+      if (/^\d+\.\s+/.test(line)) {
+        openList('ol');
+        html.push('<li>' + inline(line.replace(/^\d+\.\s+/, '')) + '</li>');
+        continue;
+      }
+      closeList();
+      html.push('<p>' + inline(line) + '</p>');
     }
     closeList();
     return html.join('');
@@ -155,6 +180,12 @@
     setTimeout(tick, speed);
   }
 
+  function revealContent(el, html) {
+    el.innerHTML = html;
+    el.classList.add('aria-reveal');
+    scrollBottom();
+  }
+
   function appendAssistant(text, useTypewriter) {
     var typing = messagesEl.querySelector('[data-typing="1"]');
     if (typing) typing.remove();
@@ -167,12 +198,14 @@
     messagesEl.appendChild(wrap);
     var content = wrap.querySelector('.aria-content');
     var html = mdToHtml(text);
+    var hasMarkdown = /[#*_\[\]`]/.test(text);
 
-    if (useTypewriter && text.length < 1800) {
-      typewriter(content, html, scrollBottom);
+    if (useTypewriter && !hasMarkdown && text.length < 900) {
+      typewriter(content, html, function () {
+        content.classList.add('aria-reveal-done');
+      });
     } else {
-      content.innerHTML = html;
-      scrollBottom();
+      revealContent(content, html);
     }
   }
 
