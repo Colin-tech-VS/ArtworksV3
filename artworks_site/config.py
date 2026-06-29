@@ -24,10 +24,16 @@ def _env_first(*keys, default=''):
     return default
 
 
+def _database_uri():
+    uri = os.environ.get('DATABASE_URL') or 'sqlite:///' + os.path.join(basedir, 'app.db')
+    if uri.startswith('postgres://'):
+        uri = 'postgresql://' + uri[len('postgres://'):]
+    return uri
+
+
 class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'dev-secret-key-change-this'
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or \
-        'sqlite:///' + os.path.join(basedir, 'app.db')
+    SQLALCHEMY_DATABASE_URI = _database_uri()
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     UPLOAD_FOLDER = os.path.join(basedir, 'static', 'uploads')
     MAX_CONTENT_LENGTH = 5 * 1024 * 1024  # 5 MB

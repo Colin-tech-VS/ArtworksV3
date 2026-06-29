@@ -31,17 +31,17 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE EXTENSION IF NOT EXISTS "pg_trgm";
 ```
 
-## Étape 2 — Inventaire V2 (sans toucher la prod)
+## Inventaire V2 (référence — fév. 2026)
 
-```bash
-# Récupérer l’URL Postgres V2
-scalingo --app artworksdigital env-get SCALINGO_POSTGRESQL_URL
+| Table | ~Lignes |
+|-------|---------|
+| artists | 137 |
+| artworks | 633 |
+| galleries | 2 |
+| fans | 33 |
+| marketplace_orders | 3 |
 
-# Windows PowerShell
-$env:V2_DATABASE_URL = "<url>"
-cd artworks_site
-python scripts/v2_db_inspect.py
-```
+Base V2 : Supabase `onifrjiwbsjnhejtmrpq`. V3 : nouveau projet **ArtworksV3** (voir `SUPABASE_V3_SETUP.md`).
 
 ## Étape 3 — Mapping entités (plan de migration)
 
