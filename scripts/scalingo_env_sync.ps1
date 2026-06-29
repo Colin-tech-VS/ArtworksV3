@@ -1,6 +1,8 @@
-# Sync .env local → Scalingo artworksv3 (sans committer les secrets)
-# Prérequis: scalingo login
-$Scalingo = Join-Path $PSScriptRoot "..\tools\scalingo_1.33.0_windows_amd64\scalingo.exe"
+# Sync variables V2 (artworksdigital) → V3 (artworksv3) via Scalingo CLI.
+# Usage: powershell -ExecutionPolicy Bypass -File scripts/scalingo_sync_v2_to_v3.ps1
+#
+# Ancien script local .env → V3 (conservé pour dev) :
+$Scalingo = Join-Path $PSScriptRoot "..\tools\scalingo147\scalingo_1.47.0_windows_amd64\scalingo.exe"
 $App = "artworksv3"
 $EnvFile = Join-Path $PSScriptRoot "..\artworks_site\.env"
 
@@ -30,6 +32,7 @@ $keys = @(
     'SECRET_KEY','MISTRAL_API_KEY','MISTRAL_MODEL','MISTRAL_MODEL_HEAVY','AI_PRIMARY',
     'STRIPE_PUBLISHABLE_KEY','STRIPE_SECRET_KEY','STRIPE_WEBHOOK_SECRET','SITE_URL',
     'GOOGLE_OAUTH_CLIENT_ID','GOOGLE_OAUTH_CLIENT_SECRET','GOOGLE_PLACES_API_KEY',
+    'COMMISSION_RATE','ADMIN_EMAILS',
     'SMTP_HOST','SMTP_PORT','SMTP_USER','SMTP_PASSWORD','SMTP_FROM','SMTP_FROM_NAME',
     'MAIL_USE_TLS','FACEBOOK_PAGE_ACCESS_TOKEN','FACEBOOK_PAGE_ID',
     'INSTAGRAM_ACCESS_TOKEN','INSTAGRAM_USER_ID',
