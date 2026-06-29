@@ -265,14 +265,13 @@
       .then(function (res) {
         var typing = messagesEl.querySelector('[data-typing="1"]');
         if (typing) typing.remove();
-        if (res.ok && res.data.reply) {
+        if (res.data.reply) {
           appendAssistant(res.data.reply, true);
           applyActions(res.data.actions);
+        } else if (res.data.error) {
+          appendAssistant(res.data.error, false);
         } else {
-          appendAssistant(
-            res.data.error || 'Aria rencontre une difficulté. Réessayez dans un instant.',
-            false
-          );
+          appendAssistant('Aria rencontre une difficulté. Réessayez dans un instant.', false);
         }
       })
       .catch(function () {

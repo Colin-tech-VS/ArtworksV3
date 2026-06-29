@@ -2,19 +2,22 @@
 from __future__ import annotations
 
 import json
+import logging
 import os
+import re
 import uuid
 from datetime import datetime
 from typing import Any
 
 from flask import current_app, session, url_for
 from flask_login import current_user, login_user
-from werkzeug.security import generate_password_hash
+from sqlalchemy.exc import IntegrityError
 from werkzeug.utils import secure_filename
 
 from . import db
-from .catalog import DISCIPLINES
 from .models import Artwork, GalleryArtist, PriceAlert, Series, User
+
+_log = logging.getLogger(__name__)
 
 _MAX_AGENT_STEPS = 8
 _PENDING_KEY = 'aria_pending_images'
@@ -96,20 +99,37 @@ TOOLS_PUBLIC = [
         ['artwork_id'],
     ),
     _tool(
+        'login_account',
+        'Connecte un utilisateur existant (email + mot de passe). À utiliser si create_account échoue car l\'email existe déjà.',
+        {
+            'email': {'type': 'string'},
+            'password': {'type': 'string'},
+        },
+        ['email', 'password'],
+    ),
+    _tool(
         'create_account',
-        'Crée un compte Artworks et connecte l\'utilisateur. Visiteur NON connecté uniquement. Demander email + mot de passe (6+ car.).',
+        'Crée un compte Artworks et connecte l\'utilisateur. Visiteur NON connecté uniquement. role=galerie pour une galerie. plan=free ou gratuit.',
         {
             'role': {'type': 'string', 'enum': ['artiste', 'galerie', 'collectionneur']},
             'username': {'type': 'string'},
             'email': {'type': 'string'},
             'password': {'type': 'string'},
-            'plan': {'type': 'string', 'description': 'Slug formule : free, portfolio, pro, membre, patron, premium…'},
+            'plan': {'type': 'string', 'description': 'free, gratuit, portfolio, pro, membre, patron, premium…'},
         },
         ['role', 'username', 'email', 'password'],
     ),
 ]
 
 TOOLS_AUTH = [
+    _tool(
+        'change_my_role',
+        'Compte connecté : change le rôle (ex. collectionneur → galerie). Réinitialise la formule gratuite du nouveau rôle.',
+        {
+            'role': {'type': 'string', 'enum': ['artiste', 'galerie', 'collectionneur']},
+        },
+        ['role'],
+    ),
     _tool(
         'get_my_profile',
         'Lit le profil du compte connecté (tous rôles).',
@@ -314,6 +334,32 @@ def _resolve_image(args: dict, ctx: dict) -> str | None:
     return pop_pending_image()
 
 
+def _normalize_plan_slug(role: str, plan: str) -> str:
+    from .subscriptions import normalize_plan
+    p = (plan or 'free').strip().lower()
+    aliases = {
+        'gratuit': 'free',
+        'gratuite': 'free',
+        'decouverte': 'free',
+        'découverte': 'free',
+        'free': 'free',
+    }
+    p = aliases.get(p, p)
+    return normalize_plan(role, p)
+
+
+def _unique_username(base: str) -> str:
+    base = re.sub(r'\s+', ' ', (base or 'membre').strip())[:64]
+    if len(base) < 3:
+        base = 'membre'
+    candidate = base
+    n = 1
+    while User.query.filter_by(username=candidate).first():
+        candidate = f'{base}{n}'
+        n += 1
+    return candidate
+
+
 def execute_tool(name: str, args: dict, ctx: dict) -> dict:
     args = args or {}
     user = _require_user(ctx)
@@ -393,6 +439,30 @@ def execute_tool(name: str, args: dict, ctx: dict) -> dict:
             },
         }
 
+    if name == 'login_account':
+        if user:
+            return {'error': 'Vous êtes déjà connecté.', 'username': user.username}
+        email = (args.get('email') or '').strip().lower()
+        password = args.get('password') or ''
+        if not email or not password:
+            return {'error': 'Email et mot de passe requis.'}
+        u = User.query.filter_by(email=email).first()
+        if not u:
+            return {'error': 'Aucun compte avec cet email.'}
+        if not u.check_password(password):
+            return {'error': 'Mot de passe incorrect.'}
+        login_user(u)
+        ctx['user'] = u
+        _side(ctx, {'type': 'login', 'user_id': u.id})
+        _side(ctx, {'type': 'reload'})
+        return {
+            'ok': True,
+            'user_id': u.id,
+            'username': u.username,
+            'role': u.role,
+            'message': 'Connexion réussie.',
+        }
+
     if name == 'create_account':
         if user:
             return {'error': 'Vous êtes déjà connecté. Déconnectez-vous pour créer un autre compte.'}
@@ -402,24 +472,39 @@ def execute_tool(name: str, args: dict, ctx: dict) -> dict:
         password = args.get('password') or ''
         plan = (args.get('plan') or 'free').strip()
         if role not in ('artiste', 'galerie', 'collectionneur'):
-            return {'error': 'Rôle invalide.'}
-        if len(username) < 3 or not email or len(password) < 6:
-            return {'error': 'username (3+), email et password (6+) requis.'}
-        if User.query.filter_by(username=username).first():
-            return {'error': 'Ce nom d\'utilisateur est déjà pris.'}
-        if User.query.filter_by(email=email).first():
-            return {'error': 'Cet email est déjà utilisé.'}
-        from .subscriptions import normalize_plan, is_paid_plan
+            return {'error': 'Rôle invalide — utilisez artiste, galerie ou collectionneur.'}
+        if not email or len(password) < 6:
+            return {'error': 'Email et mot de passe (6+ caractères) requis.'}
+        if not username or len(username) < 3:
+            username = _unique_username(email.split('@')[0])
+        else:
+            username = _unique_username(username)
+        existing = User.query.filter_by(email=email).first()
+        if existing:
+            return {
+                'error': 'Cet email est déjà utilisé.',
+                'code': 'email_taken',
+                'existing_username': existing.username,
+                'existing_role': existing.role,
+                'hint': 'Utilisez login_account avec le même email et mot de passe, puis change_my_role si besoin.',
+            }
         from .auth import _apply_free_plan, _welcome_user
 
-        slug = normalize_plan(role, plan)
+        slug = _normalize_plan_slug(role, plan)
         u = User(username=username, email=email, role=role, display_name=username)
         u.set_password(password)
         pending_paid = _apply_free_plan(u, role, slug)
-        db.session.add(u)
-        db.session.commit()
-        login_user(u)
-        _welcome_user(u)
+        try:
+            db.session.add(u)
+            db.session.commit()
+        except IntegrityError:
+            db.session.rollback()
+            return {'error': 'Impossible de créer le compte — identifiant ou email déjà pris.'}
+        try:
+            login_user(u)
+            _welcome_user(u)
+        except Exception as exc:
+            _log.warning('Aria post-register hooks failed: %s', exc)
         ctx['user'] = u
         _side(ctx, {'type': 'login', 'user_id': u.id})
         _side(ctx, {'type': 'reload'})
@@ -439,16 +524,34 @@ def execute_tool(name: str, args: dict, ctx: dict) -> dict:
         pending_img = pop_pending_image()
         if pending_img and role in ('artiste', 'galerie'):
             from .entitlements import can_publish_artwork
-            ok, err = can_publish_artwork(u)
+            ok, _err = can_publish_artwork(u)
             if ok:
                 art = Artwork(title='Sans titre', image=pending_img, user_id=u.id, status='dispo')
                 db.session.add(art)
                 db.session.commit()
-                return {'ok': True, 'user_id': u.id, 'first_artwork_id': art.id, 'logged_in': True}
-        return {'ok': True, 'user_id': u.id, 'role': role, 'logged_in': True}
+                return {'ok': True, 'user_id': u.id, 'first_artwork_id': art.id, 'logged_in': True, 'role': role}
+        return {'ok': True, 'user_id': u.id, 'role': role, 'username': username, 'logged_in': True}
 
     if not user:
-        return {'error': 'Connexion requise — connectez-vous ou créez un compte via create_account.'}
+        return {'error': 'Connexion requise — utilisez login_account ou create_account.'}
+
+    if name == 'change_my_role':
+        role = (args.get('role') or '').strip()
+        if role not in ('artiste', 'galerie', 'collectionneur'):
+            return {'error': 'Rôle invalide.'}
+        if user.role == role:
+            return {'ok': True, 'role': role, 'message': f'Vous êtes déjà {role}.'}
+        user.role = role
+        user.subscription_plan = 'free'
+        user.subscription_status = 'active'
+        db.session.commit()
+        try:
+            from .crm.auto_segments import classify_user
+            classify_user(user)
+        except Exception:
+            pass
+        _side(ctx, {'type': 'reload'})
+        return {'ok': True, 'role': role, 'message': f'Rôle mis à jour : {role}.'}
 
     if name == 'get_my_profile':
         return {
@@ -804,7 +907,11 @@ def run_tool_calls(tool_calls: list, ctx: dict) -> list[dict]:
             args = json.loads(raw_args) if isinstance(raw_args, str) else (raw_args or {})
         except json.JSONDecodeError:
             args = {}
-        result = execute_tool(name, args, ctx)
+        try:
+            result = execute_tool(name, args, ctx)
+        except Exception as exc:
+            _log.exception('Aria tool %s failed', name)
+            result = {'error': f'Échec technique sur {name}.', 'detail': str(exc)[:120]}
         out.append({
             'role': 'tool',
             'content': json.dumps(result, ensure_ascii=False),

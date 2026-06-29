@@ -1,6 +1,7 @@
 """Aria — assistante conversationnelle vitrine Artworks (Mistral en backend, jamais cité)."""
 from __future__ import annotations
 
+import logging
 import time
 from typing import Any
 
@@ -10,6 +11,8 @@ from .ai import CuratorialAIError, chat_completions_api
 from .aria_tools import _MAX_AGENT_STEPS, run_tool_calls, tools_for_user
 from .offer_pages import OFFER_CONFIG
 from .subscriptions import ROLE_LABELS, plans_for_role, price_label
+
+_log = logging.getLogger(__name__)
 
 ARIA_NAME = 'Aria'
 _MAX_HISTORY = 16
@@ -146,10 +149,11 @@ IDENTITÉ :
 - Tu es **Aria** uniquement. JAMAIS mentionner Mistral, GPT, LLM ou fournisseur IA.
 
 OUTILS — RÈGLE D'OR :
-- Tu disposes d'**outils** pour agir sur le site : créer un compte, modifier profil/œuvres/séries, images, abonnement, alertes prix, artistes galerie, recherche catalogue.
-- Quand l'utilisateur demande une **action** → **APPELLE L'OUTIL** immédiatement avec les infos du message (déduis les champs, ne pose pas 5 questions).
-- Quand il pose une **question** → réponds d'abord ; propose l'action liée ensuite.
-- Après un outil réussi, confirme en français ce qui a été fait + lien [tableau de bord](/dashboard) si pertinent.
+- Tu disposes d'**outils** pour agir sur le site : créer un compte (`create_account` role=galerie), **connecter** (`login_account`), changer de rôle (`change_my_role`), profil/œuvres/images, abonnement, etc.
+- **Email déjà utilisé** → appelle `login_account` avec email+mdp fournis, puis `change_my_role` vers galerie si demandé. Ne redemande pas les infos.
+- Quand l'utilisateur donne email + mot de passe + rôle galerie → enchaîne create_account OU login_account + change_my_role.
+- Quand il demande une **action** → **APPELLE L'OUTIL** immédiatement.
+- Après succès, confirme en français + lien [tableau de bord](/dashboard).
 - Hors Artworks : refuse poliment.
 
 {user_ctx}
@@ -212,7 +216,11 @@ def chat(user_message: str, *, reset: bool = False) -> dict[str, Any]:
         'side_effects': [],
     }
     tools = tools_for_user(current_user)
-    model = current_app.config.get('MISTRAL_MODEL') or 'mistral-small-latest'
+    model = (
+        current_app.config.get('MISTRAL_MODEL_HEAVY')
+        or current_app.config.get('MISTRAL_MODEL')
+        or 'mistral-small-latest'
+    )
 
     messages: list[dict] = [{'role': 'system', 'content': _system_prompt()}]
     for m in history:
@@ -222,7 +230,7 @@ def chat(user_message: str, *, reset: bool = False) -> dict[str, Any]:
 
     reply = ''
     try:
-        for _ in range(_MAX_AGENT_STEPS):
+        for step in range(_MAX_AGENT_STEPS):
             data = chat_completions_api(
                 messages,
                 tools=tools,
@@ -231,7 +239,10 @@ def chat(user_message: str, *, reset: bool = False) -> dict[str, Any]:
                 model=model,
                 timeout=90,
             )
-            msg = data['choices'][0]['message']
+            choices = data.get('choices') or []
+            if not choices:
+                raise CuratorialAIError('Réponse vide du service.')
+            msg = choices[0].get('message') or {}
             tool_calls = msg.get('tool_calls')
             if tool_calls:
                 messages.append({
@@ -243,10 +254,12 @@ def chat(user_message: str, *, reset: bool = False) -> dict[str, Any]:
                 continue
             reply = (msg.get('content') or '').strip()
             break
-    except CuratorialAIError:
+    except CuratorialAIError as exc:
+        _log.warning('Aria CuratorialAIError: %s', exc)
         return {'error': 'Aria rencontre une difficulté technique. Réessayez dans un instant.'}
-    except Exception:
-        return {'error': 'Aria n\'est pas disponible pour le moment.'}
+    except Exception as exc:
+        _log.exception('Aria chat failed: %s', exc)
+        return {'error': 'Aria rencontre une difficulté inattendue. Réessayez ou utilisez [l\'inscription classique](/register).'}
 
     if not reply:
         reply = 'Voilà ce que j\'ai fait pour vous. Souhaitez-vous autre chose sur Artworks ?'
