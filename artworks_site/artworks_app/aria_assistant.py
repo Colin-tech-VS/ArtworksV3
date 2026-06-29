@@ -150,8 +150,9 @@ IDENTITÉ :
 
 OUTILS — RÈGLE D'OR :
 - Tu disposes d'**outils** pour agir sur le site : créer un compte (`create_account` role=galerie), **connecter** (`login_account`), changer de rôle (`change_my_role`), profil/œuvres/images, abonnement, etc.
-- **Email déjà utilisé** → appelle `login_account` avec email+mdp fournis, puis `change_my_role` vers galerie si demandé. Ne redemande pas les infos.
-- Quand l'utilisateur donne email + mot de passe + rôle galerie → enchaîne create_account OU login_account + change_my_role.
+- **Dès que l'utilisateur donne email + mot de passe** → appelle `create_account` **immédiatement** (l'outil connecte aussi les comptes existants avec le bon mot de passe).
+- Le **nom de galerie** = `display_name` (espaces autorisés, ex. « Artworks Salon »). **Username** : 3–64 caractères, généré auto — **ne jamais** inventer de limite à 12 ou 20 caractères.
+- **Ne jamais** refuser un nom pour longueur sans avoir appelé l'outil.
 - Quand il demande une **action** → **APPELLE L'OUTIL** immédiatement.
 - Après succès, confirme en français + lien [tableau de bord](/dashboard).
 - Hors Artworks : refuse poliment.
@@ -192,7 +193,78 @@ def _save_history(messages: list[dict[str, str]]) -> None:
 
 def clear_history() -> None:
     session.pop('aria_history', None)
+    session.pop('aria_signup_role', None)
+    session.pop('aria_signup_pending', None)
     session.modified = True
+
+
+def _track_signup_intent(text: str) -> None:
+    low = (text or '').lower()
+    if any(w in low for w in ('galerie', 'gallery')) and any(
+        w in low for w in ('compte', 'créer', 'creer', 'inscri', 'inscription', 'crée', 'cree')
+    ):
+        session['aria_signup_role'] = 'galerie'
+        session.modified = True
+    elif 'artiste' in low and any(w in low for w in ('compte', 'créer', 'creer', 'inscri')):
+        session['aria_signup_role'] = 'artiste'
+        session.modified = True
+    elif 'collectionneur' in low and any(w in low for w in ('compte', 'créer', 'creer', 'inscri')):
+        session['aria_signup_role'] = 'collectionneur'
+        session.modified = True
+
+
+def _try_signup_fast_path(text: str, ctx: dict[str, Any]) -> dict[str, Any] | None:
+    """Inscription sans LLM quand email + mot de passe sont dans le message."""
+    from flask_login import current_user
+    from .aria_tools import execute_tool, format_signup_reply, parse_signup_credentials
+
+    if current_user.is_authenticated:
+        return None
+
+    low = text.lower()
+    pending = session.get('aria_signup_pending')
+    if (
+        isinstance(pending, dict)
+        and pending.get('email')
+        and pending.get('password')
+        and len(text) < 80
+        and '@' not in text
+        and 'mdp' not in low
+        and 'mail' not in low
+        and 'email' not in low
+    ):
+        args = dict(pending)
+        args['display_name'] = text.strip()
+        role = args.get('role') or session.get('aria_signup_role') or 'galerie'
+        args['role'] = role
+        result = execute_tool('create_account', args, ctx)
+        if result.get('ok'):
+            session.pop('aria_signup_pending', None)
+            session.pop('aria_signup_role', None)
+        return {
+            'reply': format_signup_reply(result, role=role),
+            'name': ARIA_NAME,
+            'actions': ctx.get('side_effects') or None,
+        }
+
+    parsed = parse_signup_credentials(text)
+    if not parsed:
+        return None
+
+    role = parsed.get('role') or session.get('aria_signup_role') or 'galerie'
+    parsed['role'] = role
+    session['aria_signup_pending'] = dict(parsed)
+    session.modified = True
+
+    result = execute_tool('create_account', parsed, ctx)
+    if result.get('ok'):
+        session.pop('aria_signup_pending', None)
+        session.pop('aria_signup_role', None)
+    return {
+        'reply': format_signup_reply(result, role=role),
+        'name': ARIA_NAME,
+        'actions': ctx.get('side_effects') or None,
+    }
 
 
 def chat(user_message: str, *, reset: bool = False) -> dict[str, Any]:
@@ -215,6 +287,18 @@ def chat(user_message: str, *, reset: bool = False) -> dict[str, Any]:
         'user': current_user,
         'side_effects': [],
     }
+
+    _track_signup_intent(text)
+    fast = _try_signup_fast_path(text, ctx)
+    if fast:
+        history.append({'role': 'user', 'content': text})
+        history.append({'role': 'assistant', 'content': fast['reply']})
+        _save_history(history)
+        out = dict(fast)
+        if not out.get('actions'):
+            out.pop('actions', None)
+        return out
+
     tools = tools_for_user(current_user)
     model = (
         current_app.config.get('MISTRAL_MODEL_HEAVY')
@@ -256,6 +340,9 @@ def chat(user_message: str, *, reset: bool = False) -> dict[str, Any]:
             break
     except CuratorialAIError as exc:
         _log.warning('Aria CuratorialAIError: %s', exc)
+        msg = str(exc)
+        if 'Quota' in msg or '429' in msg:
+            return {'error': 'Aria est momentanément saturée — réessayez dans 1 minute ou utilisez [l\'inscription](/register).'}
         return {'error': 'Aria rencontre une difficulté technique. Réessayez dans un instant.'}
     except Exception as exc:
         _log.exception('Aria chat failed: %s', exc)

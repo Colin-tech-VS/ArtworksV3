@@ -109,15 +109,17 @@ TOOLS_PUBLIC = [
     ),
     _tool(
         'create_account',
-        'Crée un compte Artworks et connecte l\'utilisateur. Visiteur NON connecté uniquement. role=galerie pour une galerie. plan=free ou gratuit.',
+        'Crée ou active un compte Artworks (email existant + bon mot de passe = connexion + rôle). '
+        'display_name = nom public de la galerie (espaces OK). username optionnel (généré automatiquement).',
         {
             'role': {'type': 'string', 'enum': ['artiste', 'galerie', 'collectionneur']},
-            'username': {'type': 'string'},
+            'display_name': {'type': 'string', 'description': 'Nom affiché public (ex. Artworks Salon)'},
+            'username': {'type': 'string', 'description': 'Optionnel — identifiant technique, 3-64 car.'},
             'email': {'type': 'string'},
             'password': {'type': 'string'},
             'plan': {'type': 'string', 'description': 'free, gratuit, portfolio, pro, membre, patron, premium…'},
         },
-        ['role', 'username', 'email', 'password'],
+        ['role', 'email', 'password'],
     ),
 ]
 
@@ -348,8 +350,14 @@ def _normalize_plan_slug(role: str, plan: str) -> str:
     return normalize_plan(role, p)
 
 
+def _slug_username(base: str) -> str:
+    s = re.sub(r'[^a-zA-Z0-9_-]', '', (base or '').replace(' ', ''))
+    return s[:64] if len(s) >= 3 else ''
+
+
 def _unique_username(base: str) -> str:
-    base = re.sub(r'\s+', ' ', (base or 'membre').strip())[:64]
+    slug = _slug_username(base)
+    base = slug or re.sub(r'\s+', '', (base or 'membre').strip())[:64]
     if len(base) < 3:
         base = 'membre'
     candidate = base
@@ -358,6 +366,95 @@ def _unique_username(base: str) -> str:
         candidate = f'{base}{n}'
         n += 1
     return candidate
+
+
+def parse_signup_credentials(text: str) -> dict[str, str] | None:
+    """Extrait email, mot de passe et nom depuis un message utilisateur (FR)."""
+    if not text:
+        return None
+    t = text.strip()
+    low = t.lower()
+
+    email = None
+    m = re.search(r'(?:mail|email)\s*[:=]\s*(\S+@\S+)', t, re.I)
+    if m:
+        email = m.group(1).strip().rstrip('.,;')
+    if not email:
+        m = re.search(r'[\w.+-]+@[\w.-]+\.\w+', t)
+        if m:
+            email = m.group(0).strip().rstrip('.,;')
+    if not email:
+        return None
+
+    password = None
+    m = re.search(r'(?:mdp|mot\s*de\s*passe|password)\s*[:=]\s*(\S+)', t, re.I)
+    if m:
+        password = m.group(1).strip().rstrip('.,;')
+    if not password or len(password) < 6:
+        return None
+
+    display_name = ''
+    m = re.search(
+        r'(?:nom|username|utilisateur|galerie)\s*[:=]\s*([^|\n]+?)(?:\s*\||\s+formule|\s+role|\s+rôle|$)',
+        t,
+        re.I,
+    )
+    if m:
+        display_name = m.group(1).strip()
+
+    role = ''
+    if 'galerie' in low:
+        role = 'galerie'
+    elif 'artiste' in low:
+        role = 'artiste'
+    elif 'collectionneur' in low:
+        role = 'collectionneur'
+
+    plan = 'free'
+    m = re.search(r'formule\s*[:=]\s*(\S+)', t, re.I)
+    if m:
+        plan = m.group(1).strip().rstrip('.,;')
+    elif any(w in low for w in ('gratuit', 'gratuite', 'découverte', 'decouverte', 'free')):
+        plan = 'gratuit'
+
+    out: dict[str, str] = {
+        'email': email.lower(),
+        'password': password,
+        'display_name': display_name,
+        'plan': plan,
+    }
+    if role:
+        out['role'] = role
+    return out
+
+
+def format_signup_reply(result: dict, *, role: str = 'galerie') -> str:
+    if result.get('error'):
+        err = result['error']
+        if result.get('code') == 'email_taken':
+            return (
+                f'**{err}**\n\n'
+                'Vérifiez votre mot de passe ou utilisez [mot de passe oublié](/forgot-password).'
+            )
+        return f'**{err}**'
+
+    name = result.get('display_name') or result.get('username') or 'votre compte'
+    role_label = {'galerie': 'galerie', 'artiste': 'artiste', 'collectionneur': 'collectionneur'}.get(
+        result.get('role') or role, role
+    )
+    if result.get('existing_account'):
+        intro = f'Votre compte **{name}** est connecté (rôle : **{role_label}**).'
+        if result.get('role_changed'):
+            intro = f'Compte existant converti en **{role_label}** — bienvenue **{name}** !'
+    else:
+        intro = f'Votre compte **{role_label}** *{name}* est créé !'
+
+    return (
+        f'{intro}\n\n'
+        f'- **Formule** : Découverte (gratuite)\n'
+        f'- [Accéder au tableau de bord](/dashboard)\n\n'
+        f'Ajoutez vos premières œuvres depuis le dashboard.'
+    )
 
 
 def execute_tool(name: str, args: dict, ctx: dict) -> dict:
@@ -468,6 +565,7 @@ def execute_tool(name: str, args: dict, ctx: dict) -> dict:
             return {'error': 'Vous êtes déjà connecté. Déconnectez-vous pour créer un autre compte.'}
         role = (args.get('role') or 'collectionneur').strip()
         username = (args.get('username') or '').strip()
+        display_name = (args.get('display_name') or '').strip()
         email = (args.get('email') or '').strip().lower()
         password = args.get('password') or ''
         plan = (args.get('plan') or 'free').strip()
@@ -475,23 +573,61 @@ def execute_tool(name: str, args: dict, ctx: dict) -> dict:
             return {'error': 'Rôle invalide — utilisez artiste, galerie ou collectionneur.'}
         if not email or len(password) < 6:
             return {'error': 'Email et mot de passe (6+ caractères) requis.'}
+        if not display_name and username:
+            display_name = username
+        name_seed = display_name or username or email.split('@')[0]
         if not username or len(username) < 3:
-            username = _unique_username(email.split('@')[0])
+            username = _unique_username(_slug_username(name_seed) or name_seed)
         else:
-            username = _unique_username(username)
+            username = _unique_username(_slug_username(username) or username)
         existing = User.query.filter_by(email=email).first()
         if existing:
+            if not existing.check_password(password):
+                return {
+                    'error': 'Cet email est déjà utilisé avec un autre mot de passe.',
+                    'code': 'email_taken',
+                    'existing_username': existing.username,
+                    'existing_role': existing.role,
+                }
+            role_changed = existing.role != role
+            if role_changed:
+                existing.role = role
+                existing.subscription_plan = 'free'
+                existing.subscription_status = 'active'
+            if display_name:
+                existing.display_name = display_name[:120]
+            db.session.commit()
+            try:
+                from .crm.auto_segments import classify_user
+                classify_user(existing)
+            except Exception:
+                pass
+            try:
+                login_user(existing)
+            except Exception as exc:
+                _log.warning('Aria login existing user failed: %s', exc)
+            ctx['user'] = existing
+            _side(ctx, {'type': 'login', 'user_id': existing.id})
+            _side(ctx, {'type': 'reload'})
             return {
-                'error': 'Cet email est déjà utilisé.',
-                'code': 'email_taken',
-                'existing_username': existing.username,
-                'existing_role': existing.role,
-                'hint': 'Utilisez login_account avec le même email et mot de passe, puis change_my_role si besoin.',
+                'ok': True,
+                'existing_account': True,
+                'role_changed': role_changed,
+                'user_id': existing.id,
+                'username': existing.username,
+                'display_name': existing.display_name or existing.username,
+                'role': existing.role,
+                'logged_in': True,
             }
         from .auth import _apply_free_plan, _welcome_user
 
         slug = _normalize_plan_slug(role, plan)
-        u = User(username=username, email=email, role=role, display_name=username)
+        u = User(
+            username=username,
+            email=email,
+            role=role,
+            display_name=(display_name or username)[:120],
+        )
         u.set_password(password)
         pending_paid = _apply_free_plan(u, role, slug)
         try:
