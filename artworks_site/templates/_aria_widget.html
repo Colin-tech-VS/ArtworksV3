@@ -1,6 +1,8 @@
 <div class="aria-root" id="aria-widget"
      data-api-url="{{ url_for('main.aria_chat') }}"
-     data-site-url="{{ site_url }}">
+     data-upload-url="{{ url_for('main.aria_upload') }}"
+     data-site-url="{{ site_url }}"
+     data-logged-in="{{ '1' if current_user.is_authenticated else '0' }}">
 
   <button type="button" class="aria-fab" data-aria-fab aria-label="Ouvrir Aria, assistante Artworks">
     <span class="aria-fab-pulse" aria-hidden="true"></span>
@@ -34,7 +36,7 @@
     <div class="aria-messages" data-aria-messages>
       <div class="aria-welcome" data-aria-welcome>
         <h3>Bonjour, je suis Aria</h3>
-        <p>Votre guide Artworks — formules, achat d'œuvres, inscription artiste ou galerie, tout ce qui concerne la plateforme.</p>
+        <p>{% if current_user.is_authenticated %}Connecté en tant que <strong>{{ current_user.name }}</strong> — je peux modifier votre profil, œuvres et abonnement.{% else %}Votre guide Artworks — formules, achat, inscription, création de compte.{% endif %}</p>
         <div class="aria-suggestions">
           <button type="button" class="aria-suggestion" data-aria-suggestion="Qu'est-ce qu'Artworks et comment ça marche ?">Qu'est-ce qu'Artworks ?</button>
           <button type="button" class="aria-suggestion" data-aria-suggestion="Quelles sont les formules et tarifs pour un artiste ?">Formules artiste & tarifs</button>
@@ -47,7 +49,11 @@
     <div class="aria-compose">
       <form data-aria-form>
         <div class="aria-compose-inner">
-          <textarea data-aria-input rows="1" placeholder="Posez votre question sur Artworks…" maxlength="2000" aria-label="Votre message"></textarea>
+          <input type="file" accept="image/jpeg,image/png,image/gif,image/webp" data-aria-file hidden>
+          <button type="button" class="aria-attach" data-aria-attach title="Joindre une image" aria-label="Joindre une image">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+          </button>
+          <textarea data-aria-input rows="1" placeholder="{% if current_user.is_authenticated %}Demandez une action ou une question…{% else %}Posez votre question sur Artworks…{% endif %}" maxlength="2000" aria-label="Votre message"></textarea>
           <button type="submit" class="aria-send" data-aria-send aria-label="Envoyer">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
           </button>

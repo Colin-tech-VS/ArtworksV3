@@ -86,7 +86,7 @@ def create_app():
         from .pricing_store import pricing_context
         ctx['pricing'] = pricing_context()
         from .aria_assistant import aria_enabled, aria_show_on_vitrine
-        ctx['aria_enabled'] = aria_enabled() and aria_show_on_vitrine(request.endpoint)
+        ctx['aria_enabled'] = aria_enabled() and aria_show_on_vitrine(request.endpoint, request.blueprint)
         ctx['site_url'] = (app.config.get('SITE_URL') or '').rstrip('/') or 'https://artworksdigital.fr'
         if request.blueprint == 'crm':
             from .crm.crm_ctx import (

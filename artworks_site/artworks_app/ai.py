@@ -22,7 +22,29 @@ def _cfg(name, default=''):
     return current_app.config.get(name, default)
 
 
-def chat_completions(messages, *, temperature=0.55, max_tokens=600, model=None, timeout=45):
+def chat_completions(messages, *, temperature=0.55, max_tokens=600, model=None, timeout=45,
+                     tools=None, tool_choice='auto'):
+    """Appel Mistral chat/completions. Retourne le texte assistant si pas d'outils, sinon la réponse API complète."""
+    data = chat_completions_api(
+        messages,
+        temperature=temperature,
+        max_tokens=max_tokens,
+        model=model,
+        timeout=timeout,
+        tools=tools,
+        tool_choice=tool_choice,
+    )
+    if tools:
+        return data
+    try:
+        content = data['choices'][0]['message']['content']
+        return (content or '').strip()
+    except (KeyError, IndexError, TypeError) as e:
+        raise CuratorialAIError('Réponse Mistral inattendue.') from e
+
+
+def chat_completions_api(messages, *, temperature=0.55, max_tokens=600, model=None, timeout=45,
+                         tools=None, tool_choice='auto'):
     api_key = _cfg('MISTRAL_API_KEY')
     if not api_key:
         raise CuratorialAIError('MISTRAL_API_KEY non configurée.')
@@ -32,6 +54,9 @@ def chat_completions(messages, *, temperature=0.55, max_tokens=600, model=None, 
         'temperature': temperature,
         'max_tokens': max_tokens,
     }
+    if tools:
+        payload['tools'] = tools
+        payload['tool_choice'] = tool_choice
     body = json.dumps(payload).encode('utf-8')
     req = urllib.request.Request(
         MISTRAL_ENDPOINT,
@@ -46,7 +71,7 @@ def chat_completions(messages, *, temperature=0.55, max_tokens=600, model=None, 
     try:
         with urllib.request.urlopen(req, timeout=timeout) as r:
             data = json.loads(r.read().decode('utf-8'))
-        return data['choices'][0]['message']['content'].strip()
+        return data
     except urllib.error.HTTPError as e:
         msg = e.read().decode('utf-8', errors='replace')[:300]
         if e.code == 429:

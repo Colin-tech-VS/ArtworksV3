@@ -336,7 +336,7 @@
 .aria-compose-inner {
   display: flex;
   align-items: flex-end;
-  gap: 8px;
+  gap: 6px;
   background: var(--aria-surface);
   border: 1px solid var(--aria-border);
   border-radius: 16px;
@@ -360,6 +360,25 @@
   outline: none;
 }
 .aria-compose textarea::placeholder { color: var(--aria-muted); }
+.aria-attach {
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--aria-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: color 0.2s, background 0.2s;
+}
+.aria-attach:hover {
+  background: var(--aria-surface-2);
+  color: var(--aria-accent);
+}
+.aria-attach.is-busy { opacity: 0.4; pointer-events: none; }
 .aria-send {
   width: 36px;
   height: 36px;

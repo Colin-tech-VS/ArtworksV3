@@ -968,3 +968,28 @@ def aria_chat():
         status = 429 if 'Limite' in result['error'] else 400
         return jsonify(result), status
     return jsonify(result)
+
+
+@bp.route('/api/aria/upload', methods=['POST'])
+def aria_upload():
+    from .aria_assistant import aria_enabled
+    from .aria_tools import push_pending_image, save_upload_file
+
+    if not aria_enabled():
+        return jsonify({'error': 'Aria indisponible.'}), 503
+    f = request.files.get('image') or request.files.get('file')
+    if not f or not f.filename:
+        return jsonify({'error': 'Fichier image requis.'}), 400
+    ext = (f.filename.rsplit('.', 1)[-1] if '.' in f.filename else '').lower()
+    if ext not in ('jpg', 'jpeg', 'png', 'gif', 'webp'):
+        return jsonify({'error': 'Format accepté : jpg, png, gif, webp.'}), 400
+    name = save_upload_file(f)
+    if not name:
+        return jsonify({'error': 'Échec upload.'}), 400
+    push_pending_image(name)
+    return jsonify({
+        'ok': True,
+        'filename': name,
+        'url': url_for('static', filename=f'uploads/{name}'),
+        'message': 'Image reçue — dites à Aria de l\'assigner à une œuvre ou au profil.',
+    })

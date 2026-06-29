@@ -6,7 +6,8 @@ from typing import Any
 
 from flask import current_app, session
 
-from .ai import CuratorialAIError, chat_completions
+from .ai import CuratorialAIError, chat_completions_api
+from .aria_tools import _MAX_AGENT_STEPS, run_tool_calls, tools_for_user
 from .offer_pages import OFFER_CONFIG
 from .subscriptions import ROLE_LABELS, plans_for_role, price_label
 
@@ -28,8 +29,16 @@ _ARIA_VITRINE_ENDPOINTS = frozenset({
 })
 
 
-def aria_show_on_vitrine(endpoint: str | None) -> bool:
-    return endpoint in _ARIA_VITRINE_ENDPOINTS
+def aria_show_on_vitrine(endpoint: str | None, blueprint: str | None = None) -> bool:
+    if blueprint == 'crm':
+        return False
+    if blueprint == 'auth' and endpoint == 'auth.logout':
+        return False
+    if blueprint in ('main', 'auth'):
+        return True
+    if endpoint in _ARIA_VITRINE_ENDPOINTS:
+        return True
+    return False
 
 
 def _site_base() -> str:
@@ -113,35 +122,42 @@ FONCTIONNALITÉS CLÉS ARTWORKS :
     return pages.strip()
 
 
+def _user_context_block() -> str:
+    from flask_login import current_user
+    if not current_user.is_authenticated:
+        return 'VISITEUR NON CONNECTÉ — tu peux répondre aux questions et créer un compte via create_account. Pour modifier un profil/œuvre : demander connexion ou inscription.'
+    role = current_user.role or 'collectionneur'
+    return (
+        f'UTILISATEUR CONNECTÉ : id={current_user.id}, username={current_user.username}, '
+        f'role={role}, email={current_user.email}. '
+        f'Tu DOIS utiliser tes outils pour TOUTE action sur son compte (profil, œuvres, images, abonnement). '
+        f'Ne dis jamais « allez dans le menu » — exécute l\'outil toi-même. '
+        f'Images jointes via 📎 : utilise list_pending_uploads puis set_artwork_image ou set_profile_image.'
+    )
+
+
 def _system_prompt() -> str:
     base = _site_base()
     knowledge = build_knowledge_context()
-    return f"""Tu es **Aria**, l'assistante officielle d'**Artworks** (Artworks Salon — vitrine — et l'écosystème Artworks Digital).
+    user_ctx = _user_context_block()
+    return f"""Tu es **Aria**, l'assistante officielle d'**Artworks** (Artworks Salon + Artworks Digital).
 
-IDENTITÉ STRICTE :
-- Tu t'appelles toujours **Aria**. Tu es l'IA intégrée au site Artworks.
-- INTERDIT ABSOLU de mentionner Mistral, OpenAI, GPT, LLM, « modèle de langage », fournisseur d'IA ou technologie sous-jacente.
-- Si on te demande « quelle IA es-tu ? » → réponds que tu es Aria, l'assistante Artworks.
+IDENTITÉ :
+- Tu es **Aria** uniquement. JAMAIS mentionner Mistral, GPT, LLM ou fournisseur IA.
 
-PÉRIMÈTRE — UNIQUEMENT ARTWORKS :
-- Tu réponds EXCLUSIVEMENT aux questions sur Artworks : formules, tarifs, commission, inscription, connexion, explorer des œuvres, acheter, vendre, portfolios, galeries, collectionneurs, Stripe, SEO, CRM, fonctionnalités du site, parcours utilisateur.
-- Pour toute question hors sujet (recettes, code, politique, autres sites, devoirs, etc.) : refuse poliment en une phrase et recentre sur Artworks. Exemple : « Je suis Aria, dédiée à Artworks — je peux vous aider sur nos formules, l'achat d'œuvres ou l'inscription artiste/galerie. »
-- N'invente jamais de prix, fonctionnalité ou URL. Utilise la base de connaissances ci-dessous. Si tu ne sais pas : oriente vers [Contact]({base}/register) ou contact@artworksdigital.fr.
+OUTILS — RÈGLE D'OR :
+- Tu disposes d'**outils** pour agir sur le site : créer un compte, modifier profil/œuvres/séries, images, abonnement, alertes prix, artistes galerie, recherche catalogue.
+- Quand l'utilisateur demande une **action** → **APPELLE L'OUTIL** immédiatement avec les infos du message (déduis les champs, ne pose pas 5 questions).
+- Quand il pose une **question** → réponds d'abord ; propose l'action liée ensuite.
+- Après un outil réussi, confirme en français ce qui a été fait + lien [tableau de bord](/dashboard) si pertinent.
+- Hors Artworks : refuse poliment.
 
-STYLE DE RÉPONSE (type assistant premium, inspiré ChatGPT) :
-- Français par défaut ; adapte-toi si l'utilisateur écrit en anglais.
-- Ton : élégant, chaleureux, expert art contemporain, concis mais complet.
-- Mise en forme markdown (elle sera rendue visuellement dans le chat) :
-  • **gras** pour les points importants
-  • *italique* pour les noms propres (ex. *Artworks Salon*, *Artworks Digital*, *Patron*)
-  • ### Titre de section pour structurer les réponses longues (ex. ### Comment ça marche ?)
-  • listes à puces avec - en début de ligne
-  • liens : [texte](/chemin) — chemins relatifs (/explorer, /tarifs, /register?role=artiste)
-- N'utilise pas de syntaxe HTML brute.
-- 2 à 8 phrases selon la complexité ; plus long si comparaison de formules.
-- Propose 1 à 2 suggestions de suite en fin de message.
+{user_ctx}
 
-BASE DE CONNAISSANCES ARTWORKS :
+STYLE (markdown rendu visuellement) :
+- **gras**, *italique*, ### titres, listes -, liens [texte](/chemin)
+
+BASE DE CONNAISSANCES :
 {knowledge}
 """
 
@@ -176,7 +192,9 @@ def clear_history() -> None:
 
 
 def chat(user_message: str, *, reset: bool = False) -> dict[str, Any]:
-    """Envoie un message utilisateur, retourne {{reply, error}}."""
+    """Agent Aria avec function calling."""
+    from flask_login import current_user
+
     text = (user_message or '').strip()[:_MAX_MESSAGE_LEN]
     if not text:
         return {'error': 'Message vide.'}
@@ -189,30 +207,56 @@ def chat(user_message: str, *, reset: bool = False) -> dict[str, Any]:
         clear_history()
 
     history = _history()
-    messages = [{'role': 'system', 'content': _system_prompt()}]
+    ctx: dict[str, Any] = {
+        'user': current_user,
+        'side_effects': [],
+    }
+    tools = tools_for_user(current_user)
+    model = current_app.config.get('MISTRAL_MODEL') or 'mistral-small-latest'
+
+    messages: list[dict] = [{'role': 'system', 'content': _system_prompt()}]
     for m in history:
         if m.get('role') in ('user', 'assistant') and m.get('content'):
             messages.append({'role': m['role'], 'content': m['content']})
     messages.append({'role': 'user', 'content': text})
 
+    reply = ''
     try:
-        reply = chat_completions(
-            messages,
-            temperature=0.45,
-            max_tokens=900,
-            model=current_app.config.get('MISTRAL_MODEL') or 'mistral-small-latest',
-        )
+        for _ in range(_MAX_AGENT_STEPS):
+            data = chat_completions_api(
+                messages,
+                tools=tools,
+                temperature=0.35,
+                max_tokens=1200,
+                model=model,
+                timeout=90,
+            )
+            msg = data['choices'][0]['message']
+            tool_calls = msg.get('tool_calls')
+            if tool_calls:
+                messages.append({
+                    'role': 'assistant',
+                    'content': msg.get('content') or '',
+                    'tool_calls': tool_calls,
+                })
+                messages.extend(run_tool_calls(tool_calls, ctx))
+                continue
+            reply = (msg.get('content') or '').strip()
+            break
     except CuratorialAIError:
         return {'error': 'Aria rencontre une difficulté technique. Réessayez dans un instant.'}
     except Exception:
         return {'error': 'Aria n\'est pas disponible pour le moment.'}
 
-    reply = (reply or '').strip()
     if not reply:
-        return {'error': 'Réponse vide — reformulez votre question.'}
+        reply = 'Voilà ce que j\'ai fait pour vous. Souhaitez-vous autre chose sur Artworks ?'
 
     history.append({'role': 'user', 'content': text})
     history.append({'role': 'assistant', 'content': reply})
     _save_history(history)
 
-    return {'reply': reply, 'name': ARIA_NAME}
+    out: dict[str, Any] = {'reply': reply, 'name': ARIA_NAME}
+    effects = ctx.get('side_effects') or []
+    if effects:
+        out['actions'] = effects
+    return out

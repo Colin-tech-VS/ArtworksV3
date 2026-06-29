@@ -5,6 +5,7 @@
   if (!root) return;
 
   var apiUrl = root.dataset.apiUrl;
+  var uploadUrl = root.dataset.uploadUrl;
   var siteUrl = (root.dataset.siteUrl || '').replace(/\/$/, '');
 
   var fab = root.querySelector('[data-aria-fab]');
@@ -18,6 +19,8 @@
   var closeBtns = root.querySelectorAll('[data-aria-close]');
   var resetBtn = root.querySelector('[data-aria-reset]');
   var suggestions = root.querySelectorAll('[data-aria-suggestion]');
+  var attachBtn = root.querySelector('[data-aria-attach]');
+  var fileInput = root.querySelector('[data-aria-file]');
 
   var busy = false;
 
@@ -209,6 +212,29 @@
     }
   }
 
+  function applyActions(actions) {
+    if (!actions || !actions.length) return;
+    actions.forEach(function (a) {
+      if (a.type === 'redirect' && a.url) {
+        window.location.href = a.url;
+      } else if (a.type === 'reload') {
+        setTimeout(function () { window.location.reload(); }, 800);
+      } else if (a.type === 'login') {
+        setTimeout(function () { window.location.reload(); }, 600);
+      }
+    });
+  }
+
+  function uploadImage(file) {
+    if (!file || !uploadUrl) return Promise.reject();
+    var fd = new FormData();
+    fd.append('image', file);
+    if (attachBtn) attachBtn.classList.add('is-busy');
+    return fetch(uploadUrl, { method: 'POST', body: fd, credentials: 'same-origin' })
+      .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, data: d }; }); })
+      .finally(function () { if (attachBtn) attachBtn.classList.remove('is-busy'); });
+  }
+
   function setBusy(on) {
     busy = on;
     sendBtn.disabled = on;
@@ -241,6 +267,7 @@
         if (typing) typing.remove();
         if (res.ok && res.data.reply) {
           appendAssistant(res.data.reply, true);
+          applyActions(res.data.actions);
         } else {
           appendAssistant(
             res.data.error || 'Aria rencontre une difficulté. Réessayez dans un instant.',
@@ -300,6 +327,29 @@
       sendMessage(btn.dataset.ariaSuggestion || btn.textContent);
     });
   });
+
+  if (attachBtn && fileInput) {
+    attachBtn.addEventListener('click', function () { fileInput.click(); });
+    fileInput.addEventListener('change', function () {
+      var file = fileInput.files && fileInput.files[0];
+      fileInput.value = '';
+      if (!file) return;
+      uploadImage(file)
+        .then(function (res) {
+          if (res.ok) {
+            appendAssistant(
+              res.data.message || 'Image reçue — indiquez-moi sur quelle œuvre ou quel profil l\'appliquer.',
+              false
+            );
+          } else {
+            appendAssistant(res.data.error || 'Échec de l\'envoi de l\'image.', false);
+          }
+        })
+        .catch(function () {
+          appendAssistant('Impossible d\'envoyer l\'image.', false);
+        });
+    });
+  }
 
   document.addEventListener('keydown', function (e) {
     if (e.key === 'Escape' && panel.classList.contains('is-open')) {
