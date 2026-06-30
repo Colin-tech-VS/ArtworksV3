@@ -172,6 +172,21 @@ class Artwork(db.Model):
         return " ".join(p for p in parts if p)
 
 
+class ArtworkFavorite(db.Model):
+    """Œuvre mise en favori par un utilisateur connecté."""
+    __tablename__ = 'artwork_favorite'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
+    artwork_id = db.Column(db.Integer, db.ForeignKey('artwork.id'), nullable=False, index=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    __table_args__ = (
+        db.UniqueConstraint('user_id', 'artwork_id', name='uq_favorite_user_artwork'),
+    )
+
+    user = db.relationship('User', backref=db.backref('artwork_favorites', lazy='dynamic'))
+    artwork = db.relationship('Artwork', backref=db.backref('favorited_by', lazy='dynamic'))
+
+
 class GalleryArtist(db.Model):
     """Artistes rattachés à une galerie (formules Pro / Premium)."""
     id = db.Column(db.Integer, primary_key=True)

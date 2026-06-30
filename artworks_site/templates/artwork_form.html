@@ -77,7 +77,7 @@
 
     <div class="form-section">
       <h3>Visuel</h3>
-      <p>Image principale de l'œuvre (JPG, PNG).</p>
+      <p>Image principale de l'œuvre (JPG, PNG, GIF ou WebP).</p>
     </div>
 
     <div class="field">
@@ -85,7 +85,7 @@
       {% if is_edit and artwork.image %}
         <div style="margin-bottom:10px"><img src="{{ img_url(artwork.image) }}" alt="" style="max-height:160px;border:1px solid var(--hair)"></div>
       {% endif %}
-      {{ form.image() }}
+      {{ form.image(accept='image/jpeg,image/png,image/gif,image/webp') }}
       {% for e in form.image.errors %}<div class="err">{{ e }}</div>{% endfor %}
     </div>
 

@@ -6,6 +6,9 @@ from wtforms.validators import (DataRequired, Email, EqualTo, Length, Optional,
 from flask_wtf.file import FileField, FileAllowed
 from .catalog import select_choices
 
+IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'gif', 'webp']
+IMAGE_FILE_MSG = 'Formats acceptés : JPG, PNG, GIF, WebP.'
+
 
 def _unique_username(form, field):
     from .models import User
@@ -89,7 +92,7 @@ class ArtworkForm(FlaskForm):
     ], validators=[Optional()])
     year = StringField('Année', validators=[Optional(), Length(max=8)])
     series_id = SelectField('Série', coerce=int, choices=[], validators=[Optional()])
-    image = FileField('Image', validators=[FileAllowed(['jpg', 'jpeg', 'png', 'gif'], 'Images only')])
+    image = FileField('Image', validators=[FileAllowed(IMAGE_EXTENSIONS, IMAGE_FILE_MSG)])
     submit = SubmitField('Publier')
 
 
@@ -98,7 +101,7 @@ class SeriesForm(FlaskForm):
     description = TextAreaField('Description', validators=[Optional(), Length(max=2000)])
     year = StringField('Année', validators=[Optional(), Length(max=8)])
     cover = FileField('Image de couverture',
-                      validators=[FileAllowed(['jpg', 'jpeg', 'png', 'gif'], 'Images only')])
+                      validators=[FileAllowed(IMAGE_EXTENSIONS, IMAGE_FILE_MSG)])
     submit = SubmitField('Enregistrer')
 
 
@@ -112,11 +115,11 @@ class ProfileForm(FlaskForm):
     statement = TextAreaField('Statement', validators=[Optional(), Length(max=4000)])
     bio = TextAreaField('Biographie', validators=[Optional(), Length(max=4000)])
     avatar = FileField('Photo de profil',
-                       validators=[FileAllowed(['jpg', 'jpeg', 'png', 'gif'], 'Images only')])
+                       validators=[FileAllowed(IMAGE_EXTENSIONS, IMAGE_FILE_MSG)])
     logo = FileField('Logo',
-                     validators=[FileAllowed(['jpg', 'jpeg', 'png', 'gif', 'svg'], 'Images only')])
+                     validators=[FileAllowed(IMAGE_EXTENSIONS + ['svg'], IMAGE_FILE_MSG)])
     cover = FileField('Bannière',
-                      validators=[FileAllowed(['jpg', 'jpeg', 'png', 'gif'], 'Images only')])
+                      validators=[FileAllowed(IMAGE_EXTENSIONS, IMAGE_FILE_MSG)])
     submit = SubmitField('Enregistrer')
 
 

@@ -340,6 +340,24 @@ def purchase_success(artwork_id):
     return redirect(url_for('main.artwork_detail', artwork_id=a.id))
 
 
+# ---------- favoris (compte connecté) ----------
+@bp.route('/api/favorites')
+@login_required
+def favorites_list():
+    from .favorites import favorite_ids_for_user, favorite_count_for_user
+    ids = favorite_ids_for_user(current_user)
+    return jsonify({'ok': True, 'ids': ids, 'count': favorite_count_for_user(current_user)})
+
+
+@bp.route('/api/favorites/<int:artwork_id>', methods=['POST'])
+@login_required
+def favorites_toggle(artwork_id):
+    from .favorites import toggle_favorite
+    Artwork.query.get_or_404(artwork_id)
+    liked, count = toggle_favorite(current_user, artwork_id)
+    return jsonify({'ok': True, 'liked': liked, 'artwork_id': artwork_id, 'count': count})
+
+
 # ---------- dashboard ----------
 @bp.route('/dashboard')
 @login_required
@@ -372,6 +390,7 @@ def dashboard():
                 sync_artwork_deviantart_stats(art)
     from .stripe_connect import connect_status, payout_label_for_role
     from . import billing
+    from .favorites import favorite_artworks_for_user
     return render_template(
         'dashboard.html',
         artworks=artworks,
@@ -384,6 +403,7 @@ def dashboard():
         ent=ent,
         gallery_artists=gallery_artists,
         price_alerts=price_alerts,
+        favorite_artworks=favorite_artworks_for_user(current_user),
         connect=connect_status(current_user),
         connect_payout_label=payout_label_for_role(current_user.role or ''),
         stripe_ready=billing.stripe_ready(),
@@ -432,6 +452,9 @@ def create_artwork():
         name = _save_upload(form.image.data)
         if name:
             a.image = name
+        else:
+            flash('Une image est requise (JPG, PNG, GIF ou WebP).', 'error')
+            return render_template('artwork_form.html', form=form, mode='create', ent=ent, publish_ok=ok)
         db.session.add(a)
         db.session.commit()
         _sync_curatorial_note(current_user, 'Œuvre publiée.')

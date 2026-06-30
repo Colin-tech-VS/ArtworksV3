@@ -11,7 +11,12 @@
 <link rel="stylesheet" href="{{ url_for('static', filename='css/site.css') }}">
 {% block page_css %}{% endblock %}
 </head>
-<body class="{% block body_class %}{% endblock %}"{% if google_places_key %} data-google-places-key="{{ google_places_key }}"{% endif %}>
+<body class="{% block body_class %}{% endblock %}"{% if google_places_key %} data-google-places-key="{{ google_places_key }}"{% endif %}
+      data-user-authenticated="{{ '1' if current_user.is_authenticated else '0' }}"
+      data-login-url="{{ url_for('auth.login') }}"
+      data-favorites-api="{{ url_for('main.favorites_list') }}"
+      data-favorite-toggle="{{ url_for('main.favorites_toggle', artwork_id=0) }}"
+      data-favorite-ids='{{ user_favorite_ids|tojson }}'>
 
 {% set active = active|default('') %}
 
@@ -33,9 +38,9 @@
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
         <input type="text" name="q" placeholder="Œuvre, artiste, galerie…" value="{{ q if q is defined else '' }}">
       </form>
-      <a href="{{ url_for('main.explorer') }}" class="icon-btn" aria-label="Favoris">
+      <a href="{% if current_user.is_authenticated %}{{ url_for('main.dashboard') }}#favoris{% else %}{{ url_for('auth.login', next=request.path) }}{% endif %}" class="icon-btn" aria-label="Favoris" title="{% if current_user.is_authenticated %}Mes favoris{% else %}Connectez-vous pour enregistrer vos favoris{% endif %}">
         <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 21s-7.5-4.6-9.7-9.2C.9 8.5 2.3 5.2 5.5 5.2c1.9 0 3.4 1.1 4.5 2.8 1.1-1.7 2.6-2.8 4.5-2.8 3.2 0 4.6 3.3 3.2 6.6C19.5 16.4 12 21 12 21z"/></svg>
-        <span class="count" data-fav-count>0</span>
+        <span class="count" data-fav-count{% if not user_favorite_count %} style="display:none"{% endif %}>{{ user_favorite_count }}</span>
       </a>
       {% if current_user.is_authenticated %}
         {% if is_staff_user|default(false) %}

@@ -65,8 +65,13 @@ def create_app():
             ctx['effective_plan'] = effective_plan(current_user)
             from .crm.auth import is_staff_user
             ctx['is_staff_user'] = is_staff_user(current_user)
+            from .favorites import favorite_ids_for_user, favorite_count_for_user
+            ctx['user_favorite_ids'] = favorite_ids_for_user(current_user)
+            ctx['user_favorite_count'] = favorite_count_for_user(current_user)
         else:
             ctx['is_staff_user'] = False
+            ctx['user_favorite_ids'] = []
+            ctx['user_favorite_count'] = 0
         if current_user.is_authenticated and current_user.role in ('artiste', 'galerie'):
             from .stripe_connect import connect_status, payout_label_for_role, can_simulate_connect
             ctx['connect'] = connect_status(current_user)

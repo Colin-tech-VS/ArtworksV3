@@ -1,4 +1,5 @@
 {% extends '_dashboard_layout.html' %}
+{% from '_macros.html' import artcard %}
 {% set dash_active = 'overview' %}
 {% block title %}Tableau de bord — Artworks{% endblock %}
 
@@ -47,6 +48,25 @@
     </div>
   </article>
 </div>
+
+<section class="dash-panel reveal in" id="favoris">
+  <div class="dash-panel-head">
+    <div>
+      <h2>Mes favoris</h2>
+      <p class="sub">Œuvres enregistrées depuis votre compte — cliquez sur ♥ sur une fiche œuvre pour les ajouter.</p>
+    </div>
+    <a href="{{ url_for('main.explorer') }}" class="btn-line">Explorer la collection</a>
+  </div>
+  <div class="dash-panel-body">
+    {% if favorite_artworks %}
+    <div class="art-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:20px">
+      {% for a in favorite_artworks %}{{ artcard(a, 'meta') }}{% endfor %}
+    </div>
+    {% else %}
+    <p style="color:var(--grey);margin:0">Aucun favori pour l'instant. Parcourez la <a href="{{ url_for('main.explorer') }}" style="color:var(--accent)">collection</a> et cliquez sur le cœur d'une œuvre.</p>
+    {% endif %}
+  </div>
+</section>
 
 {% if profile_pct < 100 %}
 <section class="dash-progress reveal in">

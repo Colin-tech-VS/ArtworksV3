@@ -12,29 +12,69 @@
     window.addEventListener('scroll', onScroll, {passive:true});
   }
 
-  /* ---- Favourite hearts (local state) ---- */
-  const FAV_KEY = 'artworks_favs';
+  /* ---- Favourite hearts (compte connecté, enregistré en base) ---- */
+  const body = document.body;
+  const loggedIn = body.getAttribute('data-user-authenticated') === '1';
+  const loginUrl = body.getAttribute('data-login-url') || '/login';
+  const toggleTpl = body.getAttribute('data-favorite-toggle') || '/api/favorites/0';
   let favs = [];
-  try{ favs = JSON.parse(localStorage.getItem(FAV_KEY) || '[]'); }catch(e){ favs = []; }
+  try {
+    favs = JSON.parse(body.getAttribute('data-favorite-ids') || '[]').map(String);
+  } catch (e) { favs = []; }
 
-  function syncCount(){
+  function toggleUrl(id) {
+    return toggleTpl.replace(/\/0$/, '/' + id);
+  }
+
+  function loginRedirect() {
+    const next = window.location.pathname + window.location.search;
+    window.location.href = loginUrl + (loginUrl.indexOf('?') >= 0 ? '&' : '?') + 'next=' + encodeURIComponent(next);
+  }
+
+  function syncCount() {
     const el = document.querySelector('[data-fav-count]');
-    if(el){ el.textContent = favs.length; el.style.display = favs.length ? '' : 'none'; }
+    if (el) {
+      el.textContent = favs.length;
+      el.style.display = favs.length ? '' : 'none';
+    }
+  }
+
+  function setFavState(btn, on) {
+    btn.classList.toggle('is-fav', on);
+    btn.setAttribute('aria-label', on ? 'Retirer des favoris' : 'Ajouter aux favoris');
   }
 
   document.querySelectorAll('.fav').forEach(btn => {
     const id = btn.getAttribute('data-id') || btn.closest('.art')?.getAttribute('data-id') || '';
-    if(id && favs.includes(id)) btn.classList.add('is-fav');
+    if (id && favs.includes(String(id))) setFavState(btn, true);
     btn.addEventListener('click', e => {
-      e.preventDefault(); e.stopPropagation();
-      btn.classList.toggle('is-fav');
-      if(btn.classList.contains('is-fav')){
-        if(id && !favs.includes(id)) favs.push(id);
-      } else {
-        favs = favs.filter(f => f !== id);
+      e.preventDefault();
+      e.stopPropagation();
+      if (!id) return;
+      if (!loggedIn) {
+        loginRedirect();
+        return;
       }
-      try{ localStorage.setItem(FAV_KEY, JSON.stringify(favs)); }catch(e){}
-      syncCount();
+      const wasFav = btn.classList.contains('is-fav');
+      setFavState(btn, !wasFav);
+      fetch(toggleUrl(id), {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+      })
+        .then(r => r.json().then(d => ({ ok: r.ok, d: d })))
+        .then(res => {
+          if (!res.ok || !res.d.ok) throw new Error('toggle failed');
+          const sid = String(res.d.artwork_id);
+          if (res.d.liked) {
+            if (!favs.includes(sid)) favs.push(sid);
+          } else {
+            favs = favs.filter(f => f !== sid);
+          }
+          document.querySelectorAll('.fav[data-id="' + sid + '"]').forEach(b => setFavState(b, res.d.liked));
+          syncCount();
+        })
+        .catch(() => setFavState(btn, wasFav));
     });
   });
   syncCount();
