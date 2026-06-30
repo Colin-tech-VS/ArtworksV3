@@ -10,12 +10,25 @@
   var draftApplyUrl = shell ? shell.getAttribute('data-draft-apply') : '';
   var draftDiscardUrl = shell ? shell.getAttribute('data-draft-discard') : '';
   var publicUrl = shell ? shell.getAttribute('data-public-url') : '';
+  var liveFrame = shell ? shell.querySelector('[data-live-preview]') : null;
   var log = root.querySelector('[data-aria-log]');
   var form = root.querySelector('[data-aria-form]');
   var input = root.querySelector('[data-aria-input]');
   var busy = false;
 
+  function previewSrc() {
+    return previewUrl + (previewUrl.indexOf('?') >= 0 ? '&' : '?') + 't=' + Date.now();
+  }
+
   function refreshPreview() {
+    if (liveFrame && previewUrl) {
+      liveFrame.src = previewSrc();
+      var panel = shell.querySelector('.pe-live-preview');
+      if (panel) {
+        panel.classList.add('is-updated');
+        setTimeout(function () { panel.classList.remove('is-updated'); }, 600);
+      }
+    }
     if (window.PePagePreview) PePagePreview.refresh();
   }
 
@@ -77,7 +90,6 @@
     bar.innerHTML =
       '<span>Modifications en attente — validez pour publier ou annulez.</span>' +
       '<div class="pe-draft-actions">' +
-      '<button type="button" class="pe-tool pe-preview-btn" data-open-preview>Aperçu en direct</button>' +
       '<button type="button" class="pe-tool" data-draft-discard>Annuler</button>' +
       '<button type="button" class="btn-solid" data-draft-apply>Enregistrer</button>' +
       '</div>';
@@ -143,7 +155,7 @@
       }
     });
     if (preview) {
-      refreshPreview();
+      setTimeout(refreshPreview, 120);
       if (draft) showDraftBar();
     }
   }
@@ -192,9 +204,13 @@
     });
   });
 
+  var refreshBtn = shell && shell.querySelector('[data-live-refresh]');
+  if (refreshBtn) refreshBtn.addEventListener('click', refreshPreview);
+
   bindDraftButtons(shell);
 
   if (window.PePagePreview && previewUrl) {
     PePagePreview.init({ previewUrl: previewUrl, publicUrl: publicUrl });
   }
+  refreshPreview();
 })();

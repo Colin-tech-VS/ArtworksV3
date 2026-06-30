@@ -2,6 +2,8 @@
    Dashboard — shared shell (artiste / galerie / collectionneur)
    ============================================================ */
 
+body.is-dashboard main{ padding:0; }
+
 .dash-page{ padding:clamp(24px,4vw,48px) 0 clamp(80px,10vw,48px); min-height:calc(100vh - 72px); }
 .dash-shell{ display:grid; grid-template-columns:260px 1fr; gap:clamp(24px,3vw,40px); align-items:start; }
 

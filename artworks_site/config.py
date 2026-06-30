@@ -78,6 +78,11 @@ class Config:
     MAIL_ENABLED = bool(MAIL_USERNAME and MAIL_PASSWORD and MAIL_SERVER)
     COMMISSION_RATE = float(os.environ.get('COMMISSION_RATE', '0.18'))
 
+    # Supabase — base PostgreSQL + stockage images persistant
+    SUPABASE_URL = _env_first('SUPABASE_URL', default='').rstrip('/')
+    SUPABASE_SERVICE_KEY = _env_first('SUPABASE_SERVICE_KEY', 'SUPABASE_KEY', default='')
+    SUPABASE_STORAGE_BUCKET = _env_first('SUPABASE_STORAGE_BUCKET', default='artworks-uploads')
+
     # Réseaux sociaux (alias V2 Scalingo artworksdigital)
     FACEBOOK_PAGE_ACCESS_TOKEN = _env_first('FACEBOOK_PAGE_ACCESS_TOKEN', 'FB_PAGE_TOKEN', 'FACEBOOK_PAGE_TOKEN')
     FACEBOOK_PAGE_ID = _env_first('FACEBOOK_PAGE_ID', 'FB_PAGE_ID')

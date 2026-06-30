@@ -18,3 +18,17 @@ CREATE TABLE IF NOT EXISTS _v2_migration_map (
 CREATE INDEX IF NOT EXISTS idx_v2_migration_v3 ON _v2_migration_map (v3_table, v3_id);
 
 COMMENT ON TABLE _v2_migration_map IS 'Correspondance IDs Artworks Digital V2 → Artworks V3';
+
+-- ---------------------------------------------------------------------------
+-- Storage : bucket public pour les uploads (images œuvres, avatars, etc.)
+-- Créer d'abord le bucket "artworks-uploads" (Public) dans Storage → New bucket
+-- Puis exécuter ce bloc si les uploads échouent en prod.
+-- ---------------------------------------------------------------------------
+
+-- INSERT INTO storage.buckets (id, name, public)
+-- VALUES ('artworks-uploads', 'artworks-uploads', true)
+-- ON CONFLICT (id) DO UPDATE SET public = true;
+
+-- CREATE POLICY "Public read artworks-uploads"
+-- ON storage.objects FOR SELECT
+-- USING (bucket_id = 'artworks-uploads');

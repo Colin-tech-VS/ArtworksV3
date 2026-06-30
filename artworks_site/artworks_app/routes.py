@@ -4,27 +4,15 @@ from .models import Artwork, User, Series, CmsPage
 from . import db
 from flask_login import current_user, login_required
 from werkzeug.security import generate_password_hash
-from werkzeug.utils import secure_filename
 from datetime import datetime
-import os
-import uuid
 
 bp = Blueprint('main', __name__)
 
 
 # ---------- helpers ----------
 def _save_upload(file_storage):
-    if not file_storage or not file_storage.filename:
-        return None
-    filename = secure_filename(file_storage.filename)
-    name = f"{uuid.uuid4().hex}_{filename}"
-    upload_folder = current_app.config.get('UPLOAD_FOLDER')
-    try:
-        os.makedirs(upload_folder, exist_ok=True)
-    except Exception:
-        pass
-    file_storage.save(os.path.join(upload_folder, name))
-    return name
+    from .storage import save_upload
+    return save_upload(file_storage)
 
 
 def _series_choices_for(user):

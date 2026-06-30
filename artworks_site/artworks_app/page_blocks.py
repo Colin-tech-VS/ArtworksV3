@@ -16,9 +16,9 @@ ALLOWED_TYPES = ('heading', 'text', 'button', 'image', 'divider', 'slider', 'gal
 
 # Polices proposées (clé -> pile CSS) — Webflow-like
 FONT_STACKS = {
-    'sans': "'Helvetica Neue', Arial, sans-serif",
-    'serif': "Georgia, 'Times New Roman', serif",
-    'display': "'Playfair Display', Georgia, serif",
+    'sans': "'Outfit', 'Helvetica Neue', Arial, sans-serif",
+    'serif': "'Cormorant Garamond', Georgia, 'Times New Roman', serif",
+    'display': "'Cormorant Garamond', Georgia, serif",
     'mono': "'SFMono-Regular', Consolas, monospace",
 }
 ALLOWED_WEIGHTS = (300, 400, 500, 600, 700, 800)
@@ -29,8 +29,8 @@ CANVAS_W = 960  # largeur de référence du canvas
 
 # Palette éditoriale galerie (mode intelligent Aria)
 GALLERY_THEME: dict[str, dict] = {
-    'heading': {'font': 'display', 'size': 38, 'weight': 600, 'color': '#1a2832', 'align': 'center'},
-    'text': {'font': 'serif', 'size': 17, 'weight': 400, 'color': '#3d4f58', 'align': 'left'},
+    'heading': {'font': 'display', 'size': 42, 'weight': 600, 'color': '#1a2832', 'align': 'center'},
+    'text': {'font': 'serif', 'size': 18, 'weight': 400, 'color': '#3d4f58', 'align': 'left'},
     'button': {'font': 'sans', 'size': 15, 'weight': 600, 'bg': '#b8734a', 'color': '#ffffff', 'align': 'center'},
     'divider': {'color': '#c9b8a8'},
 }
@@ -107,6 +107,10 @@ def style_to_css(style: dict) -> str:
         parts.append(f"font-family:{FONT_STACKS[style['font']]}")
     if style.get('size'):
         parts.append(f"font-size:{style['size']}px")
+        if style.get('font') in ('serif', 'display'):
+            parts.append('line-height:1.45')
+        else:
+            parts.append('line-height:1.6')
     if style.get('weight'):
         parts.append(f"font-weight:{style['weight']}")
     if style.get('align'):
@@ -318,8 +322,8 @@ def arrange_vertical(blocks: list, *, width: int = CANVAS_W) -> list:
     Retourne des éléments sanitisés prêts à être stockés / rendus."""
     blocks = prepare_aria_blocks(blocks)
     out = []
-    y = 56
-    gap = 36
+    y = 64
+    gap = 44
     seq = 0
     default_w = {
         'heading': 760, 'text': 720, 'button': 280, 'image': 640,
@@ -360,3 +364,32 @@ def arrange_vertical(blocks: list, *, width: int = CANVAS_W) -> list:
             y += h + gap
             seq += 1
     return out
+
+
+def elements_to_blocks(elements: list) -> list[dict]:
+    """Reconvertit des éléments layout en blocs simples pour Aria (refonte in-place)."""
+    blocks: list[dict] = []
+    for el in elements or []:
+        if not isinstance(el, dict):
+            continue
+        etype = el.get('type')
+        if etype not in ALLOWED_TYPES:
+            continue
+        b: dict = {'type': etype}
+        if el.get('text'):
+            b['text'] = el.get('text')
+        if el.get('href'):
+            b['href'] = el.get('href')
+        if el.get('src'):
+            b['src'] = el.get('src')
+        if el.get('images'):
+            b['images'] = list(el.get('images') or [])
+        if el.get('w'):
+            b['width'] = el.get('w')
+        if el.get('h') and etype in ('image', 'slider', 'gallery'):
+            b['height'] = el.get('h')
+        style = el.get('style')
+        if isinstance(style, dict) and style:
+            b['style'] = dict(style)
+        blocks.append(b)
+    return blocks

@@ -3,16 +3,13 @@ from __future__ import annotations
 
 import json
 import logging
-import os
 import re
-import uuid
 from datetime import datetime
 from typing import Any
 
 from flask import current_app, session, url_for
 from flask_login import current_user, login_user
 from sqlalchemy.exc import IntegrityError
-from werkzeug.utils import secure_filename
 
 from . import db
 from .models import Artwork, GalleryArtist, PriceAlert, Series, User
@@ -24,22 +21,14 @@ _PENDING_KEY = 'aria_pending_images'
 
 
 def _image_url(value: str | None) -> str | None:
-    """Chemin statique d'une image œuvre/profil pour l'affichage dans le chat Aria."""
-    if not value:
-        return None
-    path = value if '/' in value else f'uploads/{value}'
-    return f'/static/{path}'
+    """URL absolue d'une image œuvre/profil pour l'affichage dans le chat Aria."""
+    from .storage import absolute_url
+    return absolute_url(value)
 
 
 def save_upload_file(file_storage) -> str | None:
-    if not file_storage or not file_storage.filename:
-        return None
-    filename = secure_filename(file_storage.filename)
-    name = f'{uuid.uuid4().hex}_{filename}'
-    upload_folder = current_app.config.get('UPLOAD_FOLDER')
-    os.makedirs(upload_folder, exist_ok=True)
-    file_storage.save(os.path.join(upload_folder, name))
-    return name
+    from .storage import save_upload
+    return save_upload(file_storage)
 
 
 def pending_images() -> list[str]:
@@ -274,19 +263,19 @@ TOOLS_AUTH = [
     ),
     _tool(
         'get_my_page',
-        'Lit la page publique du compte (artiste/galerie) : layout actuel, profil, '
-        'et URLs des images d\'œuvres réutilisables dans un slider/galerie.',
+        'Lit la page publique : brouillon en cours (prioritaire), blocs actuels (current_blocks), '
+        'profil et URLs images œuvres. Toujours appeler avant set_page_layout.',
         {},
     ),
     _tool(
         'set_page_layout',
-        'Construit la page publique (brouillon). Blocs ORDONNÉS, texte BRUT sans emoji ni markdown. '
-        'Types : heading (titres courts), text (paragraphes 2-4 lignes max), divider, gallery/slider '
-        '(images réelles de get_my_page), button (href requis). Appelle get_my_page avant.',
+        'Remplace entièrement la page (brouillon). Blocs ORDONNÉS, texte BRUT sans emoji ni markdown. '
+        'Si current_blocks existe : refonte = nouvelle liste complète qui remplace l\'ancienne (pas d\'ajout). '
+        'Types : heading, text, divider, gallery/slider (images de get_my_page), button (href requis).',
         {
             'blocks': {
                 'type': 'array',
-                'description': '8–14 blocs max, texte plain uniquement (pas de ** ni emojis).',
+                'description': '8–14 blocs max, texte plain uniquement (pas de ** ni emojis). Remplace tout.',
                 'items': {
                     'type': 'object',
                     'properties': {
@@ -301,6 +290,7 @@ TOOLS_AUTH = [
                         'bg': {'type': 'string', 'description': 'Fond hex #RRGGBB'},
                         'font': {'type': 'string', 'enum': ['sans', 'serif', 'display', 'mono']},
                         'size': {'type': 'integer', 'description': 'Taille police px'},
+                        'weight': {'type': 'integer', 'description': 'Graisse 400-700'},
                     },
                 },
             },
@@ -880,13 +870,22 @@ def execute_tool(name: str, args: dict, ctx: dict) -> dict:
 
     if name == 'get_my_page':
         import json
+        from flask import session
+        from .page_blocks import elements_to_blocks
+
+        has_draft = False
         layout = None
-        if user.page_layout_json:
+        draft = session.get('page_draft')
+        if draft and isinstance(draft.get('layout'), dict):
+            layout = draft['layout']
+            has_draft = True
+        elif user.page_layout_json:
             try:
                 layout = json.loads(user.page_layout_json)
             except (ValueError, TypeError):
                 layout = None
         elements = (layout or {}).get('elements') or []
+        current_blocks = elements_to_blocks(elements)
         arts = []
         for a in (user.artworks or [])[:24]:
             img = _image_url(a.image)
@@ -899,7 +898,9 @@ def execute_tool(name: str, args: dict, ctx: dict) -> dict:
         return {
             'ok': True,
             'published': bool(user.page_published),
+            'has_draft': has_draft,
             'element_count': len(elements),
+            'current_blocks': current_blocks,
             'profile': {
                 'display_name': user.display_name or user.username,
                 'discipline': user.discipline,
@@ -925,7 +926,11 @@ def execute_tool(name: str, args: dict, ctx: dict) -> dict:
             if not isinstance(b, dict):
                 continue
             style = {}
-            for k in ('color', 'bg', 'font', 'size', 'align'):
+            if isinstance(b.get('style'), dict):
+                for k, v in b['style'].items():
+                    if v not in (None, ''):
+                        style[k] = v
+            for k in ('color', 'bg', 'font', 'size', 'align', 'weight'):
                 if b.get(k) not in (None, ''):
                     style[k] = b[k]
             norm.append({

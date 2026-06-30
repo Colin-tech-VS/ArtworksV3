@@ -1,0 +1,57 @@
+/* Canvas page publique — styles partagés (aperçu live + page artiste) */
+
+.pubpage-sec{ padding-top:0; }
+.pubpage{
+  position:relative; width:100%; max-width:1100px; margin:0 auto;
+  padding:0 12px; box-sizing:border-box;
+}
+.pubpage-el{ position:absolute; box-sizing:border-box; }
+/* Typographie : valeurs par défaut légères — le style inline (style_css) prime */
+.pubpage-el.t-heading{
+  font-family:var(--serif, Georgia, serif);
+  line-height:1.15; letter-spacing:-0.02em;
+  margin:0;
+}
+.pubpage-el.t-text{
+  line-height:1.75; white-space:pre-wrap; letter-spacing:0.01em;
+  margin:0;
+}
+.pubpage-el.t-button{
+  text-decoration:none; display:inline-block;
+  border-radius:var(--radius-pill, 999px);
+  padding:12px 28px; border:none; cursor:pointer;
+  transition:opacity .2s;
+}
+.pubpage-el.t-button:hover{ opacity:.92; }
+.pubpage-el.t-image img{
+  width:100%; height:100%; object-fit:cover;
+  border-radius:8px; display:block;
+}
+.pubpage-el.t-divider{ display:flex; align-items:center; }
+.pubpage-el.t-divider span{
+  display:block; width:100%; background:currentColor; opacity:.22;
+}
+.pubpage-el.t-slider{
+  display:flex; gap:14px; overflow-x:auto;
+  scroll-snap-type:x mandatory; -webkit-overflow-scrolling:touch;
+}
+.pubpage-el.t-slider .pubpage-slide{
+  flex:0 0 auto; height:100%; scroll-snap-align:center;
+}
+.pubpage-el.t-slider .pubpage-slide img{
+  height:100%; width:auto; max-width:100%; object-fit:cover;
+  border-radius:8px; display:block;
+}
+.pubpage-el.t-gallery{
+  display:grid; grid-template-columns:repeat(auto-fill, minmax(180px, 1fr));
+  gap:12px;
+}
+.pubpage-el.t-gallery .pubpage-cell{ aspect-ratio:1/1; }
+.pubpage-el.t-gallery .pubpage-cell img{
+  width:100%; height:100%; object-fit:cover;
+  border-radius:8px; display:block;
+}
+
+@media (max-width:760px){
+  .pubpage{ padding:0 8px; }
+}

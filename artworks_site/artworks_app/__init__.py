@@ -108,13 +108,9 @@ def create_app():
     from flask import url_for
 
     def img_url(value, placeholder='demo/art-01.jpg'):
-        """Resolve an artwork/profile image path to a static URL.
-        Stored values may be 'demo/x.jpg' (seed) or a bare upload filename."""
-        if not value:
-            return None
-        if '/' in value:
-            return url_for('static', filename=value)
-        return url_for('static', filename='uploads/' + value)
+        """Resolve an artwork/profile image path to a public URL."""
+        from .storage import public_url
+        return public_url(value)
 
     app.jinja_env.globals['img_url'] = img_url
 
