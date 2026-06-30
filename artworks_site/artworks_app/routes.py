@@ -1,9 +1,8 @@
 from flask import (Blueprint, render_template, request, redirect, url_for,
-                   flash, current_app, abort, jsonify, session)
+                   flash, current_app, abort, jsonify)
 from .models import Artwork, User, Series, CmsPage
 from . import db
 from flask_login import current_user, login_required
-from werkzeug.security import generate_password_hash
 from datetime import datetime
 
 bp = Blueprint('main', __name__)

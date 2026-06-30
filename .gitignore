@@ -13,5 +13,6 @@ artworks_site/static/uploads/*
 .cursor/
 agent-tools/
 tools/scalingo.zip
+tools/scalingo147.zip
 tools/scalingo_1.33.0_windows_amd64/
 tools/scalingo147/

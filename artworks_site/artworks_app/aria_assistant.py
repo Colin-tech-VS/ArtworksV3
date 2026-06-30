@@ -276,8 +276,6 @@ def _normalize_tool_calls(tool_calls: list) -> list[dict]:
 def clear_history() -> None:
     session.pop('aria_history', None)
     session.pop('aria_signup', None)
-    session.pop('aria_signup_role', None)
-    session.pop('aria_signup_pending', None)
     session.modified = True
 
 

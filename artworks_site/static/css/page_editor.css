@@ -306,9 +306,6 @@
 .pe-aria-form textarea:focus{ outline:none; border-color:var(--accent); box-shadow:0 0 0 2px rgba(184,115,74,.15); }
 .pe-aria-form .btn-solid{ flex-shrink:0; padding:12px 22px; }
 
-/* Legacy intro (unused) */
-.pe-aria-intro{ display:none; }
-
 /* ----- Modal aperçu plein écran ----- */
 .pe-preview-modal{
   position:fixed; inset:0; z-index:100500;

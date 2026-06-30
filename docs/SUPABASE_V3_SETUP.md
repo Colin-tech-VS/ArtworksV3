@@ -147,5 +147,3 @@ Les images déjà perdues lors d'un deploy précédent ne sont pas récupérable
 | fans | 33 |
 | marketplace_orders | 3 |
 | messages | 12 |
-
-Voir `artworks_site/scripts/v2_db_inspect.py` pour rejouer l'inventaire.
