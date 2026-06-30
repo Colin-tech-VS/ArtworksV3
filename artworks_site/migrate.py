@@ -48,11 +48,16 @@ ARTWORK_COLS = {
 def add_missing(table, cols):
     insp = inspect(db.engine)
     existing = {c['name'] for c in insp.get_columns(table)}
-    with db.engine.begin() as conn:
-        for name, ddl in cols.items():
-            if name not in existing:
-                conn.execute(text(f'ALTER TABLE {table} ADD COLUMN {name} {ddl}'))
-                print(f'  + {table}.{name}')
+    # Quote identifiers so reserved words (e.g. Postgres "user") don't break DDL.
+    # Each column is added in its own transaction so one failure can't roll back the rest.
+    preparer = db.engine.dialect.identifier_preparer
+    qtable = preparer.quote(table)
+    for name, ddl in cols.items():
+        if name not in existing:
+            qname = preparer.quote(name)
+            with db.engine.begin() as conn:
+                conn.execute(text(f'ALTER TABLE {qtable} ADD COLUMN {qname} {ddl}'))
+            print(f'  + {table}.{name}')
 
 
 def fix_postgres_sequences():
