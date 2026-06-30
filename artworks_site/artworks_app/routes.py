@@ -993,3 +993,69 @@ def aria_upload():
         'url': url_for('static', filename=f'uploads/{name}'),
         'message': 'Image reçue — dites à Aria de l\'assigner à une œuvre ou au profil.',
     })
+
+
+# ---------- Éditeur de page publique : 3 modes ----------
+PAGE_MODES = ('redacteur', 'createur', 'intelligent')
+
+
+def _normalize_page_mode(value):
+    value = (value or '').strip().lower()
+    return value if value in PAGE_MODES else 'redacteur'
+
+
+@bp.route('/dashboard/page')
+@login_required
+def page_editor():
+    """Hub d'édition de la page publique : rédacteur, créateur (canvas) ou intelligent (Aria)."""
+    if current_user.role == 'admin' or getattr(current_user, 'is_staff', False):
+        return redirect(url_for('crm.index'))
+    import json
+    requested = request.args.get('mode')
+    mode = _normalize_page_mode(requested or current_user.page_mode)
+    if requested and _normalize_page_mode(requested) != (current_user.page_mode or 'redacteur'):
+        current_user.page_mode = mode
+        db.session.commit()
+    try:
+        layout = json.loads(current_user.page_layout_json) if current_user.page_layout_json else None
+    except (ValueError, TypeError):
+        layout = None
+    from .aria_assistant import aria_enabled
+    return render_template(
+        'page_editor.html',
+        page_mode=mode,
+        page_modes=PAGE_MODES,
+        layout=layout,
+        aria_ready=aria_enabled(),
+        public_url=url_for('main.artist', artist_id=current_user.id),
+    )
+
+
+@bp.route('/dashboard/page/mode', methods=['POST'])
+@login_required
+def page_editor_set_mode():
+    mode = _normalize_page_mode(request.form.get('mode'))
+    current_user.page_mode = mode
+    db.session.commit()
+    return redirect(url_for('main.page_editor'))
+
+
+@bp.route('/api/page/layout', methods=['POST'])
+@login_required
+def page_layout_save():
+    """Sauvegarde le layout du canvas (mode créateur)."""
+    import json
+    data = request.get_json(silent=True) or {}
+    elements = data.get('elements')
+    if not isinstance(elements, list):
+        return jsonify({'error': 'Format de layout invalide.'}), 400
+    if len(elements) > 200:
+        return jsonify({'error': 'Trop d\'éléments sur la page (max 200).'}), 400
+    payload = {
+        'elements': elements,
+        'canvas': data.get('canvas') if isinstance(data.get('canvas'), dict) else {},
+        'updated_at': datetime.utcnow().isoformat(),
+    }
+    current_user.page_layout_json = json.dumps(payload, ensure_ascii=False)
+    db.session.commit()
+    return jsonify({'ok': True, 'count': len(elements)})

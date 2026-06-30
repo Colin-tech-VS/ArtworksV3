@@ -1,0 +1,178 @@
+/* ===== Éditeur de page publique — 3 modes ===== */
+
+.pe-modes{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:14px;
+  margin-bottom:26px;
+}
+.pe-mode-tab{
+  display:flex; align-items:flex-start; gap:13px;
+  padding:16px 18px;
+  border:1px solid var(--hair);
+  border-radius:var(--radius-md);
+  background:var(--bg-pure);
+  text-decoration:none;
+  color:var(--ink);
+  transition:border-color .2s var(--ease), box-shadow .2s var(--ease), transform .2s var(--ease);
+}
+.pe-mode-tab:hover{ border-color:var(--accent); box-shadow:var(--shadow-soft); transform:translateY(-2px); }
+.pe-mode-tab.is-active{
+  border-color:var(--accent);
+  box-shadow:0 0 0 1px var(--accent) inset, var(--shadow-soft);
+}
+.pe-mode-ico{
+  flex-shrink:0; width:38px; height:38px;
+  display:grid; place-items:center;
+  border-radius:var(--radius-sm);
+  background:rgba(184,115,74,.1);
+  color:var(--accent);
+}
+.pe-mode-ico svg{ width:21px; height:21px; fill:none; stroke:currentColor; stroke-width:1.7; stroke-linecap:round; stroke-linejoin:round; }
+.pe-mode-txt{ display:flex; flex-direction:column; gap:3px; }
+.pe-mode-txt strong{ font-size:.96rem; }
+.pe-mode-txt small{ color:var(--grey); font-size:.8rem; line-height:1.3; }
+.pe-badge{
+  display:inline-block; vertical-align:middle;
+  font-size:.62rem; font-weight:700; letter-spacing:.06em; text-transform:uppercase;
+  padding:1px 6px; margin-left:5px;
+  border-radius:var(--radius-pill);
+  background:var(--accent); color:#fff;
+}
+
+.pe-panel{ }
+.pe-panel-empty{
+  text-align:center; padding:54px 20px;
+  border:1px dashed var(--hair); border-radius:var(--radius-md);
+  background:var(--bg-alt);
+}
+.pe-panel-empty h3{ margin:0 0 6px; }
+.pe-panel-empty p{ color:var(--grey); margin:0; }
+
+/* ----- Mode rédacteur ----- */
+.pe-redacteur-grid{
+  display:grid; grid-template-columns:repeat(auto-fill,minmax(230px,1fr)); gap:16px;
+}
+.pe-card{
+  display:block; padding:20px;
+  border:1px solid var(--hair); border-radius:var(--radius-md);
+  background:var(--bg-pure); text-decoration:none; color:var(--ink);
+  transition:border-color .2s var(--ease), box-shadow .2s var(--ease), transform .2s var(--ease);
+}
+.pe-card:hover{ border-color:var(--accent); box-shadow:var(--shadow-soft); transform:translateY(-2px); }
+.pe-card-ghost{ background:var(--bg-alt); }
+.pe-card-ico{
+  display:grid; place-items:center; width:42px; height:42px; margin-bottom:13px;
+  border-radius:var(--radius-sm); background:rgba(184,115,74,.1); color:var(--accent);
+}
+.pe-card-ico svg{ width:23px; height:23px; fill:none; stroke:currentColor; stroke-width:1.6; stroke-linecap:round; stroke-linejoin:round; }
+.pe-card h3{ margin:0 0 6px; font-size:1.02rem; }
+.pe-card p{ margin:0; color:var(--grey); font-size:.86rem; line-height:1.45; }
+
+/* ----- Mode créateur (canvas) ----- */
+.pe-builder{ border:1px solid var(--hair); border-radius:var(--radius-md); background:var(--bg-pure); overflow:hidden; }
+.pe-builder-toolbar{
+  display:flex; flex-wrap:wrap; gap:12px; justify-content:space-between; align-items:center;
+  padding:12px 16px; border-bottom:1px solid var(--hair); background:var(--bg-alt);
+}
+.pe-tool-group{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+.pe-tool-right{ margin-left:auto; }
+.pe-tool-label{ font-size:.82rem; color:var(--grey); }
+.pe-tool{
+  font:inherit; font-size:.84rem; cursor:pointer;
+  padding:7px 13px; border:1px solid var(--hair); border-radius:var(--radius-pill);
+  background:var(--bg-pure); color:var(--ink);
+  transition:border-color .15s var(--ease), background .15s var(--ease);
+}
+.pe-tool:hover{ border-color:var(--accent); background:rgba(184,115,74,.06); }
+.pe-tool-danger{ color:var(--error,#b54a4a); }
+.pe-save-btn{ padding:8px 18px !important; }
+.pe-save-state{ font-size:.8rem; color:var(--grey); min-width:60px; text-align:right; }
+.pe-save-state.is-saved{ color:var(--success,#3d6b52); }
+.pe-save-state.is-dirty{ color:var(--warning,#a67c2e); }
+.pe-hint{ padding:10px 16px 0; margin:0; font-size:.82rem; color:var(--grey); }
+.pe-hint kbd{ font:inherit; font-size:.78rem; padding:1px 6px; border:1px solid var(--hair); border-radius:4px; background:var(--bg-alt); }
+
+.pe-canvas-wrap{ padding:16px; }
+.pe-canvas{
+  position:relative;
+  min-height:560px;
+  background:var(--bg-pure);
+  background-image:
+    linear-gradient(rgba(26,40,50,.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(26,40,50,.045) 1px, transparent 1px);
+  background-size:24px 24px;
+  border:1px dashed var(--hair);
+  border-radius:var(--radius-sm);
+  overflow:hidden;
+}
+.pe-el{
+  position:absolute;
+  min-width:60px; min-height:24px;
+  padding:6px 8px;
+  cursor:grab;
+  border:1px solid transparent;
+  border-radius:6px;
+  box-sizing:border-box;
+}
+.pe-el:hover{ border-color:rgba(184,115,74,.4); }
+.pe-el.is-selected{ border-color:var(--accent); box-shadow:0 0 0 2px rgba(184,115,74,.25); }
+.pe-el.is-dragging{ cursor:grabbing; opacity:.85; }
+.pe-el[data-type="heading"]{ font-family:var(--serif); font-size:1.8rem; font-weight:600; }
+.pe-el[data-type="text"]{ font-size:.95rem; line-height:1.5; max-width:520px; }
+.pe-el[data-type="button"]{ background:var(--accent); color:#fff; border-radius:var(--radius-pill); padding:9px 20px; font-weight:600; }
+.pe-el[data-type="image"]{ padding:0; width:240px; height:160px; }
+.pe-el[data-type="image"] img{ width:100%; height:100%; object-fit:cover; border-radius:6px; display:block; pointer-events:none; }
+.pe-el[data-type="image"] .pe-img-ph{
+  width:100%; height:100%; display:grid; place-items:center; text-align:center;
+  background:var(--bg-alt); color:var(--grey); font-size:.8rem; border-radius:6px;
+}
+.pe-el [contenteditable]{ outline:none; cursor:text; }
+.pe-el-del{
+  position:absolute; top:-10px; right:-10px;
+  width:22px; height:22px; border-radius:50%;
+  border:none; background:var(--error,#b54a4a); color:#fff;
+  font-size:14px; line-height:1; cursor:pointer; display:none;
+}
+.pe-el.is-selected .pe-el-del{ display:grid; place-items:center; }
+
+/* ----- Mode intelligent (Aria embarquée) ----- */
+.pe-aria{ border:1px solid var(--hair); border-radius:var(--radius-md); background:var(--bg-pure); padding:20px; }
+.pe-aria-intro{ display:flex; gap:14px; align-items:flex-start; margin-bottom:14px; }
+.pe-aria-avatar{
+  flex-shrink:0; width:42px; height:42px; border-radius:50%;
+  display:grid; place-items:center; font-weight:700; font-family:var(--serif);
+  background:var(--accent); color:#fff;
+}
+.pe-aria-intro h3{ margin:0 0 4px; }
+.pe-aria-intro p{ margin:0; color:var(--grey); font-size:.88rem; line-height:1.5; }
+.pe-aria-suggestions{ display:flex; flex-wrap:wrap; gap:8px; margin-bottom:14px; }
+.pe-aria-chip{
+  font:inherit; font-size:.82rem; cursor:pointer;
+  padding:7px 14px; border:1px solid var(--hair); border-radius:var(--radius-pill);
+  background:var(--bg-alt); color:var(--ink);
+  transition:border-color .15s var(--ease);
+}
+.pe-aria-chip:hover{ border-color:var(--accent); }
+.pe-aria-log{ display:flex; flex-direction:column; gap:12px; margin-bottom:14px; max-height:440px; overflow-y:auto; }
+.pe-aria-log:empty{ display:none; }
+.pe-aria-msg{ padding:11px 15px; border-radius:var(--radius-md); max-width:88%; font-size:.92rem; line-height:1.55; }
+.pe-aria-msg.user{ align-self:flex-end; background:var(--accent); color:#fff; }
+.pe-aria-msg.bot{ align-self:flex-start; background:var(--bg-alt); border:1px solid var(--hair); }
+.pe-aria-msg.bot.is-typing{ color:var(--grey); font-style:italic; }
+.pe-aria-msg.err{ align-self:flex-start; background:var(--error-bg,rgba(181,74,74,.08)); color:var(--error,#b54a4a); }
+.pe-aria-msg p{ margin:0 0 .5em; } .pe-aria-msg p:last-child{ margin-bottom:0; }
+.pe-aria-msg a{ color:inherit; text-decoration:underline; }
+.pe-aria-msg img{ max-width:160px; border-radius:8px; margin:4px 0; }
+.pe-aria-form{ display:flex; gap:10px; align-items:flex-end; }
+.pe-aria-form textarea{
+  flex:1; resize:none; font:inherit; font-size:.92rem;
+  padding:11px 14px; border:1px solid var(--hair); border-radius:var(--radius-md);
+  background:var(--bg-pure); color:var(--ink);
+}
+.pe-aria-form textarea:focus{ outline:none; border-color:var(--accent); }
+
+@media (max-width:760px){
+  .pe-modes{ grid-template-columns:1fr; }
+  .pe-canvas{ min-height:440px; }
+}

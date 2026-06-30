@@ -24,6 +24,8 @@ USER_COLS = {
     'wishlist_share_token': 'VARCHAR(32)',
     'is_staff': 'INTEGER DEFAULT 0',
     'google_sub': 'VARCHAR(64)',
+    'page_mode': "VARCHAR(16) DEFAULT 'redacteur'",
+    'page_layout_json': 'TEXT',
 }
 
 ARTWORK_COLS = {

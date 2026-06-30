@@ -11,6 +11,7 @@
   </div>
   <div class="dash-hero-actions">
     <a href="{{ url_for('main.artist', artist_id=current_user.id) }}" class="btn-line">Profil public</a>
+    <a href="{{ url_for('main.page_editor') }}" class="btn-line">Créer ma page</a>
     <a href="{{ url_for('main.create_artwork') }}" class="btn-solid">{{ role_meta.publish }}</a>
   </div>
 </header>
