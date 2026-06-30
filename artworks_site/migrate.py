@@ -24,6 +24,8 @@ USER_COLS = {
     'wishlist_share_token': 'VARCHAR(32)',
     'is_staff': 'INTEGER DEFAULT 0',
     'google_sub': 'VARCHAR(64)',
+    'page_mode': "VARCHAR(16) DEFAULT 'redacteur'",
+    'page_layout_json': 'TEXT',
 }
 
 ARTWORK_COLS = {
@@ -52,6 +54,41 @@ def add_missing(table, cols):
                 print(f'  + {table}.{name}')
 
 
+def fix_postgres_sequences():
+    """Réaligne les séquences d'auto-incrément PostgreSQL sur MAX(id).
+
+    Après l'import des données V2 -> V3 avec des IDs explicites, les séquences
+    SERIAL ne sont pas avancées : le prochain INSERT (création de compte,
+    classification segment, etc.) entre en collision de clé primaire et provoque
+    une IntegrityError -> erreur 500 à l'inscription, ou « identifiant déjà pris »
+    côté Aria. On resynchronise chaque séquence liée à une colonne « id »."""
+    if db.engine.dialect.name != 'postgresql':
+        return
+    insp = inspect(db.engine)
+    fixed = 0
+    with db.engine.begin() as conn:
+        for table in insp.get_table_names():
+            cols = {c['name'] for c in insp.get_columns(table)}
+            if 'id' not in cols:
+                continue
+            seq = conn.execute(
+                text("SELECT pg_get_serial_sequence(:t, 'id')"),
+                {'t': table},
+            ).scalar()
+            if not seq:
+                continue
+            # setval(seq, MAX(id)) ; is_called=true => prochain nextval = MAX(id)+1.
+            # Sur table vide -> setval(seq, 1, false) => prochain nextval = 1.
+            conn.execute(text(
+                f'SELECT setval(:seq, '
+                f'(SELECT COALESCE(MAX(id), 1) FROM "{table}"), '
+                f'(SELECT COUNT(*) > 0 FROM "{table}"))'
+            ), {'seq': seq})
+            fixed += 1
+    if fixed:
+        print(f'  ~ {fixed} séquence(s) PostgreSQL resynchronisée(s)')
+
+
 SEGMENT_COLS = {
     'slug': 'VARCHAR(64)',
     'is_system': 'INTEGER DEFAULT 0',
@@ -70,6 +107,7 @@ with app.app_context():
     add_missing('artwork', ARTWORK_COLS)
     add_missing('email_segment', SEGMENT_COLS)
     add_missing('email_campaign', CAMPAIGN_COLS)
+    fix_postgres_sequences()
 
     # Artistes demo avec œuvres → portfolio actif (catalogue public visible)
     from artworks_app.models import User

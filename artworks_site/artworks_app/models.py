@@ -47,6 +47,10 @@ class User(UserMixin, db.Model):
     wishlist_share_token = db.Column(db.String(32), nullable=True, unique=True)
     is_staff = db.Column(db.Boolean, default=False)
 
+    # --- Éditeur de page publique (3 modes : redacteur / createur / intelligent) ---
+    page_mode = db.Column(db.String(16), default='redacteur')
+    page_layout_json = db.Column(db.Text, nullable=True)  # canvas mode créateur (JSON)
+
     artworks = db.relationship('Artwork', backref='owner', lazy=True)
     series = db.relationship('Series', backref='owner', lazy=True,
                              cascade='all, delete-orphan')

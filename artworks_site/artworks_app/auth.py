@@ -73,20 +73,28 @@ def _plans_register_context():
 
 
 def _welcome_user(user: User) -> None:
-    from .crm.auto_segments import classify_user
-    from .crm.email_service import send_transactional
-    classify_user(user)
+    # Les effets de bord CRM (segmentation, email de bienvenue) ne doivent jamais
+    # faire échouer une création de compte déjà validée — sinon le compte existe
+    # mais l'utilisateur voit une erreur 500.
+    try:
+        from .crm.auto_segments import classify_user
+        classify_user(user)
+    except Exception:
+        db.session.rollback()
+        current_app.logger.exception('classify_user failed during registration')
     welcome_slug = {
         'artiste': 'welcome_artiste',
         'galerie': 'welcome_galerie',
         'collectionneur': 'welcome_collectionneur',
     }.get(user.role, 'welcome_collectionneur')
     try:
+        from .crm.email_service import send_transactional
         from .crm.email_templates_seed import ensure_default_email_templates
         ensure_default_email_templates()
         send_transactional(welcome_slug, user)
     except Exception:
-        pass
+        db.session.rollback()
+        current_app.logger.exception('welcome email failed during registration')
 
 
 def _apply_free_plan(user: User, role: str, plan_slug: str) -> str:

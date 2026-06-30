@@ -1,0 +1,156 @@
+{% extends '_dashboard_layout.html' %}
+{% set dash_active = 'page' %}
+{% block title %}Ma page — Artworks{% endblock %}
+
+{% block dash_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/page_editor.css') }}">
+{% endblock %}
+
+{% block dash_header %}
+<header class="dash-hero reveal in">
+  <div class="dash-hero-text">
+    <div class="eyebrow"><span class="line"></span><span class="cartel">Ma page publique</span></div>
+    <h1>Créez votre page</h1>
+    <p class="lead">Trois façons de construire votre page : rédigez avec des formulaires, dessinez librement, ou laissez Aria le faire.</p>
+  </div>
+  <div class="dash-hero-actions">
+    <a href="{{ public_url }}" target="_blank" rel="noopener" class="btn-line">Voir la page publique</a>
+  </div>
+</header>
+{% endblock %}
+
+{% block dash_content %}
+
+<div class="pe-modes reveal in" role="tablist" aria-label="Mode d'édition">
+  <a href="{{ url_for('main.page_editor', mode='redacteur') }}"
+     class="pe-mode-tab {{ 'is-active' if page_mode == 'redacteur' }}" role="tab"
+     aria-selected="{{ 'true' if page_mode == 'redacteur' else 'false' }}">
+    <span class="pe-mode-ico" aria-hidden="true">
+      <svg viewBox="0 0 24 24"><path d="M4 5h16M4 10h16M4 15h10M4 20h7"/></svg>
+    </span>
+    <span class="pe-mode-txt">
+      <strong>Mode rédacteur</strong>
+      <small>Formulaires guidés — simple et rapide</small>
+    </span>
+  </a>
+  <a href="{{ url_for('main.page_editor', mode='createur') }}"
+     class="pe-mode-tab {{ 'is-active' if page_mode == 'createur' }}" role="tab"
+     aria-selected="{{ 'true' if page_mode == 'createur' else 'false' }}">
+    <span class="pe-mode-ico" aria-hidden="true">
+      <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="11" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="18" width="7" height="3" rx="1"/></svg>
+    </span>
+    <span class="pe-mode-txt">
+      <strong>Mode créateur <span class="pe-badge">Bêta</span></strong>
+      <small>Canvas libre — glissez, double-cliquez, éditez</small>
+    </span>
+  </a>
+  <a href="{{ url_for('main.page_editor', mode='intelligent') }}"
+     class="pe-mode-tab {{ 'is-active' if page_mode == 'intelligent' }}" role="tab"
+     aria-selected="{{ 'true' if page_mode == 'intelligent' else 'false' }}">
+    <span class="pe-mode-ico" aria-hidden="true">
+      <svg viewBox="0 0 24 24"><path d="M12 3c-4.4 0-8 3.1-8 7.5 0 2.4 1.2 4.5 3.1 5.9L6 21l3.6-1.8c.8.2 1.6.3 2.4.3 4.4 0 8-3.1 8-7.5S16.4 3 12 3z"/></svg>
+    </span>
+    <span class="pe-mode-txt">
+      <strong>Mode intelligent</strong>
+      <small>Aria construit la page pour vous</small>
+    </span>
+  </a>
+</div>
+
+{% if page_mode == 'redacteur' %}
+<section class="pe-panel reveal in" aria-label="Mode rédacteur">
+  <div class="pe-redacteur-grid">
+    <a href="{{ url_for('main.edit_profile') }}" class="pe-card">
+      <span class="pe-card-ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg></span>
+      <h3>Présentation & profil</h3>
+      <p>Nom, bio, statement, photo, bannière, logo — le cœur de votre page.</p>
+    </a>
+    <a href="{{ url_for('main.create_artwork') }}" class="pe-card">
+      <span class="pe-card-ico"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="1"/><path d="M3 9h18"/></svg></span>
+      <h3>Ajouter une œuvre</h3>
+      <p>Publiez une œuvre avec image, prix et cartel détaillé.</p>
+    </a>
+    <a href="{{ url_for('main.dashboard') }}#series" class="pe-card">
+      <span class="pe-card-ico"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10"/></svg></span>
+      <h3>Organiser en séries</h3>
+      <p>Regroupez vos œuvres par thème ou collection.</p>
+    </a>
+    <a href="{{ public_url }}" target="_blank" rel="noopener" class="pe-card pe-card-ghost">
+      <span class="pe-card-ico"><svg viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg></span>
+      <h3>Aperçu public</h3>
+      <p>Visualisez votre page telle que la voient vos visiteurs.</p>
+    </a>
+  </div>
+</section>
+{% endif %}
+
+{% if page_mode == 'createur' %}
+<section class="pe-panel reveal in" aria-label="Mode créateur">
+  <div class="pe-builder"
+       id="pe-builder"
+       data-save-url="{{ url_for('main.page_layout_save') }}"
+       data-layout='{{ (layout | tojson) if layout else "null" }}'>
+    <div class="pe-builder-toolbar">
+      <div class="pe-tool-group">
+        <span class="pe-tool-label">Ajouter :</span>
+        <button type="button" class="pe-tool" data-add="heading">Titre</button>
+        <button type="button" class="pe-tool" data-add="text">Texte</button>
+        <button type="button" class="pe-tool" data-add="button">Bouton</button>
+        <button type="button" class="pe-tool" data-add="image">Image</button>
+      </div>
+      <div class="pe-tool-group pe-tool-right">
+        <span class="pe-save-state" data-save-state></span>
+        <button type="button" class="pe-tool pe-tool-danger" data-clear>Tout effacer</button>
+        <button type="button" class="btn-solid pe-save-btn" data-save>Enregistrer</button>
+      </div>
+    </div>
+    <p class="pe-hint">Glissez les éléments pour les positionner. <strong>Double-cliquez</strong> un texte pour l'éditer. Sélectionnez puis <kbd>Suppr</kbd> pour retirer.</p>
+    <div class="pe-canvas-wrap">
+      <div class="pe-canvas" data-canvas tabindex="0" aria-label="Zone de composition de la page"></div>
+    </div>
+  </div>
+</section>
+{% endif %}
+
+{% if page_mode == 'intelligent' %}
+<section class="pe-panel reveal in" aria-label="Mode intelligent">
+  {% if aria_ready %}
+  <div class="pe-aria" id="pe-aria" data-api-url="{{ url_for('main.aria_chat') }}">
+    <div class="pe-aria-intro">
+      <div class="pe-aria-avatar" aria-hidden="true">A</div>
+      <div>
+        <h3>Décrivez votre page à Aria</h3>
+        <p>Aria modifie directement votre profil, vos œuvres et votre page publique. Exemple : « Mets une bio courte sur la peinture abstraite et publie mes deux dernières œuvres. »</p>
+      </div>
+    </div>
+    <div class="pe-aria-suggestions">
+      <button type="button" class="pe-aria-chip" data-prompt="Rédige une présentation professionnelle pour ma page à partir de mon profil.">Rédige ma présentation</button>
+      <button type="button" class="pe-aria-chip" data-prompt="Propose une structure de page idéale pour vendre mes œuvres.">Structure ma page</button>
+      <button type="button" class="pe-aria-chip" data-prompt="Améliore le référencement (SEO) de ma page publique.">Optimise mon SEO</button>
+    </div>
+    <div class="pe-aria-log" data-aria-log aria-live="polite"></div>
+    <form class="pe-aria-form" data-aria-form>
+      <textarea data-aria-input rows="2" maxlength="2000" placeholder="Demandez à Aria de construire ou modifier votre page…" aria-label="Message à Aria"></textarea>
+      <button type="submit" class="btn-solid" data-aria-send>Envoyer</button>
+    </form>
+  </div>
+  {% else %}
+  <div class="pe-panel-empty">
+    <h3>Mode intelligent indisponible</h3>
+    <p>Aria n'est pas activée sur cette plateforme pour le moment. Utilisez le mode rédacteur ou créateur.</p>
+  </div>
+  {% endif %}
+</section>
+{% endif %}
+
+{% endblock %}
+
+{% block dash_scripts %}
+{{ super() }}
+{% if page_mode == 'createur' %}
+<script src="{{ url_for('static', filename='js/page_builder.js') }}" defer></script>
+{% endif %}
+{% if page_mode == 'intelligent' and aria_ready %}
+<script src="{{ url_for('static', filename='js/page_aria.js') }}" defer></script>
+{% endif %}
+{% endblock %}
