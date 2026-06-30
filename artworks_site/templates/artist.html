@@ -112,38 +112,7 @@
 
   {% if custom_page %}
   <section class="sec pubpage-sec reveal in" aria-label="Page personnalisée">
-    <div class="pubpage" style="height:{{ custom_page.height }}px">
-      {% for el in custom_page.elements %}
-        {% set pos = 'left:%spx;top:%spx;'|format(el.x, el.y) %}
-        {% if el.type == 'image' %}
-          {% if el.src %}
-          <div class="pubpage-el t-image" style="{{ pos }}width:{{ el.w or 240 }}px;height:{{ el.h or 160 }}px;{{ el.style_css }}">
-            <img src="{{ el.src }}" alt="" loading="lazy">
-          </div>
-          {% endif %}
-        {% elif el.type == 'heading' %}
-          <div class="pubpage-el t-heading" style="{{ pos }}{% if el.w %}width:{{ el.w }}px;{% endif %}{{ el.style_css }}">{{ el.text }}</div>
-        {% elif el.type == 'button' %}
-          {% if el.href %}
-          <a class="pubpage-el t-button" href="{{ el.href }}" style="{{ pos }}{{ el.style_css }}">{{ el.text }}</a>
-          {% else %}
-          <span class="pubpage-el t-button" style="{{ pos }}{{ el.style_css }}">{{ el.text }}</span>
-          {% endif %}
-        {% elif el.type == 'divider' %}
-          <div class="pubpage-el t-divider" style="{{ pos }}width:{{ el.w or 600 }}px;{{ el.style_css }}"><span style="height:{{ el.h or 2 }}px"></span></div>
-        {% elif el.type == 'slider' %}
-          <div class="pubpage-el t-slider" style="{{ pos }}width:{{ el.w or 860 }}px;height:{{ el.h or 380 }}px;{{ el.style_css }}">
-            {% for img in el.images %}<div class="pubpage-slide"><img src="{{ img }}" alt="" loading="lazy"></div>{% endfor %}
-          </div>
-        {% elif el.type == 'gallery' %}
-          <div class="pubpage-el t-gallery" style="{{ pos }}width:{{ el.w or 860 }}px;{% if el.h %}height:{{ el.h }}px;{% endif %}{{ el.style_css }}">
-            {% for img in el.images %}<div class="pubpage-cell"><img src="{{ img }}" alt="" loading="lazy"></div>{% endfor %}
-          </div>
-        {% else %}
-          <div class="pubpage-el t-text" style="{{ pos }}{% if el.w %}width:{{ el.w }}px;{% endif %}{{ el.style_css }}">{{ el.text }}</div>
-        {% endif %}
-      {% endfor %}
-    </div>
+    {% include '_pubpage_canvas.html' %}
   </section>
   {% endif %}
 

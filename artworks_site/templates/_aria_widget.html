@@ -38,10 +38,17 @@
         <h3>Bonjour, je suis Aria</h3>
         <p>{% if current_user.is_authenticated %}Connecté en tant que <strong>{{ current_user.name }}</strong> — je peux modifier votre profil, œuvres et abonnement.{% else %}Votre guide Artworks — formules, achat, inscription, création de compte.{% endif %}</p>
         <div class="aria-suggestions">
+          {% if current_user.is_authenticated %}
+          <button type="button" class="aria-suggestion" data-aria-suggestion="Aide-moi à compléter mon profil artiste.">Compléter mon profil</button>
+          <button type="button" class="aria-suggestion" data-aria-suggestion="Comment ajouter une nouvelle œuvre ?">Ajouter une œuvre</button>
+          <button type="button" class="aria-suggestion" data-aria-suggestion="Structure ma page publique pour vendre mes œuvres.">Ma page publique</button>
+          <button type="button" class="aria-suggestion" data-aria-suggestion="Quels sont les avantages de mon abonnement actuel ?">Mon abonnement</button>
+          {% else %}
           <button type="button" class="aria-suggestion" data-aria-suggestion="Qu'est-ce qu'Artworks et comment ça marche ?">Qu'est-ce qu'Artworks ?</button>
           <button type="button" class="aria-suggestion" data-aria-suggestion="Quelles sont les formules et tarifs pour un artiste ?">Formules artiste & tarifs</button>
           <button type="button" class="aria-suggestion" data-aria-suggestion="Comment acheter une œuvre sur la plateforme ?">Comment acheter une œuvre ?</button>
           <button type="button" class="aria-suggestion" data-aria-suggestion="Quelle commission sur les ventes ?">Commission sur les ventes</button>
+          {% endif %}
         </div>
       </div>
     </div>

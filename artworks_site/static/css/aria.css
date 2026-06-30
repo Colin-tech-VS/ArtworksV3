@@ -433,6 +433,16 @@ body.aria-open { overflow: hidden; }
 body.page-auth .aria-root,
 body.crm-mode .aria-root { display: none !important; }
 
+/* Dashboard — éviter le chevauchement avec la nav mobile */
+body.dash-page .aria-fab {
+  bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+}
+@media (max-width: 900px) {
+  body.dash-page .aria-fab {
+    bottom: calc(76px + env(safe-area-inset-bottom, 0px));
+  }
+}
+
 @media (max-width: 480px) {
   .aria-panel { width: 100vw; }
 }

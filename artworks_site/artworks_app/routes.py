@@ -1,5 +1,5 @@
 from flask import (Blueprint, render_template, request, redirect, url_for,
-                   flash, current_app, abort, jsonify)
+                   flash, current_app, abort, jsonify, session)
 from .models import Artwork, User, Series, CmsPage
 from . import db
 from flask_login import current_user, login_required
@@ -1027,6 +1027,12 @@ def published_page(user):
     if not getattr(user, 'page_published', False):
         return None
     layout = _parse_page_layout(user)
+    return _layout_to_custom_page(layout)
+
+
+def _layout_to_custom_page(layout):
+    """Convertit un dict layout en données template custom_page."""
+    from .page_blocks import layout_height, style_to_css
     if not layout or not layout.get('elements'):
         return None
     elements = []
@@ -1037,6 +1043,18 @@ def published_page(user):
         item['style_css'] = style_to_css(el.get('style') or {})
         elements.append(item)
     return {'elements': elements, 'height': layout_height(elements)}
+
+
+def _preview_layout_for_user():
+    """Layout pour l'aperçu live : brouillon Aria > brouillon créateur > sauvegardé."""
+    import json
+    draft = session.get('page_draft')
+    if draft and isinstance(draft.get('layout'), dict):
+        return draft['layout']
+    temp = session.get('page_preview_temp')
+    if temp and isinstance(temp.get('elements'), list):
+        return temp
+    return _parse_page_layout(current_user)
 
 
 @bp.route('/dashboard/page')
@@ -1051,6 +1069,7 @@ def page_editor():
         current_user.page_mode = mode
         db.session.commit()
     from .aria_assistant import aria_enabled
+    has_draft = bool(session.get('page_draft'))
     return render_template(
         'page_editor.html',
         page_mode=mode,
@@ -1058,7 +1077,9 @@ def page_editor():
         layout=_parse_page_layout(current_user),
         published=bool(current_user.page_published),
         aria_ready=aria_enabled(),
+        has_page_draft=has_draft,
         public_url=url_for('main.artist', artist_id=current_user.id),
+        preview_url=url_for('main.page_preview_frame'),
     )
 
 
@@ -1112,6 +1133,64 @@ def page_publish_toggle():
     current_user.page_published = bool(data.get('published'))
     db.session.commit()
     return jsonify({'ok': True, 'published': bool(current_user.page_published)})
+
+
+@bp.route('/dashboard/page/preview')
+@login_required
+def page_preview_frame():
+    """Iframe d'aperçu live (brouillon ou page enregistrée)."""
+    custom_page = _layout_to_custom_page(_preview_layout_for_user())
+    return render_template('page_preview.html', custom_page=custom_page, artist=current_user)
+
+
+@bp.route('/api/page/preview', methods=['POST'])
+@login_required
+def page_preview_push():
+    """Pousse un layout temporaire en session pour l'aperçu créateur (sans sauvegarder)."""
+    import json
+    data = request.get_json(silent=True) or {}
+    elements = data.get('elements')
+    if not isinstance(elements, list):
+        return jsonify({'error': 'Format invalide.'}), 400
+    clean = [e for e in (_sanitize_page_element(el) for el in elements) if e]
+    session['page_preview_temp'] = {
+        'elements': clean,
+        'canvas': data.get('canvas') if isinstance(data.get('canvas'), dict) else {},
+    }
+    session.modified = True
+    return jsonify({'ok': True, 'url': url_for('main.page_preview_frame')})
+
+
+@bp.route('/api/page/draft/apply', methods=['POST'])
+@login_required
+def page_draft_apply():
+    """Valide le brouillon Aria (modifications de page)."""
+    import json
+    draft = session.get('page_draft')
+    if not draft or not isinstance(draft.get('layout'), dict):
+        return jsonify({'error': 'Aucun brouillon en attente.'}), 404
+    current_user.page_layout_json = json.dumps(draft['layout'], ensure_ascii=False)
+    if 'published' in draft:
+        current_user.page_published = bool(draft['published'])
+    db.session.commit()
+    session.pop('page_draft', None)
+    session.pop('page_preview_temp', None)
+    session.modified = True
+    return jsonify({
+        'ok': True,
+        'published': bool(current_user.page_published),
+        'preview_url': url_for('main.page_preview_frame'),
+    })
+
+
+@bp.route('/api/page/draft/discard', methods=['POST'])
+@login_required
+def page_draft_discard():
+    """Annule le brouillon Aria."""
+    session.pop('page_draft', None)
+    session.pop('page_preview_temp', None)
+    session.modified = True
+    return jsonify({'ok': True, 'preview_url': url_for('main.page_preview_frame')})
 
 
 @bp.route('/api/page/upload', methods=['POST'])

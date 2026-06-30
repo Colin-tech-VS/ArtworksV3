@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Aperçu — {{ artist.name }}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/site.css') }}">
+  <style>
+    body{ margin:0; background:var(--bg-pure,#faf9f7); }
+    .preview-wrap{ padding:24px 16px 40px; max-width:1100px; margin:0 auto; }
+    .preview-label{
+      font-size:11px; font-weight:700; letter-spacing:.08em; text-transform:uppercase;
+      color:var(--grey); margin:0 0 12px; text-align:center;
+    }
+    .pubpage-sec{ padding:0; }
+    .pubpage{ position:relative; width:100%; max-width:1100px; margin:0 auto; }
+    .pubpage-el{ position:absolute; box-sizing:border-box; }
+    .pubpage-el.t-heading{ font-family:var(--serif); font-weight:600; font-size:clamp(24px,3vw,38px); line-height:1.15; color:var(--ink); }
+    .pubpage-el.t-text{ font-size:1rem; line-height:1.55; color:var(--ink); white-space:pre-wrap; }
+    .pubpage-el.t-button{ background:var(--accent); color:#fff; border-radius:var(--radius-pill); padding:10px 22px; font-weight:600; text-decoration:none; display:inline-block; }
+    .pubpage-el.t-image img{ width:100%; height:100%; object-fit:cover; border-radius:8px; display:block; }
+    .pubpage-el.t-divider{ display:flex; align-items:center; }
+    .pubpage-el.t-divider span{ display:block; width:100%; background:currentColor; opacity:.25; }
+    .pubpage-el.t-slider{ display:flex; gap:14px; overflow-x:auto; scroll-snap-type:x mandatory; }
+    .pubpage-el.t-slider .pubpage-slide{ flex:0 0 auto; height:100%; scroll-snap-align:center; }
+    .pubpage-el.t-slider .pubpage-slide img{ height:100%; width:auto; object-fit:cover; border-radius:8px; display:block; }
+    .pubpage-el.t-gallery{ display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:12px; }
+    .pubpage-el.t-gallery .pubpage-cell{ aspect-ratio:1/1; }
+    .pubpage-el.t-gallery .pubpage-cell img{ width:100%; height:100%; object-fit:cover; border-radius:8px; display:block; }
+    .preview-empty{ text-align:center; padding:80px 20px; color:var(--grey); font-size:.95rem; }
+  </style>
+</head>
+<body>
+  <div class="preview-wrap">
+    <p class="preview-label">Aperçu en direct</p>
+    {% if custom_page %}
+    <section class="pubpage-sec" aria-label="Aperçu page personnalisée">
+      {% include '_pubpage_canvas.html' %}
+    </section>
+    {% else %}
+    <div class="preview-empty">Ajoutez des éléments pour voir l'aperçu.</div>
+    {% endif %}
+  </div>
+</body>
+</html>

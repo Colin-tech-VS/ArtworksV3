@@ -1,13 +1,18 @@
-/* Mode intelligent — Aria embarquée dans l'éditeur de page. */
+/* Mode intelligent — Aria embarquée + aperçu live + brouillon Enregistrer/Annuler */
 (function () {
   'use strict';
+  var shell = document.getElementById('pe-intelligent');
   var root = document.getElementById('pe-aria');
   if (!root) return;
 
   var apiUrl = root.getAttribute('data-api-url');
+  var previewUrl = shell ? shell.getAttribute('data-preview-url') : '';
+  var draftApplyUrl = shell ? shell.getAttribute('data-draft-apply') : '';
+  var draftDiscardUrl = shell ? shell.getAttribute('data-draft-discard') : '';
   var log = root.querySelector('[data-aria-log]');
   var form = root.querySelector('[data-aria-form]');
   var input = root.querySelector('[data-aria-input]');
+  var previewFrame = shell ? shell.querySelector('[data-aria-preview-frame]') : null;
   var busy = false;
 
   function escapeHtml(s) {
@@ -58,35 +63,89 @@
     return div;
   }
 
-  function showPreview(url) {
-    var wrap = root.querySelector('[data-aria-preview]');
-    if (!wrap) {
-      wrap = document.createElement('div');
-      wrap.className = 'pe-aria-preview';
-      wrap.setAttribute('data-aria-preview', '');
-      wrap.innerHTML =
-        '<div class="pe-aria-preview-bar">' +
-        '<span>Aperçu de votre page publique</span>' +
-        '<a href="' + url + '" target="_blank" rel="noopener" data-aria-preview-link>Ouvrir ↗</a>' +
-        '</div><iframe title="Aperçu de la page" data-aria-preview-frame loading="lazy"></iframe>';
-      root.appendChild(wrap);
-    }
-    var link = wrap.querySelector('[data-aria-preview-link]');
-    if (link) link.href = url;
-    var frame = wrap.querySelector('[data-aria-preview-frame]');
-    if (frame) frame.src = url + (url.indexOf('?') >= 0 ? '&' : '?') + 't=' + Date.now();
-    wrap.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  function refreshPreview() {
+    if (!previewFrame || !previewUrl) return;
+    previewFrame.src = previewUrl + (previewUrl.indexOf('?') >= 0 ? '&' : '?') + 't=' + Date.now();
+  }
+
+  function showDraftBar() {
+    if (!shell) return;
+    var bar = shell.querySelector('[data-draft-bar]');
+    if (bar) { bar.hidden = false; return; }
+    bar = document.createElement('div');
+    bar.className = 'pe-draft-bar';
+    bar.setAttribute('data-draft-bar', '');
+    bar.innerHTML =
+      '<span>Modifications en attente — validez pour publier ou annulez.</span>' +
+      '<div class="pe-draft-actions">' +
+      '<button type="button" class="pe-tool" data-draft-discard>Annuler</button>' +
+      '<button type="button" class="btn-solid" data-draft-apply>Enregistrer</button>' +
+      '</div>';
+    shell.insertBefore(bar, shell.firstChild);
+    bindDraftButtons(bar);
+  }
+
+  function hideDraftBar() {
+    var bar = shell && shell.querySelector('[data-draft-bar]');
+    if (bar) bar.hidden = true;
+  }
+
+  function applyDraft() {
+    if (!draftApplyUrl) return;
+    fetch(draftApplyUrl, { method: 'POST', credentials: 'same-origin', headers: { Accept: 'application/json' } })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        if (d.ok) {
+          hideDraftBar();
+          refreshPreview();
+          bubble('bot', '<p><strong>Page enregistrée.</strong> Vos modifications sont en ligne.</p>');
+        } else {
+          bubble('err', escapeHtml(d.error || 'Échec de l\'enregistrement.'));
+        }
+      })
+      .catch(function () { bubble('err', 'Erreur réseau.'); });
+  }
+
+  function discardDraft() {
+    if (!draftDiscardUrl) return;
+    fetch(draftDiscardUrl, { method: 'POST', credentials: 'same-origin', headers: { Accept: 'application/json' } })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        if (d.ok) {
+          hideDraftBar();
+          refreshPreview();
+          bubble('bot', '<p>Modifications annulées — retour à la version enregistrée.</p>');
+        }
+      })
+      .catch(function () { bubble('err', 'Erreur réseau.'); });
+  }
+
+  function bindDraftButtons(scope) {
+    var rootScope = scope || shell;
+    if (!rootScope) return;
+    var applyBtn = rootScope.querySelector('[data-draft-apply]');
+    var discardBtn = rootScope.querySelector('[data-draft-discard]');
+    if (applyBtn) applyBtn.addEventListener('click', applyDraft);
+    if (discardBtn) discardBtn.addEventListener('click', discardDraft);
   }
 
   function applyActions(actions) {
     if (!actions || !actions.length) return;
+    var preview = false;
+    var draft = false;
     actions.forEach(function (a) {
       if (a.type === 'redirect' && a.url) window.location.href = a.url;
-      else if (a.type === 'page_updated' && a.url) showPreview(a.url);
-      else if (a.type === 'reload' || a.type === 'login') {
+      else if (a.type === 'page_preview' || a.type === 'page_updated') {
+        preview = true;
+        if (a.draft) draft = true;
+      } else if (a.type === 'reload' || a.type === 'login') {
         setTimeout(function () { window.location.reload(); }, 900);
       }
     });
+    if (preview) {
+      refreshPreview();
+      if (draft) showDraftBar();
+    }
   }
 
   function send(text) {
@@ -132,4 +191,7 @@
       send(chip.getAttribute('data-prompt'));
     });
   });
+
+  bindDraftButtons(shell);
+  refreshPreview();
 })();

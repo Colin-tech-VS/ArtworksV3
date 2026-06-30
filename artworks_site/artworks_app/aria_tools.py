@@ -947,8 +947,32 @@ def execute_tool(name: str, args: dict, ctx: dict) -> dict:
             'canvas': {'w': 960},
             'updated_at': datetime.utcnow().isoformat(),
         }
-        user.page_layout_json = json.dumps(payload, ensure_ascii=False)
         publish = args.get('publish')
+        pub_flag = True if publish is None else bool(publish)
+        commit = args.get('commit')
+        use_draft = commit is not True and args.get('draft', True) is not False
+
+        if use_draft:
+            draft = session.get('page_draft') or {}
+            if not draft.get('baseline_layout'):
+                draft['baseline_layout'] = user.page_layout_json
+                draft['baseline_published'] = bool(user.page_published)
+            draft['layout'] = payload
+            draft['published'] = pub_flag
+            session['page_draft'] = draft
+            session.modified = True
+            preview_url = url_for('main.page_preview_frame')
+            _side(ctx, {'type': 'page_preview', 'url': preview_url, 'draft': True})
+            return {
+                'ok': True,
+                'draft': True,
+                'count': len(elements),
+                'published': pub_flag,
+                'preview_url': preview_url,
+                'message': 'Brouillon créé — validez ou annulez dans l\'éditeur.',
+            }
+
+        user.page_layout_json = json.dumps(payload, ensure_ascii=False)
         if publish is None or bool(publish):
             user.page_published = True
         db.session.commit()
