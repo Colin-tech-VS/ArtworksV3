@@ -60,6 +60,21 @@ def add_missing(table, cols):
             print(f'  + {table}.{name}')
 
 
+def widen_column(table, column, ddl_type):
+    """Élargit le type d'une colonne existante si nécessaire (Postgres only).
+
+    SQLite n'applique pas la longueur des VARCHAR, donc rien à faire en local.
+    Idempotent : ne touche pas la colonne si elle a déjà la bonne capacité."""
+    if db.engine.dialect.name != 'postgresql':
+        return
+    preparer = db.engine.dialect.identifier_preparer
+    qtable = preparer.quote(table)
+    qcol = preparer.quote(column)
+    with db.engine.begin() as conn:
+        conn.execute(text(f'ALTER TABLE {qtable} ALTER COLUMN {qcol} TYPE {ddl_type}'))
+    print(f'  ~ {table}.{column} -> {ddl_type}')
+
+
 def fix_postgres_sequences():
     """Réaligne les séquences d'auto-incrément PostgreSQL sur MAX(id).
 
@@ -113,6 +128,9 @@ with app.app_context():
     add_missing('artwork', ARTWORK_COLS)
     add_missing('email_segment', SEGMENT_COLS)
     add_missing('email_campaign', CAMPAIGN_COLS)
+    # password_hash: les hash scrypt de Werkzeug font ~162 caractères, le
+    # VARCHAR(128) d'origine débordait sur Postgres (erreur 500 à l'inscription).
+    widen_column('user', 'password_hash', 'VARCHAR(255)')
     fix_postgres_sequences()
 
     # Artistes demo avec œuvres → portfolio actif (catalogue public visible)

@@ -8,7 +8,7 @@ class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(64), unique=True, nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
-    password_hash = db.Column(db.String(128), nullable=True)
+    password_hash = db.Column(db.String(255), nullable=True)  # scrypt hashes ~162 chars
     google_sub = db.Column(db.String(64), unique=True, nullable=True, index=True)
     role = db.Column(db.String(20), default='collectionneur')  # collectionneur / galerie / artiste / admin
 
