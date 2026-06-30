@@ -160,11 +160,11 @@ RÔLE COMMERCIAL — TU VENDS LE CATALOGUE :
 - Mets en valeur la provenance, l'authenticité et la sélection curatoriale pour rassurer l'acheteur, sans inventer de détails absents des données.
 
 OUTILS — RÈGLE D'OR :
-- Tu disposes d'**outils** pour lire le catalogue (œuvres, profils) et pour agir sur le site : créer un compte (`create_account` role=galerie), **connecter** (`login_account`), changer de rôle (`change_my_role`), profil/œuvres/images, abonnement, etc.
-- **Dès que l'utilisateur donne email + mot de passe** → appelle `create_account` **immédiatement** (l'outil connecte aussi les comptes existants avec le bon mot de passe).
+- Tu disposes d'**outils** pour lire le catalogue (œuvres, profils) et pour agir sur le site : créer un compte (`create_account`), **connecter** (`login_account`), changer de rôle (`change_my_role`), profil/œuvres/images, abonnement, etc.
+- **INSCRIPTION** : la collecte des identifiants est gérée par un flux guidé du site. Tu **ne dois JAMAIS inventer** d'email, de mot de passe ni de nom. Si l'utilisateur veut un compte, demande-lui son **email**, puis son **mot de passe** ; n'appelle `create_account` **que** lorsque l'utilisateur a fourni email ET mot de passe explicitement.
 - Le **nom de galerie** = `display_name` (espaces autorisés, ex. « Artworks Salon »). **Username** : 3–64 caractères, généré auto — **ne jamais** inventer de limite à 12 ou 20 caractères.
 - **Ne jamais** refuser un nom pour longueur sans avoir appelé l'outil.
-- Quand il demande une **action** → **APPELLE L'OUTIL** immédiatement.
+- Quand il demande une **action** (autre que l'inscription) → **APPELLE L'OUTIL** immédiatement.
 - Après succès, confirme en français + lien [tableau de bord](/dashboard).
 - Hors Artworks : refuse poliment.
 
@@ -229,78 +229,230 @@ def _normalize_tool_calls(tool_calls: list) -> list[dict]:
 
 def clear_history() -> None:
     session.pop('aria_history', None)
+    session.pop('aria_signup', None)
     session.pop('aria_signup_role', None)
     session.pop('aria_signup_pending', None)
     session.modified = True
 
 
-def _track_signup_intent(text: str) -> None:
-    low = (text or '').lower()
-    if any(w in low for w in ('galerie', 'gallery')) and any(
-        w in low for w in ('compte', 'créer', 'creer', 'inscri', 'inscription', 'crée', 'cree')
-    ):
-        session['aria_signup_role'] = 'galerie'
-        session.modified = True
-    elif 'artiste' in low and any(w in low for w in ('compte', 'créer', 'creer', 'inscri')):
-        session['aria_signup_role'] = 'artiste'
-        session.modified = True
-    elif 'collectionneur' in low and any(w in low for w in ('compte', 'créer', 'creer', 'inscri')):
-        session['aria_signup_role'] = 'collectionneur'
-        session.modified = True
+# ---------------------------------------------------------------------------
+# Inscription guidée (déterministe, sans deviner) : Aria demande le rôle, puis
+# l'email, puis le mot de passe, puis le nom — et NE crée le compte qu'une fois
+# email + mot de passe explicitement fournis par l'utilisateur.
+# ---------------------------------------------------------------------------
+_SIGNUP_CANCEL = (
+    'annuler', 'annule', 'laisse tomber', 'laisser tomber', "j'arrête", "j'arrete",
+    'arrête', 'arrete', 'stop', 'abandonner', 'abandon',
+)
+_SIGNUP_SKIP = ('passer', 'passe', 'skip', 'non', 'aucun', 'plus tard', 'sans', 'rien', 'no')
+_ROLE_WORDS = (
+    ('galerie', 'galerie'), ('gallery', 'galerie'),
+    ('artiste', 'artiste'), ('artist', 'artiste'),
+    ('collectionneur', 'collectionneur'), ('collectionneuse', 'collectionneur'),
+    ('collector', 'collectionneur'),
+)
+_ROLE_LABEL = {'galerie': 'galerie', 'artiste': 'artiste', 'collectionneur': 'collectionneur'}
+_EMAIL_RE = re.compile(r'[\w.+-]+@[\w-]+\.[\w.-]+')
 
 
-def _try_signup_fast_path(text: str, ctx: dict[str, Any]) -> dict[str, Any] | None:
-    """Inscription sans LLM quand email + mot de passe sont dans le message."""
-    from flask_login import current_user
-    from .aria_tools import execute_tool, format_signup_reply, parse_signup_credentials
+def _detect_role(low: str) -> str | None:
+    for word, role in _ROLE_WORDS:
+        if word in low:
+            return role
+    return None
 
-    if current_user.is_authenticated:
-        return None
 
-    low = text.lower()
-    pending = session.get('aria_signup_pending')
-    if (
-        isinstance(pending, dict)
-        and pending.get('email')
-        and pending.get('password')
-        and len(text) < 80
-        and '@' not in text
-        and 'mdp' not in low
-        and 'mail' not in low
-        and 'email' not in low
-    ):
-        args = dict(pending)
-        args['display_name'] = text.strip()
-        role = args.get('role') or session.get('aria_signup_role') or 'galerie'
-        args['role'] = role
-        result = execute_tool('create_account', args, ctx)
-        if result.get('ok'):
-            session.pop('aria_signup_pending', None)
-            session.pop('aria_signup_role', None)
-        return {
-            'reply': format_signup_reply(result, role=role),
-            'name': ARIA_NAME,
-            'actions': ctx.get('side_effects') or None,
-        }
+def _has_signup_intent(low: str) -> bool:
+    if 'inscri' in low:
+        return True
+    verbs = ('créer', 'creer', 'crée', 'cree', 'créez', 'creez', 'ouvrir', 'rejoindre', 'nouveau compte')
+    if any(v in low for v in verbs) and ('compte' in low or _detect_role(low)):
+        return True
+    return False
 
-    parsed = parse_signup_credentials(text)
-    if not parsed:
-        return None
 
-    role = parsed.get('role') or session.get('aria_signup_role') or 'galerie'
-    parsed['role'] = role
-    session['aria_signup_pending'] = dict(parsed)
+def _extract_email(text: str) -> str | None:
+    m = re.search(r'(?:mail|email|courriel)\s*[:=]?\s*([\w.+-]+@[\w-]+\.[\w.-]+)', text, re.I)
+    if m:
+        return m.group(1).strip().rstrip('.,;').lower()
+    m = _EMAIL_RE.search(text)
+    return m.group(0).strip().rstrip('.,;').lower() if m else None
+
+
+def _extract_password_labeled(text: str) -> str | None:
+    m = re.search(r'(?:mot\s*de\s*passe|mdp|password|pass)\s*(?:est|:|=)?\s*(\S+)', text, re.I)
+    if m:
+        pw = m.group(1).strip().strip('"\'').rstrip('.,;')
+        if len(pw) >= 6:
+            return pw
+    return None
+
+
+def _extract_name_labeled(text: str) -> str | None:
+    m = re.search(
+        r'(?:nom|name|nomm[ée]e?|appel[ée]e?|intitul[ée]e?)\s*[:=]?\s*([^\n|]+?)'
+        r'(?:\s*\||\s+mdp|\s+mot\s*de\s*passe|\s+email|\s+mail|$)',
+        text, re.I,
+    )
+    if m:
+        nm = m.group(1).strip().strip('"\'')
+        if nm and '@' not in nm and not re.fullmatch(r'(?:galerie|artiste|collectionneur)', nm, re.I):
+            return nm[:120]
+    return None
+
+
+def _extract_plan(low: str) -> str | None:
+    if any(w in low for w in ('gratuit', 'gratuite', 'découverte', 'decouverte', 'free')):
+        return 'gratuit'
+    m = re.search(r'formule\s*[:=]?\s*(\w+)', low)
+    return m.group(1) if m else None
+
+
+def _signup_reply(message: str, ctx: dict[str, Any] | None = None) -> dict[str, Any]:
+    out: dict[str, Any] = {'reply': message, 'name': ARIA_NAME}
+    if ctx and ctx.get('side_effects'):
+        out['actions'] = ctx['side_effects']
+    return out
+
+
+def _save_signup_state(state: dict) -> None:
+    session['aria_signup'] = state
     session.modified = True
 
-    result = execute_tool('create_account', parsed, ctx)
+
+def _handle_signup_flow(text: str, ctx: dict[str, Any]) -> dict[str, Any] | None:
+    """Collecte guidée des informations d'inscription, étape par étape.
+
+    Retourne une réponse Aria si la conversation porte sur une inscription,
+    sinon None (le LLM prend le relais). Ne crée jamais le compte tant que
+    l'email ET le mot de passe n'ont pas été donnés explicitement."""
+    from flask_login import current_user
+    from .aria_tools import execute_tool, format_signup_reply
+
+    if current_user.is_authenticated:
+        session.pop('aria_signup', None)
+        return None
+
+    low = text.lower().strip()
+    state = session.get('aria_signup')
+    if not isinstance(state, dict):
+        state = None
+
+    # Annulation explicite
+    if state and state.get('active') and any(w in low for w in _SIGNUP_CANCEL):
+        session.pop('aria_signup', None)
+        session.modified = True
+        return _signup_reply(
+            "Pas de souci, j'annule la création de compte. Je reste disponible si vous "
+            "avez des questions sur Artworks ou souhaitez réessayer plus tard."
+        )
+
+    role = _detect_role(low)
+    if not state or not state.get('active'):
+        if not _has_signup_intent(low):
+            return None
+        state = {
+            'active': True, 'role': role, 'email': None, 'password': None,
+            'display_name': None, 'plan': 'free', 'awaiting': None,
+        }
+
+    awaiting = state.get('awaiting')
+
+    # Changement de rôle tant que l'email n'est pas fixé
+    if role and not state.get('email') and role != state.get('role'):
+        state['role'] = role
+    if awaiting == 'role' and role:
+        state['role'] = role
+
+    # Extraction de tout champ présent dans le message
+    em = _extract_email(text)
+    if em:
+        state['email'] = em
+    plan = _extract_plan(low)
+    if plan:
+        state['plan'] = plan
+    plab = _extract_password_labeled(text)
+    if plab:
+        state['password'] = plab
+    nlab = _extract_name_labeled(text)
+    if nlab:
+        state['display_name'] = nlab
+
+    # Mot de passe positionnel : on a explicitement demandé le mot de passe
+    if awaiting == 'password' and not state.get('password') and not em:
+        cand = text.strip().strip('"\'').rstrip('.,;')
+        if ' ' in cand:
+            toks = [t for t in re.split(r'\s+', cand) if t]
+            cand = toks[-1] if toks else cand
+        if 6 <= len(cand) <= 128:
+            state['password'] = cand
+
+    # Nom positionnel : on a explicitement demandé le nom
+    if (
+        awaiting == 'name' and state.get('email') and state.get('password')
+        and state.get('display_name') is None and not em and not nlab
+    ):
+        if low in _SIGNUP_SKIP:
+            state['display_name'] = ''
+        else:
+            nm = text.strip().strip('"\'')
+            state['display_name'] = nm[:120] if nm else ''
+
+    # Étape suivante : demander ce qui manque, sinon créer
+    if not state.get('role'):
+        state['awaiting'] = 'role'
+        _save_signup_state(state)
+        return _signup_reply(
+            "Avec plaisir ! Quel type de compte souhaitez-vous créer : "
+            "**galerie**, **artiste** ou **collectionneur** ?"
+        )
+
+    rlabel = _ROLE_LABEL.get(state['role'], state['role'])
+    if not state.get('email'):
+        state['awaiting'] = 'email'
+        _save_signup_state(state)
+        return _signup_reply(
+            f"Parfait, créons votre compte **{rlabel}**. Quelle est votre **adresse email** ?"
+        )
+
+    if not state.get('password'):
+        state['awaiting'] = 'password'
+        _save_signup_state(state)
+        return _signup_reply(
+            "Merci ! Choisissez maintenant un **mot de passe** (au moins 6 caractères). "
+            "Il restera confidentiel."
+        )
+
+    if state.get('display_name') is None:
+        state['awaiting'] = 'name'
+        _save_signup_state(state)
+        if state['role'] == 'galerie':
+            q = "Et quel est le **nom de votre galerie** ? (ou répondez « passer »)"
+        elif state['role'] == 'artiste':
+            q = "Sous quel **nom d'artiste** souhaitez-vous apparaître ? (ou « passer »)"
+        else:
+            q = "Quel **nom** souhaitez-vous afficher sur votre profil ? (ou « passer »)"
+        return _signup_reply(q)
+
+    # Tout est collecté → création
+    result = execute_tool('create_account', {
+        'email': state['email'],
+        'password': state['password'],
+        'role': state['role'],
+        'plan': state.get('plan') or 'free',
+        'display_name': state.get('display_name') or '',
+    }, ctx)
+
     if result.get('ok'):
-        session.pop('aria_signup_pending', None)
-        session.pop('aria_signup_role', None)
-    return {
-        'reply': format_signup_reply(result, role=role),
-        'name': ARIA_NAME,
-        'actions': ctx.get('side_effects') or None,
-    }
+        session.pop('aria_signup', None)
+        session.modified = True
+    elif result.get('code') == 'email_taken' or 'mot de passe' in (result.get('error') or '').lower():
+        # Email déjà pris / mauvais mot de passe → on redemande le mot de passe
+        state['password'] = None
+        state['awaiting'] = 'password'
+        _save_signup_state(state)
+
+    return _signup_reply(format_signup_reply(result, role=state['role']), ctx)
 
 
 def chat(user_message: str, *, reset: bool = False) -> dict[str, Any]:
@@ -324,13 +476,12 @@ def chat(user_message: str, *, reset: bool = False) -> dict[str, Any]:
         'side_effects': [],
     }
 
-    _track_signup_intent(text)
-    fast = _try_signup_fast_path(text, ctx)
-    if fast:
+    signup = _handle_signup_flow(text, ctx)
+    if signup:
         history.append({'role': 'user', 'content': text})
-        history.append({'role': 'assistant', 'content': fast['reply']})
+        history.append({'role': 'assistant', 'content': signup['reply']})
         _save_history(history)
-        out = dict(fast)
+        out = dict(signup)
         if not out.get('actions'):
             out.pop('actions', None)
         return out
