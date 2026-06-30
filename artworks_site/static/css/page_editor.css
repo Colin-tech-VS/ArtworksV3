@@ -71,6 +71,20 @@
 
 /* ----- Mode créateur (canvas) ----- */
 .pe-builder{ border:1px solid var(--hair); border-radius:var(--radius-md); background:var(--bg-pure); overflow:hidden; }
+.pe-creator-split{
+  display:grid; grid-template-columns:minmax(360px, 1fr) minmax(320px, 1.05fr);
+  gap:0; min-height:min(72vh, 820px);
+}
+.pe-creator-main{ border-right:1px solid var(--hair); min-width:0; display:flex; flex-direction:column; }
+.pe-add-group{ flex-wrap:wrap; gap:6px; }
+.pe-add-btn{
+  font:inherit; font-size:.82rem; font-weight:600; cursor:pointer;
+  padding:8px 14px; border:1px solid var(--hair); border-radius:var(--radius-pill);
+  background:var(--bg-pure); color:var(--ink);
+  transition:border-color .15s var(--ease), background .15s var(--ease), transform .15s var(--ease);
+}
+.pe-add-btn:hover{ border-color:var(--accent); background:rgba(184,115,74,.08); transform:translateY(-1px); }
+.pe-add-btn-muted{ font-weight:500; color:var(--grey); }
 .pe-builder-toolbar{
   display:flex; flex-wrap:wrap; gap:12px; justify-content:space-between; align-items:center;
   padding:12px 16px; border-bottom:1px solid var(--hair); background:var(--bg-alt);
@@ -93,10 +107,10 @@
 .pe-hint{ padding:10px 16px 0; margin:0; font-size:.82rem; color:var(--grey); }
 .pe-hint kbd{ font:inherit; font-size:.78rem; padding:1px 6px; border:1px solid var(--hair); border-radius:4px; background:var(--bg-alt); }
 
-.pe-canvas-wrap{ padding:20px; }
+.pe-canvas-wrap{ padding:16px; }
 .pe-canvas{
   position:relative;
-  min-height:720px;
+  min-height:520px;
   background:var(--bg-pure);
   background-image:
     linear-gradient(rgba(26,40,50,.045) 1px, transparent 1px),
@@ -172,7 +186,7 @@
 
 .pe-props{
   border-left:1px solid var(--hair); background:var(--bg-alt);
-  padding:20px; overflow-y:auto; min-height:720px;
+  padding:16px; overflow-y:auto; min-height:480px; max-height:min(60vh, 640px);
 }
 .pe-prop-empty{ color:var(--grey); font-size:.92rem; line-height:1.55; }
 .pe-prop-title{ margin:0 0 16px; font-size:1.05rem; font-weight:700; color:var(--ink); }
@@ -334,6 +348,8 @@
 body.pe-preview-open{ overflow:hidden; }
 
 @media (max-width:1100px){
+  .pe-creator-split{ grid-template-columns:1fr; min-height:0; }
+  .pe-creator-main{ border-right:none; border-bottom:1px solid var(--hair); }
   .pe-builder-stage{ grid-template-columns:1fr; }
   .pe-props{ border-left:none; border-top:1px solid var(--hair); min-height:0; max-height:none; }
   .pe-preview-modal-panel{ width:100vw; height:100vh; border-radius:0; margin:0; }

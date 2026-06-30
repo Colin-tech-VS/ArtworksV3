@@ -50,6 +50,8 @@ class User(UserMixin, db.Model):
     # --- Éditeur de page publique (3 modes : redacteur / createur / intelligent) ---
     page_mode = db.Column(db.String(16), default='redacteur')
     page_layout_json = db.Column(db.Text, nullable=True)  # canvas mode créateur (JSON)
+    page_draft_json = db.Column(db.Text, nullable=True)  # brouillon Aria (JSON)
+    page_preview_json = db.Column(db.Text, nullable=True)  # aperçu live créateur (JSON)
     page_published = db.Column(db.Boolean, default=False)  # canvas visible sur la page publique
 
     artworks = db.relationship('Artwork', backref='owner', lazy=True)

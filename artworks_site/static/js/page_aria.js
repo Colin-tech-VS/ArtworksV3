@@ -9,6 +9,7 @@
   var previewUrl = shell ? shell.getAttribute('data-preview-url') : '';
   var draftApplyUrl = shell ? shell.getAttribute('data-draft-apply') : '';
   var draftDiscardUrl = shell ? shell.getAttribute('data-draft-discard') : '';
+  var draftStatusUrl = shell ? shell.getAttribute('data-draft-status') : '';
   var publicUrl = shell ? shell.getAttribute('data-public-url') : '';
   var liveFrame = shell ? shell.querySelector('[data-live-preview]') : null;
   var log = root.querySelector('[data-aria-log]');
@@ -38,6 +39,24 @@
       }
     }
     if (window.PePagePreview) PePagePreview.refresh();
+  }
+
+  function refreshPreviewWhenReady(expectedCount, attempt) {
+    attempt = attempt || 0;
+    if (!draftStatusUrl || !expectedCount) {
+      refreshPreview();
+      return;
+    }
+    fetch(draftStatusUrl, { credentials: 'same-origin', headers: { Accept: 'application/json' } })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        if (d.element_count >= expectedCount || attempt >= 4) {
+          refreshPreview();
+        } else {
+          setTimeout(function () { refreshPreviewWhenReady(expectedCount, attempt + 1); }, 180);
+        }
+      })
+      .catch(function () { refreshPreview(); });
   }
 
   function escapeHtml(s) {
@@ -153,6 +172,7 @@
     if (!actions || !actions.length) return;
     var preview = false;
     var draft = false;
+    var expectedCount = 0;
     var redirectUrl = null;
     actions.forEach(function (a) {
       if (a.type === 'redirect' && a.url) redirectUrl = a.url;
@@ -160,6 +180,7 @@
       else if (a.type === 'page_preview' || a.type === 'page_updated') {
         preview = true;
         if (a.draft) draft = true;
+        if (a.element_count) expectedCount = a.element_count;
       }
     });
     if (redirectUrl) {
@@ -172,7 +193,10 @@
       }
     });
     if (preview) {
-      setTimeout(refreshPreview, 120);
+      setTimeout(function () {
+        if (draft && expectedCount) refreshPreviewWhenReady(expectedCount, 0);
+        else refreshPreview();
+      }, 80);
       if (draft) showDraftBar();
     }
   }

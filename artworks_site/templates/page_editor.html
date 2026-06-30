@@ -16,8 +16,8 @@
   </div>
   <div class="dash-hero-actions">
     <a href="{{ public_url }}" target="_blank" rel="noopener" class="btn-line">Voir la page publique</a>
-    {% if page_mode in ('createur', 'intelligent') %}
-    <button type="button" class="btn-solid" data-open-preview>Aperçu en direct</button>
+    {% if page_mode == 'intelligent' %}
+    <button type="button" class="btn-solid" data-open-preview>Aperçu plein écran</button>
     {% endif %}
   </div>
 </header>
@@ -99,34 +99,52 @@
        data-upload-url="{{ url_for('main.page_image_upload') }}"
        data-published="{{ '1' if published else '0' }}"
        data-layout='{{ (layout | tojson) if layout else "null" }}'>
-    <div class="pe-builder-toolbar">
-      <div class="pe-tool-group">
-        <span class="pe-tool-label">Ajouter :</span>
-        <button type="button" class="pe-tool" data-add="heading">Titre</button>
-        <button type="button" class="pe-tool" data-add="text">Texte</button>
-        <button type="button" class="pe-tool" data-add="button">Bouton</button>
-        <button type="button" class="pe-tool" data-add="image">Image</button>
-        <button type="button" class="pe-tool" data-add="slider">Slider</button>
-        <button type="button" class="pe-tool" data-add="gallery">Galerie</button>
-        <button type="button" class="pe-tool" data-add="divider">Séparateur</button>
+    <div class="pe-creator-split">
+      <div class="pe-creator-main">
+        <div class="pe-builder-toolbar">
+          <div class="pe-tool-group pe-add-group">
+            <span class="pe-tool-label">Ajouter un bloc</span>
+            <button type="button" class="pe-add-btn" data-add="heading" title="Titre">Titre</button>
+            <button type="button" class="pe-add-btn" data-add="text" title="Texte">Texte</button>
+            <button type="button" class="pe-add-btn" data-add="image" title="Image">Image</button>
+            <button type="button" class="pe-add-btn" data-add="gallery" title="Galerie">Galerie</button>
+            <button type="button" class="pe-add-btn" data-add="button" title="Bouton">Bouton</button>
+            <button type="button" class="pe-add-btn pe-add-btn-muted" data-add="divider" title="Séparateur">—</button>
+            <button type="button" class="pe-add-btn pe-add-btn-muted" data-add="slider" title="Slider">Slider</button>
+          </div>
+          <div class="pe-tool-group pe-tool-right">
+            <span class="pe-save-state" data-save-state></span>
+            <button type="button" class="pe-tool" data-cancel hidden>Annuler</button>
+            <button type="button" class="pe-tool pe-tool-danger" data-clear title="Tout effacer">Effacer</button>
+            <button type="button" class="pe-tool pe-pub-btn" data-publish aria-pressed="false">Publier</button>
+            <button type="button" class="btn-solid pe-save-btn" data-save>Enregistrer</button>
+          </div>
+        </div>
+        <p class="pe-hint">Double-cliquez un bloc pour le modifier · glissez pour le déplacer · l'aperçu se met à jour à droite.</p>
+        <input type="file" accept="image/jpeg,image/png,image/gif,image/webp" data-upload-input hidden>
+        <div class="pe-builder-stage">
+          <div class="pe-canvas-wrap">
+            <div class="pe-canvas" data-canvas tabindex="0" aria-label="Zone de composition"></div>
+          </div>
+          <aside class="pe-props" data-props aria-label="Propriétés de l'élément">
+            <p class="pe-prop-empty">Cliquez sur un élément pour ajuster son style.</p>
+          </aside>
+        </div>
       </div>
-      <div class="pe-tool-group pe-tool-right">
-        <span class="pe-save-state" data-save-state></span>
-        <button type="button" class="pe-tool pe-preview-btn" data-open-preview>Aperçu en direct</button>
-        <button type="button" class="pe-tool" data-cancel hidden>Annuler</button>
-        <button type="button" class="pe-tool pe-tool-danger" data-clear>Tout effacer</button>
-        <button type="button" class="pe-tool pe-pub-btn" data-publish aria-pressed="false">Publier sur ma page</button>
-        <button type="button" class="btn-solid pe-save-btn" data-save>Enregistrer</button>
-      </div>
-    </div>
-    <p class="pe-hint">Glissez pour positionner · <strong>double-clic</strong> pour éditer le texte ou choisir une image · panneau de droite pour le style · <strong>Aperçu en direct</strong> pour voir le rendu réel.</p>
-    <input type="file" accept="image/jpeg,image/png,image/gif,image/webp" data-upload-input hidden>
-    <div class="pe-builder-stage">
-      <div class="pe-canvas-wrap">
-        <div class="pe-canvas" data-canvas tabindex="0" aria-label="Zone de composition"></div>
-      </div>
-      <aside class="pe-props" data-props aria-label="Propriétés de l'élément">
-        <p class="pe-prop-empty">Sélectionnez un élément pour modifier son style.</p>
+      <aside class="pe-live-preview" aria-label="Aperçu en direct">
+        <header class="pe-live-preview-head">
+          <div>
+            <strong>Aperçu en direct</strong>
+            <span class="pe-live-preview-sub">Rendu réel de votre page</span>
+          </div>
+          <div class="pe-live-preview-actions">
+            <button type="button" class="pe-tool" data-creator-refresh title="Actualiser">Actualiser</button>
+            <button type="button" class="pe-tool" data-open-preview title="Plein écran">Plein écran</button>
+          </div>
+        </header>
+        <div class="pe-live-preview-frame">
+          <iframe title="Aperçu de votre page" data-creator-live-preview loading="lazy"></iframe>
+        </div>
       </aside>
     </div>
   </div>
@@ -141,6 +159,7 @@
        data-public-url="{{ public_url }}"
        data-draft-apply="{{ url_for('main.page_draft_apply') }}"
        data-draft-discard="{{ url_for('main.page_draft_discard') }}"
+       data-draft-status="{{ draft_status_url }}"
        data-has-draft="{{ '1' if has_page_draft else '0' }}">
     {% if has_page_draft %}
     <div class="pe-draft-bar" data-draft-bar>

@@ -873,12 +873,12 @@ def execute_tool(name: str, args: dict, ctx: dict) -> dict:
 
     if name == 'get_my_page':
         import json
-        from flask import session
+        from .page_staging import load_page_draft
         from .page_blocks import elements_to_blocks
 
         has_draft = False
         layout = None
-        draft = session.get('page_draft')
+        draft = load_page_draft(user)
         if draft and isinstance(draft.get('layout'), dict):
             layout = draft['layout']
             has_draft = True
@@ -960,16 +960,21 @@ def execute_tool(name: str, args: dict, ctx: dict) -> dict:
         use_draft = commit is not True and args.get('draft', True) is not False
 
         if use_draft:
-            draft = session.get('page_draft') or {}
+            from .page_staging import load_page_draft, save_page_draft
+            draft = load_page_draft(user) or {}
             if not draft.get('baseline_layout'):
                 draft['baseline_layout'] = user.page_layout_json
                 draft['baseline_published'] = bool(user.page_published)
             draft['layout'] = payload
             draft['published'] = pub_flag
-            session['page_draft'] = draft
-            session.modified = True
+            save_page_draft(user, draft)
             preview_url = url_for('main.page_preview_frame')
-            _side(ctx, {'type': 'page_preview', 'url': preview_url, 'draft': True})
+            _side(ctx, {
+                'type': 'page_preview',
+                'url': preview_url,
+                'draft': True,
+                'element_count': len(elements),
+            })
             return {
                 'ok': True,
                 'draft': True,

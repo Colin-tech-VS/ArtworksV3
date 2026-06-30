@@ -1041,11 +1041,11 @@ def _layout_to_custom_page(layout):
 
 def _preview_layout_for_user():
     """Layout pour l'aperçu live : brouillon Aria > brouillon créateur > sauvegardé."""
-    import json
-    draft = session.get('page_draft')
+    from .page_staging import load_page_draft, load_preview_temp
+    draft = load_page_draft(current_user)
     if draft and isinstance(draft.get('layout'), dict):
         return draft['layout']
-    temp = session.get('page_preview_temp')
+    temp = load_preview_temp(current_user)
     if temp and isinstance(temp.get('elements'), list):
         return temp
     return _parse_page_layout(current_user)
@@ -1063,7 +1063,8 @@ def page_editor():
         current_user.page_mode = mode
         db.session.commit()
     from .aria_assistant import aria_enabled
-    has_draft = bool(session.get('page_draft'))
+    from .page_staging import has_page_draft
+    has_draft = has_page_draft(current_user)
     return render_template(
         'page_editor.html',
         page_mode=mode,
@@ -1074,6 +1075,7 @@ def page_editor():
         has_page_draft=has_draft,
         public_url=url_for('main.artist', artist_id=current_user.id),
         preview_url=url_for('main.page_preview_frame'),
+        draft_status_url=url_for('main.page_draft_status'),
     )
 
 
@@ -1140,19 +1142,29 @@ def page_preview_frame():
 @bp.route('/api/page/preview', methods=['POST'])
 @login_required
 def page_preview_push():
-    """Pousse un layout temporaire en session pour l'aperçu créateur (sans sauvegarder)."""
-    import json
+    """Pousse un layout temporaire pour l'aperçu créateur (sans sauvegarder)."""
+    from .page_staging import save_preview_temp
     data = request.get_json(silent=True) or {}
     elements = data.get('elements')
     if not isinstance(elements, list):
         return jsonify({'error': 'Format invalide.'}), 400
     clean = [e for e in (_sanitize_page_element(el) for el in elements) if e]
-    session['page_preview_temp'] = {
+    save_preview_temp(current_user, {
         'elements': clean,
         'canvas': data.get('canvas') if isinstance(data.get('canvas'), dict) else {},
-    }
-    session.modified = True
-    return jsonify({'ok': True, 'url': url_for('main.page_preview_frame')})
+    })
+    return jsonify({'ok': True, 'url': url_for('main.page_preview_frame'), 'count': len(clean)})
+
+
+@bp.route('/api/page/draft/status')
+@login_required
+def page_draft_status():
+    """État du brouillon Aria (pour rafraîchir l'aperçu après une action)."""
+    from .page_staging import has_page_draft, draft_element_count
+    return jsonify({
+        'has_draft': has_page_draft(current_user),
+        'element_count': draft_element_count(current_user),
+    })
 
 
 @bp.route('/api/page/draft/apply', methods=['POST'])
@@ -1160,16 +1172,15 @@ def page_preview_push():
 def page_draft_apply():
     """Valide le brouillon Aria (modifications de page)."""
     import json
-    draft = session.get('page_draft')
+    from .page_staging import clear_all_staging, load_page_draft
+    draft = load_page_draft(current_user)
     if not draft or not isinstance(draft.get('layout'), dict):
         return jsonify({'error': 'Aucun brouillon en attente.'}), 404
     current_user.page_layout_json = json.dumps(draft['layout'], ensure_ascii=False)
     if 'published' in draft:
         current_user.page_published = bool(draft['published'])
     db.session.commit()
-    session.pop('page_draft', None)
-    session.pop('page_preview_temp', None)
-    session.modified = True
+    clear_all_staging(current_user)
     return jsonify({
         'ok': True,
         'published': bool(current_user.page_published),
@@ -1180,10 +1191,9 @@ def page_draft_apply():
 @bp.route('/api/page/draft/discard', methods=['POST'])
 @login_required
 def page_draft_discard():
-    """Annule le brouillon Aria."""
-    session.pop('page_draft', None)
-    session.pop('page_preview_temp', None)
-    session.modified = True
+    """Annule le brouillon Aria et restaure la version précédente."""
+    from .page_staging import clear_all_staging
+    clear_all_staging(current_user, restore_baseline=True)
     return jsonify({'ok': True, 'preview_url': url_for('main.page_preview_frame')})
 
 

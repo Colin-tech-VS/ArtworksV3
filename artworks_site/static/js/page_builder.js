@@ -10,6 +10,7 @@
   var previewPushUrl = root.getAttribute('data-preview-url');
   var previewFrameUrl = root.getAttribute('data-preview-frame');
   var publicUrl = root.getAttribute('data-public-url') || '';
+  var liveFrame = root.querySelector('[data-creator-live-preview]');
   var uploadUrl = root.getAttribute('data-upload-url');
   var saveBtn = root.querySelector('[data-save]');
   var cancelBtn = root.querySelector('[data-cancel]');
@@ -91,7 +92,7 @@
     if (!pubBtn) return;
     pubBtn.classList.toggle('is-published', published);
     pubBtn.setAttribute('aria-pressed', published ? 'true' : 'false');
-    pubBtn.textContent = published ? 'Publiée ✓ — masquer' : 'Publier sur ma page';
+    pubBtn.textContent = published ? 'Publiée ✓' : 'Publier';
   }
 
   function renderStrip(type, images) {
@@ -397,6 +398,21 @@
     });
   }
 
+  function previewSrc() {
+    if (!previewFrameUrl) return '';
+    return previewFrameUrl + (previewFrameUrl.indexOf('?') >= 0 ? '&' : '?') + 't=' + Date.now();
+  }
+
+  function refreshLivePreview() {
+    if (!liveFrame || !previewFrameUrl) return;
+    liveFrame.src = previewSrc();
+    var panel = root.querySelector('.pe-live-preview');
+    if (panel) {
+      panel.classList.add('is-updated');
+      setTimeout(function () { panel.classList.remove('is-updated'); }, 600);
+    }
+  }
+
   function schedulePreview() {
     if (!previewPushUrl) return;
     clearTimeout(previewTimer);
@@ -411,6 +427,7 @@
       credentials: 'same-origin',
       body: JSON.stringify({ elements: serialize(), canvas: {} })
     }).then(function () {
+      refreshLivePreview();
       if (window.PePagePreview) PePagePreview.refresh();
     }).catch(function () {});
   }
@@ -668,6 +685,9 @@
 
   load();
 
+  var refreshBtn = root.querySelector('[data-creator-refresh]');
+  if (refreshBtn) refreshBtn.addEventListener('click', function () { pushPreview(); });
+
   if (window.PePagePreview && previewFrameUrl) {
     PePagePreview.init({
       previewUrl: previewFrameUrl,
@@ -675,4 +695,5 @@
       beforeOpen: function () { return pushPreview(); }
     });
   }
+  pushPreview();
 })();
