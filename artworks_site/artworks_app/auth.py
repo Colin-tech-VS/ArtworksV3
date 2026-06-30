@@ -245,6 +245,11 @@ def login():
             return redirect(url_for('auth.login'))
         login_user(user)
         return _redirect_after_login(user, next_page=request.args.get('next'))
+    if request.method == 'POST':
+        if form.errors.get('csrf_token'):
+            flash('Session expirée — rechargez la page et réessayez.', 'error')
+        elif form.errors:
+            flash('Vérifiez votre identifiant et votre mot de passe.', 'error')
     return render_template('login.html', form=form)
 
 

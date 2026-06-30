@@ -15,6 +15,14 @@
   var form = root.querySelector('[data-aria-form]');
   var input = root.querySelector('[data-aria-input]');
   var busy = false;
+  var chatContext = [];
+  var signupState = null;
+  var loginState = null;
+
+  function pushContext(role, content) {
+    chatContext.push({ role: role, content: content });
+    if (chatContext.length > 14) chatContext = chatContext.slice(-14);
+  }
 
   function previewSrc() {
     return previewUrl + (previewUrl.indexOf('?') >= 0 ? '&' : '?') + 't=' + Date.now();
@@ -145,12 +153,21 @@
     if (!actions || !actions.length) return;
     var preview = false;
     var draft = false;
+    var redirectUrl = null;
     actions.forEach(function (a) {
-      if (a.type === 'redirect' && a.url) window.location.href = a.url;
+      if (a.type === 'redirect' && a.url) redirectUrl = a.url;
+      else if (a.type === 'login') redirectUrl = redirectUrl || '/dashboard';
       else if (a.type === 'page_preview' || a.type === 'page_updated') {
         preview = true;
         if (a.draft) draft = true;
-      } else if (a.type === 'reload' || a.type === 'login') {
+      }
+    });
+    if (redirectUrl) {
+      window.location.href = redirectUrl;
+      return;
+    }
+    actions.forEach(function (a) {
+      if (a.type === 'reload') {
         setTimeout(function () { window.location.reload(); }, 900);
       }
     });
@@ -170,13 +187,28 @@
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
       credentials: 'same-origin',
-      body: JSON.stringify({ message: text })
+      body: JSON.stringify({
+        message: text,
+        context: chatContext,
+        signup_state: signupState,
+        login_state: loginState,
+      })
     })
       .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, data: d }; }); })
       .then(function (res) {
         typing.remove();
         if (res.data.reply) {
           bubble('bot', mdToHtml(res.data.reply));
+          pushContext('user', text);
+          pushContext('assistant', res.data.reply);
+          if (res.data.signup_state) signupState = res.data.signup_state;
+          else if (res.data.actions && res.data.actions.some(function (a) {
+            return a.type === 'redirect' || a.type === 'login';
+          })) signupState = null;
+          if (res.data.login_state) loginState = res.data.login_state;
+          else if (res.data.actions && res.data.actions.some(function (a) {
+            return a.type === 'redirect' || a.type === 'login';
+          })) loginState = null;
           applyActions(res.data.actions);
         } else {
           bubble('err', escapeHtml(res.data.error || 'Aria rencontre une difficulté. Réessayez.'));

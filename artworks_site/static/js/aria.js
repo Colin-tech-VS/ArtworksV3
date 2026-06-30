@@ -23,6 +23,19 @@
   var fileInput = root.querySelector('[data-aria-file]');
 
   var busy = false;
+  var chatContext = [];
+  var signupState = null;
+  var loginState = null;
+
+  function pushContext(role, content) {
+    chatContext.push({ role: role, content: content });
+    if (chatContext.length > 14) chatContext = chatContext.slice(-14);
+  }
+
+  function resolveUrl(href) {
+    if (!href) return siteUrl + '/dashboard';
+    return href.charAt(0) === '/' ? siteUrl + href : href;
+  }
 
   function openPanel() {
     panel.classList.add('is-open');
@@ -223,13 +236,21 @@
 
   function applyActions(actions) {
     if (!actions || !actions.length) return;
+    var redirectUrl = null;
     actions.forEach(function (a) {
       if (a.type === 'redirect' && a.url) {
-        window.location.href = a.url;
-      } else if (a.type === 'reload') {
-        setTimeout(function () { window.location.reload(); }, 800);
+        redirectUrl = resolveUrl(a.url);
       } else if (a.type === 'login') {
-        setTimeout(function () { window.location.reload(); }, 600);
+        redirectUrl = redirectUrl || (siteUrl + '/dashboard');
+      }
+    });
+    if (redirectUrl) {
+      window.location.href = redirectUrl;
+      return;
+    }
+    actions.forEach(function (a) {
+      if (a.type === 'reload') {
+        setTimeout(function () { window.location.reload(); }, 800);
       }
     });
   }
@@ -264,7 +285,12 @@
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
       credentials: 'same-origin',
-      body: JSON.stringify({ message: text }),
+      body: JSON.stringify({
+        message: text,
+        context: chatContext,
+        signup_state: signupState,
+        login_state: loginState,
+      }),
     })
       .then(function (r) {
         return r.json().then(function (data) {
@@ -276,6 +302,16 @@
         if (typing) typing.remove();
         if (res.data.reply) {
           appendAssistant(res.data.reply, true);
+          pushContext('user', text);
+          pushContext('assistant', res.data.reply);
+          if (res.data.signup_state) signupState = res.data.signup_state;
+          else if (res.data.actions && res.data.actions.some(function (a) {
+            return a.type === 'redirect' || a.type === 'login';
+          })) signupState = null;
+          if (res.data.login_state) loginState = res.data.login_state;
+          else if (res.data.actions && res.data.actions.some(function (a) {
+            return a.type === 'redirect' || a.type === 'login';
+          })) loginState = null;
           applyActions(res.data.actions);
         } else if (res.data.error) {
           appendAssistant(res.data.error, false);
@@ -309,6 +345,9 @@
         body: JSON.stringify({ reset: true }),
       }).catch(function () {});
       messagesEl.innerHTML = '';
+      chatContext = [];
+      signupState = null;
+      loginState = null;
       if (welcomeEl) welcomeEl.style.display = '';
     });
   }

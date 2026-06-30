@@ -99,3 +99,9 @@ class Config:
         FACEBOOK_PAGE_ACCESS_TOKEN or INSTAGRAM_USER_ID
         or DEVIANTART_CLIENT_ID or PINTEREST_CLIENT_ID
     )
+
+    # Cookies session (HTTPS prod Scalingo)
+    if SITE_URL.startswith('https://'):
+        SESSION_COOKIE_SECURE = True
+        SESSION_COOKIE_SAMESITE = 'Lax'
+        REMEMBER_COOKIE_SECURE = True

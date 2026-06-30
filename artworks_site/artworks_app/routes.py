@@ -952,7 +952,13 @@ def aria_chat():
         return jsonify({'ok': True})
 
     message = (data.get('message') or '').strip()
-    result = chat(message, reset=bool(data.get('reset_conversation')))
+    result = chat(
+        message,
+        reset=bool(data.get('reset_conversation')),
+        client_context=data.get('context'),
+        client_signup=data.get('signup_state'),
+        client_login=data.get('login_state'),
+    )
     if result.get('error') and not result.get('reply'):
         if 'Limite' in result.get('error', ''):
             return jsonify(result), 429

@@ -221,6 +221,33 @@ def _save_history(messages: list[dict[str, str]]) -> None:
     session.modified = True
 
 
+def _merge_histories(client: list | None, server: list) -> list[dict[str, str]]:
+    """Historique client (fiable) + session serveur."""
+    merged: list[dict[str, str]] = []
+    for src in (client or []) + (server or []):
+        if not isinstance(src, dict):
+            continue
+        role = src.get('role')
+        content = str(src.get('content') or '').strip()
+        if role in ('user', 'assistant') and content:
+            merged.append({'role': role, 'content': content[:2000]})
+    return merged[-_MAX_HISTORY:]
+
+
+def _state_from_client_signup(data: dict | None) -> dict | None:
+    if not isinstance(data, dict) or not data.get('active'):
+        return None
+    return {
+        'active': True,
+        'role': data.get('role') or 'galerie',
+        'email': data.get('email'),
+        'password': None,
+        'display_name': data.get('display_name'),
+        'plan': data.get('plan') or 'free',
+        'awaiting': data.get('awaiting'),
+    }
+
+
 def _normalize_tool_calls(tool_calls: list) -> list[dict]:
     """Réécrit les tool_calls Mistral avec un id valide (a-zA-Z0-9, longueur 9).
 
@@ -437,10 +464,27 @@ def _recover_signup_from_history(history: list[dict], text: str) -> dict | None:
     return None
 
 
-def _signup_reply(message: str, ctx: dict[str, Any] | None = None) -> dict[str, Any]:
+def _signup_reply(
+    message: str,
+    ctx: dict[str, Any] | None = None,
+    state: dict | None = None,
+) -> dict[str, Any]:
     out: dict[str, Any] = {'reply': message, 'name': ARIA_NAME}
     if ctx and ctx.get('side_effects'):
         out['actions'] = ctx['side_effects']
+    if state and state.get('active'):
+        logged_in = any(
+            isinstance(a, dict) and a.get('type') in ('redirect', 'login')
+            for a in (out.get('actions') or [])
+        )
+        if not logged_in:
+            out['signup_state'] = {
+                'active': True,
+                'role': state.get('role'),
+                'email': state.get('email'),
+                'awaiting': state.get('awaiting'),
+                'plan': state.get('plan') or 'free',
+            }
     return out
 
 
@@ -467,6 +511,12 @@ def _handle_signup_flow(text: str, ctx: dict[str, Any], history: list[dict] | No
     state = session.get('aria_signup')
     if not isinstance(state, dict):
         state = None
+
+    client_signup = ctx.get('client_signup')
+    if (not state or not state.get('active')) and client_signup:
+        restored = _state_from_client_signup(client_signup)
+        if restored:
+            state = restored
 
     # Inscription en une ligne (email + mdp + rôle dans le même message)
     one_shot = parse_signup_credentials(text)
@@ -559,7 +609,8 @@ def _handle_signup_flow(text: str, ctx: dict[str, Any], history: list[dict] | No
         _save_signup_state(state)
         return _signup_reply(
             "Avec plaisir ! Quel type de compte souhaitez-vous créer : "
-            "**galerie**, **artiste** ou **collectionneur** ?"
+            "**galerie**, **artiste** ou **collectionneur** ?",
+            ctx, state,
         )
 
     rlabel = _ROLE_LABEL.get(state['role'], state['role'])
@@ -567,7 +618,8 @@ def _handle_signup_flow(text: str, ctx: dict[str, Any], history: list[dict] | No
         state['awaiting'] = 'email'
         _save_signup_state(state)
         return _signup_reply(
-            f"Parfait, créons votre compte **{rlabel}**. Quelle est votre **adresse email** ?"
+            f"Parfait, créons votre compte **{rlabel}**. Quelle est votre **adresse email** ?",
+            ctx, state,
         )
 
     if not state.get('password'):
@@ -575,7 +627,8 @@ def _handle_signup_flow(text: str, ctx: dict[str, Any], history: list[dict] | No
         _save_signup_state(state)
         return _signup_reply(
             "Merci ! Choisissez maintenant un **mot de passe** (au moins 6 caractères). "
-            "Il restera confidentiel."
+            "Il restera confidentiel.",
+            ctx, state,
         )
 
     # Nom optionnel : création directe (modifiable dans le profil ensuite)
@@ -599,10 +652,88 @@ def _handle_signup_flow(text: str, ctx: dict[str, Any], history: list[dict] | No
         state['awaiting'] = 'password'
         _save_signup_state(state)
 
-    return _signup_reply(format_signup_reply(result, role=state['role']), ctx)
+    return _signup_reply(format_signup_reply(result, role=state['role']), ctx, state)
 
 
-def chat(user_message: str, *, reset: bool = False) -> dict[str, Any]:
+def _has_login_intent(low: str) -> bool:
+    if _has_signup_intent(low):
+        return False
+    keys = ('connect', 'connexion', 'connecter', 'login', 'identif', 'se connecter')
+    return any(k in low for k in keys)
+
+
+def _handle_login_flow(text: str, ctx: dict[str, Any], history: list[dict]) -> dict[str, Any] | None:
+    """Connexion directe email + mot de passe (sans passer par le LLM)."""
+    from flask_login import current_user
+    from .aria_tools import execute_tool
+
+    if current_user.is_authenticated:
+        return None
+
+    low = text.lower().strip()
+    em = _extract_email(text)
+    pw = _capture_password(text)
+
+    # Connexion en une phrase : email + mot de passe
+    if em and pw and not _has_signup_intent(low):
+        result = execute_tool('login_account', {'email': em, 'password': pw}, ctx)
+        if result.get('ok'):
+            msg = (
+                f"Connexion réussie — bienvenue **{result.get('username', 'sur Artworks')}** !\n\n"
+                f"[Accéder au tableau de bord](/dashboard)"
+            )
+        else:
+            msg = f"**{result.get('error', 'Connexion impossible.')}**"
+        return _signup_reply(msg, ctx)
+
+    last_a = _last_assistant_text(history).lower()
+    login_pw_step = (
+        ('mot de passe' in last_a or 'password' in last_a)
+        and any(w in last_a for w in ('connect', 'connexion', 'identif'))
+        and 'créons votre compte' not in last_a
+    )
+    client_login = ctx.get('client_login') if isinstance(ctx.get('client_login'), dict) else {}
+    if client_login.get('awaiting') == 'password' or login_pw_step:
+        email = client_login.get('email') or _last_user_email(history)
+        if not pw:
+            pw = _capture_password(text)
+        if email and pw:
+            result = execute_tool('login_account', {'email': email, 'password': pw}, ctx)
+            if result.get('ok'):
+                msg = (
+                    f"Connexion réussie — bienvenue **{result.get('username', '')}** !\n\n"
+                    f"[Accéder au tableau de bord](/dashboard)"
+                )
+            else:
+                msg = f"**{result.get('error', 'Connexion impossible.')}**"
+            return _signup_reply(msg, ctx)
+
+    if _has_login_intent(low) and em and not pw:
+        return {
+            **_signup_reply(
+                f"Merci. Quel est votre **mot de passe** pour {em} ?",
+                ctx,
+            ),
+            'login_state': {'email': em, 'awaiting': 'password'},
+        }
+
+    if _has_login_intent(low) and not em:
+        return _signup_reply(
+            "Pour vous connecter, indiquez votre **adresse email**.",
+            ctx,
+        )
+
+    return None
+
+
+def chat(
+    user_message: str,
+    *,
+    reset: bool = False,
+    client_context: list | None = None,
+    client_signup: dict | None = None,
+    client_login: dict | None = None,
+) -> dict[str, Any]:
     """Agent Aria avec function calling."""
     from flask_login import current_user
 
@@ -617,11 +748,23 @@ def chat(user_message: str, *, reset: bool = False) -> dict[str, Any]:
     if reset:
         clear_history()
 
-    history = _history()
+    history = _merge_histories(client_context, _history())
     ctx: dict[str, Any] = {
         'user': current_user,
         'side_effects': [],
+        'client_signup': client_signup,
+        'client_login': client_login,
     }
+
+    login_flow = _handle_login_flow(text, ctx, history)
+    if login_flow:
+        history.append({'role': 'user', 'content': text})
+        history.append({'role': 'assistant', 'content': login_flow['reply']})
+        _save_history(history)
+        out = dict(login_flow)
+        if not out.get('actions'):
+            out.pop('actions', None)
+        return out
 
     signup = _handle_signup_flow(text, ctx, history)
     if signup:

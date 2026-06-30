@@ -375,6 +375,12 @@ def _side(ctx: dict, effect: dict) -> None:
     ctx.setdefault('side_effects', []).append(effect)
 
 
+def _auth_success_side(ctx: dict, user: User) -> None:
+    """Après connexion / inscription : rediriger vers le dashboard (plus fiable qu'un reload)."""
+    _side(ctx, {'type': 'login', 'user_id': user.id})
+    _side(ctx, {'type': 'redirect', 'url': '/dashboard'})
+
+
 def _resolve_image(args: dict, ctx: dict) -> str | None:
     fn = (args.get('image_filename') or '').strip()
     if fn:
@@ -680,8 +686,7 @@ def execute_tool(name: str, args: dict, ctx: dict) -> dict:
             return {'error': 'Mot de passe incorrect.'}
         login_user(u)
         ctx['user'] = u
-        _side(ctx, {'type': 'login', 'user_id': u.id})
-        _side(ctx, {'type': 'reload'})
+        _auth_success_side(ctx, u)
         return {
             'ok': True,
             'user_id': u.id,
@@ -737,8 +742,7 @@ def execute_tool(name: str, args: dict, ctx: dict) -> dict:
             except Exception as exc:
                 _log.warning('Aria login existing user failed: %s', exc)
             ctx['user'] = existing
-            _side(ctx, {'type': 'login', 'user_id': existing.id})
-            _side(ctx, {'type': 'reload'})
+            _auth_success_side(ctx, existing)
             return {
                 'ok': True,
                 'existing_account': True,
@@ -772,8 +776,7 @@ def execute_tool(name: str, args: dict, ctx: dict) -> dict:
         except Exception as exc:
             _log.warning('Aria post-register hooks failed: %s', exc)
         ctx['user'] = u
-        _side(ctx, {'type': 'login', 'user_id': u.id})
-        _side(ctx, {'type': 'reload'})
+        _auth_success_side(ctx, u)
         if pending_paid:
             from . import billing
             checkout = billing.create_checkout_session(
