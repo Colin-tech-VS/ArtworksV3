@@ -99,6 +99,9 @@
         <button type="button" class="pe-tool" data-add="text">Texte</button>
         <button type="button" class="pe-tool" data-add="button">Bouton</button>
         <button type="button" class="pe-tool" data-add="image">Image</button>
+        <button type="button" class="pe-tool" data-add="slider">Slider</button>
+        <button type="button" class="pe-tool" data-add="gallery">Galerie</button>
+        <button type="button" class="pe-tool" data-add="divider">Séparateur</button>
       </div>
       <div class="pe-tool-group pe-tool-right">
         <span class="pe-save-state" data-save-state></span>
@@ -107,10 +110,15 @@
         <button type="button" class="btn-solid pe-save-btn" data-save>Enregistrer</button>
       </div>
     </div>
-    <p class="pe-hint">Glissez les éléments pour les positionner. <strong>Double-cliquez</strong> un texte pour l'éditer (une image pour la remplacer). Tirez le coin pour redimensionner. Sélectionnez puis <kbd>Suppr</kbd> pour retirer.</p>
+    <p class="pe-hint">Glissez les éléments pour les positionner. <strong>Double-cliquez</strong> un texte pour l'éditer (une image pour la remplacer). Tirez le coin pour redimensionner. Sélectionnez un élément pour modifier <strong>couleur, police, taille…</strong> dans le panneau de droite.</p>
     <input type="file" accept="image/jpeg,image/png,image/gif,image/webp" data-upload-input hidden>
-    <div class="pe-canvas-wrap">
-      <div class="pe-canvas" data-canvas tabindex="0" aria-label="Zone de composition de la page"></div>
+    <div class="pe-builder-stage">
+      <div class="pe-canvas-wrap">
+        <div class="pe-canvas" data-canvas tabindex="0" aria-label="Zone de composition de la page"></div>
+      </div>
+      <aside class="pe-props" data-props aria-label="Propriétés de l'élément">
+        <p class="pe-prop-empty">Sélectionnez un élément pour modifier son style.</p>
+      </aside>
     </div>
   </div>
 </section>

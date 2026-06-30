@@ -998,7 +998,6 @@ def aria_upload():
 
 # ---------- Éditeur de page publique : 3 modes ----------
 PAGE_MODES = ('redacteur', 'createur', 'intelligent')
-_PAGE_EL_TYPES = ('heading', 'text', 'button', 'image')
 
 
 def _normalize_page_mode(value):
@@ -1020,21 +1019,24 @@ def _parse_page_layout(user):
 
 
 def published_page(user):
-    """Éléments + hauteur du canvas à afficher sur la page publique, ou None."""
+    """Éléments + hauteur du canvas à afficher sur la page publique, ou None.
+
+    Chaque élément est enrichi d'un champ `style_css` (styles visuels inline)
+    pour que le template reste simple."""
+    from .page_blocks import layout_height, style_to_css
     if not getattr(user, 'page_published', False):
         return None
     layout = _parse_page_layout(user)
     if not layout or not layout.get('elements'):
         return None
-    bottom = 0
+    elements = []
     for el in layout['elements']:
-        try:
-            y = float(el.get('y') or 0)
-            h = float(el.get('h') or 0) or (60 if el.get('type') == 'heading' else 40)
-        except (TypeError, ValueError):
+        if not isinstance(el, dict):
             continue
-        bottom = max(bottom, y + h)
-    return {'elements': layout['elements'], 'height': int(bottom) + 60}
+        item = dict(el)
+        item['style_css'] = style_to_css(el.get('style') or {})
+        elements.append(item)
+    return {'elements': elements, 'height': layout_height(elements)}
 
 
 @bp.route('/dashboard/page')
@@ -1071,36 +1073,8 @@ def page_editor_set_mode():
 
 def _sanitize_page_element(el):
     """Garde un élément de canvas propre et borné (anti-XSS / valeurs aberrantes)."""
-    if not isinstance(el, dict):
-        return None
-    etype = el.get('type')
-    if etype not in _PAGE_EL_TYPES:
-        return None
-
-    def num(v, lo, hi):
-        try:
-            v = int(float(v))
-        except (TypeError, ValueError):
-            v = 0
-        return max(lo, min(hi, v))
-
-    out = {
-        'id': str(el.get('id') or '')[:40],
-        'type': etype,
-        'x': num(el.get('x'), 0, 4000),
-        'y': num(el.get('y'), 0, 20000),
-        'w': num(el.get('w'), 0, 4000),
-    }
-    if etype == 'image':
-        out['h'] = num(el.get('h'), 0, 4000)
-        src = str(el.get('src') or '').strip()[:512]
-        # n'autorise que des URLs http(s) ou des chemins relatifs internes
-        if src and not (src.startswith('http://') or src.startswith('https://') or src.startswith('/')):
-            src = ''
-        out['src'] = src
-    else:
-        out['text'] = str(el.get('text') or '')[:2000]
-    return out
+    from .page_blocks import sanitize_element
+    return sanitize_element(el)
 
 
 @bp.route('/api/page/layout', methods=['POST'])

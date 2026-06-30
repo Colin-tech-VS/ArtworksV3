@@ -58,10 +58,31 @@
     return div;
   }
 
+  function showPreview(url) {
+    var wrap = root.querySelector('[data-aria-preview]');
+    if (!wrap) {
+      wrap = document.createElement('div');
+      wrap.className = 'pe-aria-preview';
+      wrap.setAttribute('data-aria-preview', '');
+      wrap.innerHTML =
+        '<div class="pe-aria-preview-bar">' +
+        '<span>Aperçu de votre page publique</span>' +
+        '<a href="' + url + '" target="_blank" rel="noopener" data-aria-preview-link>Ouvrir ↗</a>' +
+        '</div><iframe title="Aperçu de la page" data-aria-preview-frame loading="lazy"></iframe>';
+      root.appendChild(wrap);
+    }
+    var link = wrap.querySelector('[data-aria-preview-link]');
+    if (link) link.href = url;
+    var frame = wrap.querySelector('[data-aria-preview-frame]');
+    if (frame) frame.src = url + (url.indexOf('?') >= 0 ? '&' : '?') + 't=' + Date.now();
+    wrap.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
   function applyActions(actions) {
     if (!actions || !actions.length) return;
     actions.forEach(function (a) {
       if (a.type === 'redirect' && a.url) window.location.href = a.url;
+      else if (a.type === 'page_updated' && a.url) showPreview(a.url);
       else if (a.type === 'reload' || a.type === 'login') {
         setTimeout(function () { window.location.reload(); }, 900);
       }

@@ -273,6 +273,48 @@ TOOLS_AUTH = [
         {},
     ),
     _tool(
+        'get_my_page',
+        'Lit la page publique du compte (artiste/galerie) : layout actuel, profil, '
+        'et URLs des images d\'œuvres réutilisables dans un slider/galerie.',
+        {},
+    ),
+    _tool(
+        'set_page_layout',
+        'CONSTRUIT/REMPLACE réellement la page publique (mode intelligent). Fournis une '
+        'liste ORDONNÉE de blocs (de haut en bas) ; le site les empile et les centre '
+        'automatiquement, puis publie la page. Utilise get_my_page avant pour récupérer '
+        'les images d\'œuvres.',
+        {
+            'blocks': {
+                'type': 'array',
+                'description': 'Blocs ordonnés haut → bas.',
+                'items': {
+                    'type': 'object',
+                    'properties': {
+                        'type': {'type': 'string', 'enum': ['heading', 'text', 'button', 'image', 'divider', 'slider', 'gallery']},
+                        'text': {'type': 'string', 'description': 'Titre/texte/libellé du bouton'},
+                        'href': {'type': 'string', 'description': 'Lien du bouton (interne ou http)'},
+                        'src': {'type': 'string', 'description': 'URL image (type image)'},
+                        'images': {'type': 'array', 'items': {'type': 'string'}, 'description': 'URLs (slider/gallery)'},
+                        'width': {'type': 'integer'},
+                        'align': {'type': 'string', 'enum': ['left', 'center', 'right']},
+                        'color': {'type': 'string', 'description': 'Couleur texte hex #RRGGBB'},
+                        'bg': {'type': 'string', 'description': 'Fond hex #RRGGBB'},
+                        'font': {'type': 'string', 'enum': ['sans', 'serif', 'display', 'mono']},
+                        'size': {'type': 'integer', 'description': 'Taille police px'},
+                    },
+                },
+            },
+            'publish': {'type': 'boolean', 'description': 'Publier (défaut: oui)'},
+        },
+        ['blocks'],
+    ),
+    _tool(
+        'publish_my_page',
+        'Publie ou masque la page publique personnalisée.',
+        {'published': {'type': 'boolean'}},
+    ),
+    _tool(
         'get_subscription_status',
         'Statut abonnement et formule du compte connecté.',
         {},
@@ -836,6 +878,97 @@ def execute_tool(name: str, args: dict, ctx: dict) -> dict:
         db.session.commit()
         _side(ctx, {'type': 'reload'})
         return {'ok': True, 'updated': updated}
+
+    if name == 'get_my_page':
+        import json
+        layout = None
+        if user.page_layout_json:
+            try:
+                layout = json.loads(user.page_layout_json)
+            except (ValueError, TypeError):
+                layout = None
+        elements = (layout or {}).get('elements') or []
+        arts = []
+        for a in (user.artworks or [])[:24]:
+            img = _image_url(a.image)
+            arts.append({
+                'id': a.id,
+                'title': a.title,
+                'image': img,
+                'price_label': a.price_str if a.price else 'Prix sur demande',
+            })
+        return {
+            'ok': True,
+            'published': bool(user.page_published),
+            'element_count': len(elements),
+            'profile': {
+                'display_name': user.display_name or user.username,
+                'discipline': user.discipline,
+                'location': user.location,
+                'bio': (user.bio or '')[:600],
+                'statement': (user.statement or '')[:600],
+            },
+            'artworks': arts,
+            'artwork_images': [a['image'] for a in arts if a['image']],
+            'page_url': f'/artist/{user.id}',
+        }
+
+    if name == 'set_page_layout':
+        if user.role not in ('artiste', 'galerie'):
+            return {'error': 'La page publique est réservée aux comptes artiste et galerie.'}
+        import json
+        from .page_blocks import arrange_vertical
+        blocks_in = args.get('blocks')
+        if not isinstance(blocks_in, list) or not blocks_in:
+            return {'error': 'Fournissez une liste de blocs (blocks).'}
+        norm = []
+        for b in blocks_in[:60]:
+            if not isinstance(b, dict):
+                continue
+            style = {}
+            for k in ('color', 'bg', 'font', 'size', 'align'):
+                if b.get(k) not in (None, ''):
+                    style[k] = b[k]
+            norm.append({
+                'type': b.get('type'),
+                'text': b.get('text'),
+                'src': b.get('src'),
+                'href': b.get('href'),
+                'images': b.get('images'),
+                'width': b.get('width'),
+                'height': b.get('height'),
+                'style': style or None,
+            })
+        elements = arrange_vertical(norm)
+        if not elements:
+            return {'error': 'Aucun bloc valide à appliquer.'}
+        payload = {
+            'elements': elements,
+            'canvas': {'w': 960},
+            'updated_at': datetime.utcnow().isoformat(),
+        }
+        user.page_layout_json = json.dumps(payload, ensure_ascii=False)
+        publish = args.get('publish')
+        if publish is None or bool(publish):
+            user.page_published = True
+        db.session.commit()
+        page_url = f'/artist/{user.id}'
+        _side(ctx, {'type': 'page_updated', 'url': page_url})
+        return {
+            'ok': True,
+            'count': len(elements),
+            'published': bool(user.page_published),
+            'page_url': page_url,
+        }
+
+    if name == 'publish_my_page':
+        if user.role not in ('artiste', 'galerie'):
+            return {'error': 'La page publique est réservée aux comptes artiste et galerie.'}
+        user.page_published = bool(args.get('published', True))
+        db.session.commit()
+        page_url = f'/artist/{user.id}'
+        _side(ctx, {'type': 'page_updated', 'url': page_url})
+        return {'ok': True, 'published': bool(user.page_published), 'page_url': page_url}
 
     if name == 'update_my_password':
         if user.uses_google_auth and not user.password_hash:
