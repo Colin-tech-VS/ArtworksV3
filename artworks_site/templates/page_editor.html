@@ -89,6 +89,8 @@
   <div class="pe-builder"
        id="pe-builder"
        data-save-url="{{ url_for('main.page_layout_save') }}"
+       data-upload-url="{{ url_for('main.page_image_upload') }}"
+       data-published="{{ '1' if published else '0' }}"
        data-layout='{{ (layout | tojson) if layout else "null" }}'>
     <div class="pe-builder-toolbar">
       <div class="pe-tool-group">
@@ -101,10 +103,12 @@
       <div class="pe-tool-group pe-tool-right">
         <span class="pe-save-state" data-save-state></span>
         <button type="button" class="pe-tool pe-tool-danger" data-clear>Tout effacer</button>
+        <button type="button" class="pe-tool pe-pub-btn" data-publish aria-pressed="false">Publier sur ma page</button>
         <button type="button" class="btn-solid pe-save-btn" data-save>Enregistrer</button>
       </div>
     </div>
-    <p class="pe-hint">Glissez les éléments pour les positionner. <strong>Double-cliquez</strong> un texte pour l'éditer. Sélectionnez puis <kbd>Suppr</kbd> pour retirer.</p>
+    <p class="pe-hint">Glissez les éléments pour les positionner. <strong>Double-cliquez</strong> un texte pour l'éditer (une image pour la remplacer). Tirez le coin pour redimensionner. Sélectionnez puis <kbd>Suppr</kbd> pour retirer.</p>
+    <input type="file" accept="image/jpeg,image/png,image/gif,image/webp" data-upload-input hidden>
     <div class="pe-canvas-wrap">
       <div class="pe-canvas" data-canvas tabindex="0" aria-label="Zone de composition de la page"></div>
     </div>

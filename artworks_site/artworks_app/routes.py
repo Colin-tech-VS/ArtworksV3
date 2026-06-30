@@ -258,6 +258,7 @@ def artist(artist_id):
     return render_template(
         'artist.html', artist=artist, artworks=artworks, artist_ent=ent,
         seo=seo, json_ld=json_ld,
+        custom_page=published_page(artist),
     )
 
 
@@ -997,11 +998,43 @@ def aria_upload():
 
 # ---------- Éditeur de page publique : 3 modes ----------
 PAGE_MODES = ('redacteur', 'createur', 'intelligent')
+_PAGE_EL_TYPES = ('heading', 'text', 'button', 'image')
 
 
 def _normalize_page_mode(value):
     value = (value or '').strip().lower()
     return value if value in PAGE_MODES else 'redacteur'
+
+
+def _parse_page_layout(user):
+    """Layout du canvas (dict {elements, canvas}) ou None."""
+    import json
+    raw = getattr(user, 'page_layout_json', None)
+    if not raw:
+        return None
+    try:
+        data = json.loads(raw)
+    except (ValueError, TypeError):
+        return None
+    return data if isinstance(data, dict) and isinstance(data.get('elements'), list) else None
+
+
+def published_page(user):
+    """Éléments + hauteur du canvas à afficher sur la page publique, ou None."""
+    if not getattr(user, 'page_published', False):
+        return None
+    layout = _parse_page_layout(user)
+    if not layout or not layout.get('elements'):
+        return None
+    bottom = 0
+    for el in layout['elements']:
+        try:
+            y = float(el.get('y') or 0)
+            h = float(el.get('h') or 0) or (60 if el.get('type') == 'heading' else 40)
+        except (TypeError, ValueError):
+            continue
+        bottom = max(bottom, y + h)
+    return {'elements': layout['elements'], 'height': int(bottom) + 60}
 
 
 @bp.route('/dashboard/page')
@@ -1010,22 +1043,18 @@ def page_editor():
     """Hub d'édition de la page publique : rédacteur, créateur (canvas) ou intelligent (Aria)."""
     if current_user.role == 'admin' or getattr(current_user, 'is_staff', False):
         return redirect(url_for('crm.index'))
-    import json
     requested = request.args.get('mode')
     mode = _normalize_page_mode(requested or current_user.page_mode)
     if requested and _normalize_page_mode(requested) != (current_user.page_mode or 'redacteur'):
         current_user.page_mode = mode
         db.session.commit()
-    try:
-        layout = json.loads(current_user.page_layout_json) if current_user.page_layout_json else None
-    except (ValueError, TypeError):
-        layout = None
     from .aria_assistant import aria_enabled
     return render_template(
         'page_editor.html',
         page_mode=mode,
         page_modes=PAGE_MODES,
-        layout=layout,
+        layout=_parse_page_layout(current_user),
+        published=bool(current_user.page_published),
         aria_ready=aria_enabled(),
         public_url=url_for('main.artist', artist_id=current_user.id),
     )
@@ -1040,10 +1069,44 @@ def page_editor_set_mode():
     return redirect(url_for('main.page_editor'))
 
 
+def _sanitize_page_element(el):
+    """Garde un élément de canvas propre et borné (anti-XSS / valeurs aberrantes)."""
+    if not isinstance(el, dict):
+        return None
+    etype = el.get('type')
+    if etype not in _PAGE_EL_TYPES:
+        return None
+
+    def num(v, lo, hi):
+        try:
+            v = int(float(v))
+        except (TypeError, ValueError):
+            v = 0
+        return max(lo, min(hi, v))
+
+    out = {
+        'id': str(el.get('id') or '')[:40],
+        'type': etype,
+        'x': num(el.get('x'), 0, 4000),
+        'y': num(el.get('y'), 0, 20000),
+        'w': num(el.get('w'), 0, 4000),
+    }
+    if etype == 'image':
+        out['h'] = num(el.get('h'), 0, 4000)
+        src = str(el.get('src') or '').strip()[:512]
+        # n'autorise que des URLs http(s) ou des chemins relatifs internes
+        if src and not (src.startswith('http://') or src.startswith('https://') or src.startswith('/')):
+            src = ''
+        out['src'] = src
+    else:
+        out['text'] = str(el.get('text') or '')[:2000]
+    return out
+
+
 @bp.route('/api/page/layout', methods=['POST'])
 @login_required
 def page_layout_save():
-    """Sauvegarde le layout du canvas (mode créateur)."""
+    """Sauvegarde le layout du canvas (mode créateur) + état de publication."""
     import json
     data = request.get_json(silent=True) or {}
     elements = data.get('elements')
@@ -1051,11 +1114,43 @@ def page_layout_save():
         return jsonify({'error': 'Format de layout invalide.'}), 400
     if len(elements) > 200:
         return jsonify({'error': 'Trop d\'éléments sur la page (max 200).'}), 400
+    clean = [e for e in (_sanitize_page_element(el) for el in elements) if e]
     payload = {
-        'elements': elements,
+        'elements': clean,
         'canvas': data.get('canvas') if isinstance(data.get('canvas'), dict) else {},
         'updated_at': datetime.utcnow().isoformat(),
     }
     current_user.page_layout_json = json.dumps(payload, ensure_ascii=False)
+    if 'published' in data:
+        current_user.page_published = bool(data.get('published'))
     db.session.commit()
-    return jsonify({'ok': True, 'count': len(elements)})
+    return jsonify({
+        'ok': True,
+        'count': len(clean),
+        'published': bool(current_user.page_published),
+    })
+
+
+@bp.route('/api/page/publish', methods=['POST'])
+@login_required
+def page_publish_toggle():
+    data = request.get_json(silent=True) or {}
+    current_user.page_published = bool(data.get('published'))
+    db.session.commit()
+    return jsonify({'ok': True, 'published': bool(current_user.page_published)})
+
+
+@bp.route('/api/page/upload', methods=['POST'])
+@login_required
+def page_image_upload():
+    """Upload d'image pour le canvas (mode créateur)."""
+    f = request.files.get('image') or request.files.get('file')
+    if not f or not f.filename:
+        return jsonify({'error': 'Fichier image requis.'}), 400
+    ext = (f.filename.rsplit('.', 1)[-1] if '.' in f.filename else '').lower()
+    if ext not in ('jpg', 'jpeg', 'png', 'gif', 'webp'):
+        return jsonify({'error': 'Format accepté : jpg, png, gif, webp.'}), 400
+    name = _save_upload(f)
+    if not name:
+        return jsonify({'error': 'Échec de l\'upload.'}), 400
+    return jsonify({'ok': True, 'url': url_for('static', filename=f'uploads/{name}')})

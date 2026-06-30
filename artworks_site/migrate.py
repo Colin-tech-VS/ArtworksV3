@@ -26,6 +26,7 @@ USER_COLS = {
     'google_sub': 'VARCHAR(64)',
     'page_mode': "VARCHAR(16) DEFAULT 'redacteur'",
     'page_layout_json': 'TEXT',
+    'page_published': 'INTEGER DEFAULT 0',
 }
 
 ARTWORK_COLS = {

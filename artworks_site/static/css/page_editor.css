@@ -135,6 +135,16 @@
   font-size:14px; line-height:1; cursor:pointer; display:none;
 }
 .pe-el.is-selected .pe-el-del{ display:grid; place-items:center; }
+.pe-el-resize{
+  position:absolute; right:-6px; bottom:-6px;
+  width:14px; height:14px; border-radius:3px;
+  background:#fff; border:2px solid var(--accent);
+  cursor:nwse-resize; display:none;
+}
+.pe-el.is-selected .pe-el-resize{ display:block; }
+.pe-el.is-resizing{ opacity:.9; }
+
+.pe-pub-btn.is-published{ background:var(--success,#3d6b52); color:#fff; border-color:var(--success,#3d6b52); }
 
 /* ----- Mode intelligent (Aria embarquée) ----- */
 .pe-aria{ border:1px solid var(--hair); border-radius:var(--radius-md); background:var(--bg-pure); padding:20px; }
