@@ -7,11 +7,11 @@
 
   var apiUrl = root.getAttribute('data-api-url');
   var previewUrl = shell ? shell.getAttribute('data-preview-url') : '';
+  var layoutApiUrl = shell ? shell.getAttribute('data-layout-api') : '';
   var draftApplyUrl = shell ? shell.getAttribute('data-draft-apply') : '';
   var draftDiscardUrl = shell ? shell.getAttribute('data-draft-discard') : '';
   var draftStatusUrl = shell ? shell.getAttribute('data-draft-status') : '';
   var publicUrl = shell ? shell.getAttribute('data-public-url') : '';
-  var liveFrame = shell ? shell.querySelector('[data-live-preview]') : null;
   var log = root.querySelector('[data-aria-log]');
   var form = root.querySelector('[data-aria-form]');
   var input = root.querySelector('[data-aria-input]');
@@ -25,35 +25,32 @@
     if (chatContext.length > 14) chatContext = chatContext.slice(-14);
   }
 
-  function previewSrc() {
-    return previewUrl + (previewUrl.indexOf('?') >= 0 ? '&' : '?') + 't=' + Date.now();
-  }
-
   function refreshPreview() {
-    if (liveFrame && previewUrl) {
-      liveFrame.src = previewSrc();
-      var panel = shell.querySelector('.pe-live-preview');
-      if (panel) {
-        panel.classList.add('is-updated');
-        setTimeout(function () { panel.classList.remove('is-updated'); }, 600);
-      }
+    if (window.PeLivePreview) {
+      PeLivePreview.refreshFromServer();
+    } else if (window.PePagePreview) {
+      PePagePreview.refresh();
     }
-    if (window.PePagePreview) PePagePreview.refresh();
   }
 
   function refreshPreviewWhenReady(expectedCount, attempt) {
     attempt = attempt || 0;
-    if (!draftStatusUrl || !expectedCount) {
+    var url = layoutApiUrl || draftStatusUrl;
+    if (!url) {
       refreshPreview();
       return;
     }
-    fetch(draftStatusUrl, { credentials: 'same-origin', headers: { Accept: 'application/json' } })
+    fetch(url, { credentials: 'same-origin', headers: { Accept: 'application/json' } })
       .then(function (r) { return r.json(); })
       .then(function (d) {
-        if (d.element_count >= expectedCount || attempt >= 4) {
+        var count = d.element_count || 0;
+        if (window.PeLivePreview && d.layout) {
+          PeLivePreview.render(d.layout);
+        }
+        if (count >= expectedCount || attempt >= 5 || !expectedCount) {
           refreshPreview();
         } else {
-          setTimeout(function () { refreshPreviewWhenReady(expectedCount, attempt + 1); }, 180);
+          setTimeout(function () { refreshPreviewWhenReady(expectedCount, attempt + 1); }, 150);
         }
       })
       .catch(function () { refreshPreview(); });
@@ -260,13 +257,5 @@
     });
   });
 
-  var refreshBtn = shell && shell.querySelector('[data-live-refresh]');
-  if (refreshBtn) refreshBtn.addEventListener('click', refreshPreview);
-
   bindDraftButtons(shell);
-
-  if (window.PePagePreview && previewUrl) {
-    PePagePreview.init({ previewUrl: previewUrl, publicUrl: publicUrl });
-  }
-  refreshPreview();
 })();

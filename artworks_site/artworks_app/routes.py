@@ -1087,18 +1087,28 @@ def page_editor():
         db.session.commit()
     from .aria_assistant import aria_enabled
     from .page_staging import has_page_draft
+    from .dashboard_ctx import role_meta, profile_completion
     has_draft = has_page_draft(current_user)
+    meta = role_meta(current_user)
+    prof_pct, prof_done, prof_total, prof_missing = profile_completion(current_user)
+    preview_layout = _preview_layout_for_user()
     return render_template(
         'page_editor.html',
         page_mode=mode,
         page_modes=PAGE_MODES,
-        layout=_parse_page_layout(current_user),
+        layout=preview_layout or _parse_page_layout(current_user),
         published=bool(current_user.page_published),
         aria_ready=aria_enabled(),
         has_page_draft=has_draft,
         public_url=url_for('main.artist', artist_id=current_user.id),
         preview_url=url_for('main.page_preview_frame'),
+        layout_api_url=url_for('main.page_layout_current'),
         draft_status_url=url_for('main.page_draft_status'),
+        meta=meta,
+        prof_pct=prof_pct,
+        prof_done=prof_done,
+        prof_total=prof_total,
+        prof_missing=prof_missing,
     )
 
 
@@ -1160,6 +1170,24 @@ def page_preview_frame():
     """Iframe d'aperçu live (brouillon ou page enregistrée)."""
     custom_page = _layout_to_custom_page(_preview_layout_for_user())
     return render_template('page_preview.html', custom_page=custom_page, artist=current_user)
+
+
+@bp.route('/api/page/layout/current')
+@login_required
+def page_layout_current():
+    """Layout courant pour aperçu client instantané (sans rechargement iframe)."""
+    from .page_staging import has_page_draft, draft_element_count
+    layout = _preview_layout_for_user()
+    elements = []
+    if layout and isinstance(layout.get('elements'), list):
+        elements = layout['elements']
+    return jsonify({
+        'ok': True,
+        'layout': layout,
+        'element_count': len(elements) or draft_element_count(current_user),
+        'has_draft': has_page_draft(current_user),
+        'published': bool(current_user.page_published),
+    })
 
 
 @bp.route('/api/page/preview', methods=['POST'])

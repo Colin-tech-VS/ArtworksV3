@@ -10,7 +10,6 @@
   var previewPushUrl = root.getAttribute('data-preview-url');
   var previewFrameUrl = root.getAttribute('data-preview-frame');
   var publicUrl = root.getAttribute('data-public-url') || '';
-  var liveFrame = root.querySelector('[data-creator-live-preview]');
   var uploadUrl = root.getAttribute('data-upload-url');
   var saveBtn = root.querySelector('[data-save]');
   var cancelBtn = root.querySelector('[data-cancel]');
@@ -26,7 +25,6 @@
   var uploadTargetId = null;
   var elements = [];
   var savedSnapshot = null;
-  var previewTimer = null;
 
   var DEFAULTS = {
     heading: { text: 'Votre titre', w: 420, style: { size: 36, weight: 600, font: 'serif' } },
@@ -67,21 +65,31 @@
     stateEl.className = 'pe-save-state' + (cls ? ' ' + cls : '');
   }
 
+  function updateInstantPreview() {
+    if (window.PeLivePreview) {
+      PeLivePreview.render({ elements: serialize() });
+    }
+  }
+
   function markDirty() {
     dirty = true;
     if (cancelBtn) cancelBtn.hidden = !savedSnapshot;
     setState('Non enregistré', 'is-dirty');
-    schedulePreview();
+    updateInstantPreview();
   }
 
   function styleToInline(style) {
     if (!style) return '';
+    var stacks = {
+      sans: "'Outfit', 'Helvetica Neue', Arial, sans-serif",
+      serif: "'Cormorant Garamond', Georgia, serif",
+      display: "'Cormorant Garamond', Georgia, serif",
+      mono: "'SFMono-Regular', Consolas, monospace"
+    };
     var parts = [];
     if (style.color) parts.push('color:' + style.color);
     if (style.bg) parts.push('background:' + style.bg);
-    if (style.font === 'serif') parts.push('font-family:Georgia,serif');
-    else if (style.font === 'display') parts.push('font-family:Georgia,serif');
-    else if (style.font === 'mono') parts.push('font-family:monospace');
+    if (stacks[style.font]) parts.push('font-family:' + stacks[style.font]);
     if (style.size) parts.push('font-size:' + style.size + 'px');
     if (style.weight) parts.push('font-weight:' + style.weight);
     if (style.align) parts.push('text-align:' + style.align);
@@ -240,6 +248,7 @@
       el.style.top = top + 'px';
       var m = findEl(id);
       if (m) { m.x = left; m.y = top; }
+      if (moved) updateInstantPreview();
     });
     function end(e) {
       if (!el.classList.contains('is-dragging')) return;
@@ -398,27 +407,6 @@
     });
   }
 
-  function previewSrc() {
-    if (!previewFrameUrl) return '';
-    return previewFrameUrl + (previewFrameUrl.indexOf('?') >= 0 ? '&' : '?') + 't=' + Date.now();
-  }
-
-  function refreshLivePreview() {
-    if (!liveFrame || !previewFrameUrl) return;
-    liveFrame.src = previewSrc();
-    var panel = root.querySelector('.pe-live-preview');
-    if (panel) {
-      panel.classList.add('is-updated');
-      setTimeout(function () { panel.classList.remove('is-updated'); }, 600);
-    }
-  }
-
-  function schedulePreview() {
-    if (!previewPushUrl) return;
-    clearTimeout(previewTimer);
-    previewTimer = setTimeout(pushPreview, 400);
-  }
-
   function pushPreview() {
     if (!previewPushUrl) return Promise.resolve();
     return fetch(previewPushUrl, {
@@ -427,7 +415,6 @@
       credentials: 'same-origin',
       body: JSON.stringify({ elements: serialize(), canvas: {} })
     }).then(function () {
-      refreshLivePreview();
       if (window.PePagePreview) PePagePreview.refresh();
     }).catch(function () {});
   }
@@ -449,7 +436,8 @@
           if (cancelBtn) cancelBtn.hidden = true;
           renderPubBtn();
           setState(published ? 'Enregistré · publié' : 'Enregistré', 'is-saved');
-          pushPreview();
+          updateInstantPreview();
+          if (window.PeLivePreview) PeLivePreview.refreshFromServer();
         } else {
           setState((res.j && res.j.error) || 'Erreur', 'is-dirty');
         }
@@ -467,7 +455,7 @@
     if (cancelBtn) cancelBtn.hidden = true;
     renderCanvas();
     setState('Modifications annulées', '');
-    pushPreview();
+    updateInstantPreview();
   }
 
   function load() {
@@ -498,7 +486,7 @@
     }
     renderPubBtn();
     renderCanvas();
-    pushPreview();
+    updateInstantPreview();
   }
 
   /* ----- Panneau propriétés ----- */
@@ -685,15 +673,14 @@
 
   load();
 
-  var refreshBtn = root.querySelector('[data-creator-refresh]');
-  if (refreshBtn) refreshBtn.addEventListener('click', function () { pushPreview(); });
-
   if (window.PePagePreview && previewFrameUrl) {
     PePagePreview.init({
       previewUrl: previewFrameUrl,
       publicUrl: publicUrl,
-      beforeOpen: function () { return pushPreview(); }
+      beforeOpen: function () {
+        updateInstantPreview();
+        return pushPreview();
+      }
     });
   }
-  pushPreview();
 })();
