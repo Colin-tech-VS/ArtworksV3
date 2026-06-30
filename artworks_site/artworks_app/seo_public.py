@@ -15,6 +15,14 @@ def _site_url() -> str:
     return (current_app.config.get('SITE_URL') or '').rstrip('/') or 'https://artworksdigital.fr'
 
 
+def _abs_image(value: str | None, placeholder: str = 'demo/art-01.jpg') -> str:
+    """URL absolue d'une image (œuvre/profil) pour Open Graph & JSON-LD."""
+    base = _site_url()
+    raw = value or placeholder
+    path = raw if '/' in raw else f'uploads/{raw}'
+    return f'{base}/static/{path}'
+
+
 def seo_level(user) -> str:
     ent = user_entitlements(user)
     if ent.get('seo_level') == 'max':
@@ -179,6 +187,8 @@ def artist_meta(artist) -> dict:
         'description': desc,
         'robots': 'index, follow' if ent.get('seo_profile') else 'noindex, nofollow',
         'og_type': 'profile',
+        'image': _abs_image(getattr(artist, 'cover', None) or getattr(artist, 'avatar', None)),
+        'url': _site_url() + url_for('main.artist', artist_id=artist.id),
     }
 
 
@@ -219,6 +229,7 @@ def artwork_json_ld(artwork) -> dict:
         '@type': 'VisualArtwork',
         'name': artwork.title,
         'url': url,
+        'image': _abs_image(artwork.image),
         'artMedium': artwork.technique or artwork.medium or 'Mixed media',
     }
     if artwork.year:
@@ -246,13 +257,20 @@ def artwork_meta(artwork) -> dict:
     desc = (artwork.description or
             f'Œuvre originale « {artwork.title} » ({medium}) par {owner_name}. '
             f'Achat sécurisé en ligne sur {SITE_NAME}.')[:320]
-    return {
+    out = {
         'title': title[:200],
         'description': desc,
         'robots': 'index, follow',
         'og_type': 'product',
+        'image': _abs_image(artwork.image),
+        'url': _site_url() + url_for('main.artwork_detail', artwork_id=artwork.id),
         'keywords': f'acheter {artwork.title}, oeuvre originale, {medium}, art contemporain',
     }
+    if artwork.price and artwork.status != 'reserve':
+        out['price'] = str(int(artwork.price))
+        out['currency'] = 'EUR'
+        out['availability'] = 'in stock'
+    return out
 
 
 def json_ld_script(data: dict | list | None) -> str:

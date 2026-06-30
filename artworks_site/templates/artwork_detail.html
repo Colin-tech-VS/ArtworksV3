@@ -10,6 +10,19 @@
 <meta property="og:title" content="{{ seo.title }}">
 <meta property="og:description" content="{{ seo.description }}">
 <meta property="og:type" content="{{ seo.og_type }}">
+<meta property="og:site_name" content="Artworks">
+{% if seo.url %}<meta property="og:url" content="{{ seo.url }}">{% endif %}
+{% if seo.image %}<meta property="og:image" content="{{ seo.image }}">{% endif %}
+{% if seo.price %}
+<meta property="product:price:amount" content="{{ seo.price }}">
+<meta property="product:price:currency" content="{{ seo.currency|default('EUR') }}">
+<meta property="product:availability" content="{{ seo.availability|default('in stock') }}">
+{% endif %}
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="{{ seo.title }}">
+<meta name="twitter:description" content="{{ seo.description }}">
+{% if seo.image %}<meta name="twitter:image" content="{{ seo.image }}">{% endif %}
+{% if seo.url %}<link rel="canonical" href="{{ seo.url }}">{% endif %}
 {% endif %}
 {% if json_ld %}{{ json_ld|safe }}{% endif %}
 {% endblock %}

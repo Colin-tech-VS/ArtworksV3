@@ -2,6 +2,8 @@
 from __future__ import annotations
 
 import logging
+import re
+import secrets
 import time
 from typing import Any
 
@@ -148,8 +150,17 @@ def _system_prompt() -> str:
 IDENTITÉ :
 - Tu es **Aria** uniquement. JAMAIS mentionner Mistral, GPT, LLM ou fournisseur IA.
 
+RÔLE COMMERCIAL — TU VENDS LE CATALOGUE :
+- Ta mission première : **faire découvrir et vendre** les œuvres, artistes, galeries et collectionneurs d'Artworks.
+- Pour parler d'une œuvre, d'un artiste, d'une galerie ou d'un collectionneur : appelle d'abord l'outil de lecture (`search_artworks`, `search_artists`, `get_artwork`, `get_profile`) — **ne devine jamais** prix, disponibilité ou stock.
+- **Montre toujours l'image** de l'œuvre quand le champ `image` est fourni : écris-la en markdown `![titre](image)` juste avant le lien.
+- Présente toujours : le **prix** (`price_label`), la **disponibilité**, et un **lien cliquable** vers l'œuvre `[titre](/artwork/ID)` ou le profil `[nom](/artist/ID)`.
+- Pour **vendre** : si `buyable_online` est vrai → mets un appel à l'action clair **[Acheter — prix](buy_url)** (paiement Stripe sécurisé sur la page œuvre). Sinon → propose **[Voir l'œuvre](url)** puis de **contacter l'artiste/la galerie** (champ `contact`) ou de demander le prix.
+- Quand tu présentes plusieurs œuvres, fais une liste : pour chacune, image + titre lié + prix.
+- Mets en valeur la provenance, l'authenticité et la sélection curatoriale pour rassurer l'acheteur, sans inventer de détails absents des données.
+
 OUTILS — RÈGLE D'OR :
-- Tu disposes d'**outils** pour agir sur le site : créer un compte (`create_account` role=galerie), **connecter** (`login_account`), changer de rôle (`change_my_role`), profil/œuvres/images, abonnement, etc.
+- Tu disposes d'**outils** pour lire le catalogue (œuvres, profils) et pour agir sur le site : créer un compte (`create_account` role=galerie), **connecter** (`login_account`), changer de rôle (`change_my_role`), profil/œuvres/images, abonnement, etc.
 - **Dès que l'utilisateur donne email + mot de passe** → appelle `create_account` **immédiatement** (l'outil connecte aussi les comptes existants avec le bon mot de passe).
 - Le **nom de galerie** = `display_name` (espaces autorisés, ex. « Artworks Salon »). **Username** : 3–64 caractères, généré auto — **ne jamais** inventer de limite à 12 ou 20 caractères.
 - **Ne jamais** refuser un nom pour longueur sans avoir appelé l'outil.
@@ -161,6 +172,7 @@ OUTILS — RÈGLE D'OR :
 
 STYLE (markdown rendu visuellement) :
 - **gras**, *italique*, ### titres, listes -, liens [texte](/chemin)
+- **images** : `![texte](url_image)` — affichées en vignette dans le chat (utilise le champ `image` des œuvres).
 
 BASE DE CONNAISSANCES :
 {knowledge}
@@ -189,6 +201,30 @@ def _history() -> list[dict[str, str]]:
 def _save_history(messages: list[dict[str, str]]) -> None:
     session['aria_history'] = messages[-_MAX_HISTORY:]
     session.modified = True
+
+
+def _normalize_tool_calls(tool_calls: list) -> list[dict]:
+    """Réécrit les tool_calls Mistral avec un id valide (a-zA-Z0-9, longueur 9).
+
+    Mistral rejette tout `tool_call_id` non conforme : on régénère un id propre
+    quand celui renvoyé est absent ou invalide, et on s'assure que l'id du message
+    `assistant` correspond exactement à celui du message `tool` (même objet réutilisé
+    par run_tool_calls)."""
+    norm = []
+    for tc in tool_calls or []:
+        fn = tc.get('function') or {}
+        tid = tc.get('id')
+        if not (isinstance(tid, str) and re.fullmatch(r'[a-zA-Z0-9]{9}', tid)):
+            tid = secrets.token_hex(5)[:9]
+        norm.append({
+            'id': tid,
+            'type': 'function',
+            'function': {
+                'name': fn.get('name') or '',
+                'arguments': fn.get('arguments') or '{}',
+            },
+        })
+    return norm
 
 
 def clear_history() -> None:
@@ -300,9 +336,12 @@ def chat(user_message: str, *, reset: bool = False) -> dict[str, Any]:
         return out
 
     tools = tools_for_user(current_user)
+    # Boucle conversationnelle temps réel : on privilégie le modèle rapide.
+    # Un appel d'outil enchaîne plusieurs requêtes séquentielles — le modèle lourd
+    # (mistral-large) les rend trop lentes et fait « bloquer » Aria / expirer le worker.
     model = (
-        current_app.config.get('MISTRAL_MODEL_HEAVY')
-        or current_app.config.get('MISTRAL_MODEL')
+        current_app.config.get('MISTRAL_MODEL')
+        or current_app.config.get('MISTRAL_MODEL_HEAVY')
         or 'mistral-small-latest'
     )
 
@@ -321,7 +360,7 @@ def chat(user_message: str, *, reset: bool = False) -> dict[str, Any]:
                 temperature=0.35,
                 max_tokens=1200,
                 model=model,
-                timeout=90,
+                timeout=45,
             )
             choices = data.get('choices') or []
             if not choices:
@@ -329,6 +368,7 @@ def chat(user_message: str, *, reset: bool = False) -> dict[str, Any]:
             msg = choices[0].get('message') or {}
             tool_calls = msg.get('tool_calls')
             if tool_calls:
+                tool_calls = _normalize_tool_calls(tool_calls)
                 messages.append({
                     'role': 'assistant',
                     'content': msg.get('content') or '',

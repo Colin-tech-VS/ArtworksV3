@@ -23,6 +23,14 @@ _MAX_AGENT_STEPS = 8
 _PENDING_KEY = 'aria_pending_images'
 
 
+def _image_url(value: str | None) -> str | None:
+    """Chemin statique d'une image œuvre/profil pour l'affichage dans le chat Aria."""
+    if not value:
+        return None
+    path = value if '/' in value else f'uploads/{value}'
+    return f'/static/{path}'
+
+
 def save_upload_file(file_storage) -> str | None:
     if not file_storage or not file_storage.filename:
         return None
@@ -85,18 +93,25 @@ TOOLS_PUBLIC = [
     ),
     _tool(
         'search_artists',
-        'Recherche artistes ou galeries publiques.',
+        'Recherche des profils publics : artistes, galeries ou collectionneurs.',
         {
-            'role': {'type': 'string', 'enum': ['artiste', 'galerie']},
+            'role': {'type': 'string', 'enum': ['artiste', 'galerie', 'collectionneur']},
             'query': {'type': 'string'},
             'limit': {'type': 'integer'},
         },
     ),
     _tool(
         'get_artwork',
-        'Détail d\'une œuvre par ID.',
+        'Détail complet d\'une œuvre par ID : prix, disponibilité et lien d\'achat (pour vendre).',
         {'artwork_id': {'type': 'integer'}},
         ['artwork_id'],
+    ),
+    _tool(
+        'get_profile',
+        'Profil public complet par ID (artiste, galerie ou collectionneur) : présentation, '
+        'lien du portfolio/wishlist et liste des œuvres en vente avec prix et liens d\'achat.',
+        {'user_id': {'type': 'integer'}},
+        ['user_id'],
     ),
     _tool(
         'login_account',
@@ -488,8 +503,10 @@ def execute_tool(name: str, args: dict, ctx: dict) -> dict:
                     'id': a.id,
                     'title': a.title,
                     'price': float(a.price) if a.price else None,
+                    'price_label': a.price_str if a.price else 'Prix sur demande',
                     'discipline': a.discipline,
                     'artist': a.owner.name if a.owner else None,
+                    'image': _image_url(a.image),
                     'url': f'/artwork/{a.id}',
                 }
                 for a in rows[:limit]
@@ -500,9 +517,13 @@ def execute_tool(name: str, args: dict, ctx: dict) -> dict:
         role = (args.get('role') or 'artiste').strip()
         q = (args.get('query') or '').strip().lower()
         limit = min(int(args.get('limit') or 8), 12)
-        from .entitlements import has_public_portfolio
-        rows = User.query.filter_by(role=role).limit(100).all()
-        rows = [u for u in rows if has_public_portfolio(u)]
+        from .entitlements import has_public_portfolio, user_entitlements
+        rows = User.query.filter_by(role=role).limit(150).all()
+        if role == 'collectionneur':
+            # Collectionneurs « lisibles » publiquement = wishlist partageable activée.
+            rows = [u for u in rows if user_entitlements(u).get('shareable_wishlist') and u.wishlist_share_token]
+        else:
+            rows = [u for u in rows if has_public_portfolio(u)]
         if q:
             rows = [
                 u for u in rows
@@ -511,9 +532,63 @@ def execute_tool(name: str, args: dict, ctx: dict) -> dict:
         return {
             'ok': True,
             'profiles': [
-                {'id': u.id, 'name': u.name, 'role': u.role, 'url': f'/artist/{u.id}'}
+                {
+                    'id': u.id,
+                    'name': u.name,
+                    'role': u.role,
+                    'discipline': u.discipline,
+                    'url': (f'/wishlist/{u.wishlist_share_token}' if role == 'collectionneur'
+                            else f'/artist/{u.id}'),
+                }
                 for u in rows[:limit]
             ],
+        }
+
+    if name == 'get_profile':
+        uid = int(args.get('user_id') or 0)
+        u = User.query.get(uid)
+        if not u:
+            return {'error': 'Profil introuvable.'}
+        from .entitlements import has_public_portfolio, user_entitlements
+        role = u.role or 'collectionneur'
+        ent = user_entitlements(u)
+        if role == 'collectionneur':
+            if not (ent.get('shareable_wishlist') and u.wishlist_share_token):
+                return {'error': 'Ce collectionneur n\'a pas de profil public.'}
+            profile_url = f'/wishlist/{u.wishlist_share_token}'
+        else:
+            if not has_public_portfolio(u):
+                return {'error': 'Ce profil n\'est pas encore public.'}
+            profile_url = f'/artist/{u.id}'
+        works = []
+        if role in ('artiste', 'galerie'):
+            buyable = bool(ent.get('marketplace_enabled'))
+            for a in u.artworks:
+                works.append({
+                    'id': a.id,
+                    'title': a.title,
+                    'price_label': a.price_str if a.price else 'Prix sur demande',
+                    'image': _image_url(a.image),
+                    'available': a.status == 'dispo',
+                    'buyable_online': bool(buyable and a.status == 'dispo' and a.price),
+                    'url': f'/artwork/{a.id}',
+                })
+        return {
+            'ok': True,
+            'profile': {
+                'id': u.id,
+                'name': u.name,
+                'role': role,
+                'discipline': u.discipline,
+                'location': u.location,
+                'gallery': u.gallery,
+                'bio': (u.description or u.statement or u.bio or '')[:600],
+                'curatorial_note': (getattr(u, 'curatorial_note', None) or '')[:600],
+                'profile_url': profile_url,
+                'contact': u.email or 'contact@artworksdigital.fr',
+                'artworks_for_sale': works,
+                'artworks_count': len(works),
+            },
         }
 
     if name == 'get_artwork':
@@ -521,18 +596,42 @@ def execute_tool(name: str, args: dict, ctx: dict) -> dict:
         a = Artwork.query.get(aid)
         if not a:
             return {'error': 'Œuvre introuvable.'}
+        from .entitlements import has_public_portfolio, user_entitlements
+        owner_ent = user_entitlements(a.owner) if a.owner else {}
+        # La page /artwork/<id> renvoie 404 si le portfolio n'est pas public :
+        # on ne propose un lien d'achat que si l'œuvre est réellement consultable.
+        publicly_visible = (
+            a.owner is None
+            or a.owner.role not in ('artiste', 'galerie')
+            or has_public_portfolio(a.owner)
+        )
+        buyable = bool(
+            publicly_visible and owner_ent.get('marketplace_enabled')
+            and a.status == 'dispo' and a.price
+        )
+        contact = (a.owner.email if a.owner else None) or 'contact@artworksdigital.fr'
         return {
             'ok': True,
             'artwork': {
                 'id': a.id,
                 'title': a.title,
-                'description': (a.description or '')[:500],
+                'description': (a.description or '')[:600],
                 'price': float(a.price) if a.price else None,
+                'price_label': a.price_str if a.price else 'Prix sur demande',
+                'image': _image_url(a.image),
                 'discipline': a.discipline,
+                'medium': a.technique or a.medium,
+                'dimensions': a.dimensions,
+                'year': a.year,
                 'status': a.status,
+                'available': a.status == 'dispo',
+                'for_sale': bool(a.price) and a.status != 'reserve',
+                'buyable_online': buyable,
+                'buy_url': f'/artwork/{a.id}' if buyable else None,
+                'url': f'/artwork/{a.id}' if publicly_visible else None,
+                'contact': contact,
                 'artist_id': a.user_id,
                 'artist': a.owner.name if a.owner else None,
-                'url': f'/artwork/{a.id}',
             },
         }
 
