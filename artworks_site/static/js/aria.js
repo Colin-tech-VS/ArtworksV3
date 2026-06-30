@@ -71,15 +71,24 @@
       }
     }
 
+    function resolveUrl(href) {
+      return href.charAt(0) === '/' ? siteUrl + href : href;
+    }
+
     function inline(s) {
       s = escapeHtml(s);
       s = s.replace(/`([^`]+)`/g, '<code>$1</code>');
+      // Images ![alt](src) — traitées AVANT les liens
+      s = s.replace(/!\[([^\]]*)\]\(([^)\s]+)\)/g, function (_, alt, src) {
+        var url = resolveUrl(src);
+        return '<a class="aria-art" href="' + escapeHtml(url) + '" target="_blank" rel="noopener">' +
+          '<img src="' + escapeHtml(url) + '" alt="' + alt + '" loading="lazy"></a>';
+      });
       s = s.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
       s = s.replace(/\*([^*\n]+)\*/g, '<em>$1</em>');
       s = s.replace(/_([^_\n]+)_/g, '<em>$1</em>');
       s = s.replace(/\[([^\]]+)\]\(([^)]+)\)/g, function (_, label, href) {
-        var url = href.charAt(0) === '/' ? siteUrl + href : href;
-        return '<a href="' + escapeHtml(url) + '" target="_blank" rel="noopener">' + label + '</a>';
+        return '<a href="' + escapeHtml(resolveUrl(href)) + '" target="_blank" rel="noopener">' + label + '</a>';
       });
       return s;
     }

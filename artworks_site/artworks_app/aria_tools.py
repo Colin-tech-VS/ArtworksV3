@@ -23,6 +23,14 @@ _MAX_AGENT_STEPS = 8
 _PENDING_KEY = 'aria_pending_images'
 
 
+def _image_url(value: str | None) -> str | None:
+    """Chemin statique d'une image œuvre/profil pour l'affichage dans le chat Aria."""
+    if not value:
+        return None
+    path = value if '/' in value else f'uploads/{value}'
+    return f'/static/{path}'
+
+
 def save_upload_file(file_storage) -> str | None:
     if not file_storage or not file_storage.filename:
         return None
@@ -495,8 +503,10 @@ def execute_tool(name: str, args: dict, ctx: dict) -> dict:
                     'id': a.id,
                     'title': a.title,
                     'price': float(a.price) if a.price else None,
+                    'price_label': a.price_str if a.price else 'Prix sur demande',
                     'discipline': a.discipline,
                     'artist': a.owner.name if a.owner else None,
+                    'image': _image_url(a.image),
                     'url': f'/artwork/{a.id}',
                 }
                 for a in rows[:limit]
@@ -558,6 +568,7 @@ def execute_tool(name: str, args: dict, ctx: dict) -> dict:
                     'id': a.id,
                     'title': a.title,
                     'price_label': a.price_str if a.price else 'Prix sur demande',
+                    'image': _image_url(a.image),
                     'available': a.status == 'dispo',
                     'buyable_online': bool(buyable and a.status == 'dispo' and a.price),
                     'url': f'/artwork/{a.id}',
@@ -607,6 +618,7 @@ def execute_tool(name: str, args: dict, ctx: dict) -> dict:
                 'description': (a.description or '')[:600],
                 'price': float(a.price) if a.price else None,
                 'price_label': a.price_str if a.price else 'Prix sur demande',
+                'image': _image_url(a.image),
                 'discipline': a.discipline,
                 'medium': a.technique or a.medium,
                 'dimensions': a.dimensions,

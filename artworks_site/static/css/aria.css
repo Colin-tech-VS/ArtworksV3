@@ -232,6 +232,29 @@
 }
 .aria-msg-assistant .aria-content p { margin: 0 0 0.65em; }
 .aria-msg-assistant .aria-content p:last-child { margin-bottom: 0; }
+/* Vignettes d'œuvres dans le chat */
+.aria-msg-assistant .aria-content .aria-art {
+  display: block;
+  margin: 0.5em 0;
+  border: 1px solid var(--aria-border);
+  border-radius: 4px;
+  overflow: hidden;
+  line-height: 0;
+  background: var(--aria-surface-2);
+  transition: border-color 0.2s;
+}
+.aria-msg-assistant .aria-content .aria-art:hover { border-color: var(--aria-accent); }
+.aria-msg-assistant .aria-content .aria-art img {
+  display: block;
+  width: 100%;
+  max-height: 240px;
+  object-fit: cover;
+}
+.aria-msg-assistant .aria-content li .aria-art {
+  max-width: 120px;
+  margin: 0.3em 0;
+}
+.aria-msg-assistant .aria-content li .aria-art img { max-height: 120px; }
 .aria-msg-assistant .aria-content ul,
 .aria-msg-assistant .aria-content ol {
   margin: 0.4em 0 0.65em;
