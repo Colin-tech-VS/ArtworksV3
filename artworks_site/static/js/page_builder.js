@@ -9,6 +9,7 @@
   var saveUrl = root.getAttribute('data-save-url');
   var previewPushUrl = root.getAttribute('data-preview-url');
   var previewFrameUrl = root.getAttribute('data-preview-frame');
+  var publicUrl = root.getAttribute('data-public-url') || '';
   var uploadUrl = root.getAttribute('data-upload-url');
   var saveBtn = root.querySelector('[data-save]');
   var cancelBtn = root.querySelector('[data-cancel]');
@@ -16,7 +17,6 @@
   var pubBtn = root.querySelector('[data-publish]');
   var stateEl = root.querySelector('[data-save-state]');
   var fileInput = root.querySelector('[data-upload-input]');
-  var previewFrame = root.querySelector('[data-preview-frame]');
 
   var seq = 0;
   var selectedId = null;
@@ -398,24 +398,21 @@
   }
 
   function schedulePreview() {
-    if (!previewPushUrl || !previewFrame) return;
+    if (!previewPushUrl) return;
     clearTimeout(previewTimer);
     previewTimer = setTimeout(pushPreview, 400);
   }
 
-  function refreshPreviewFrame() {
-    if (!previewFrame || !previewFrameUrl) return;
-    previewFrame.src = previewFrameUrl + (previewFrameUrl.indexOf('?') >= 0 ? '&' : '?') + 't=' + Date.now();
-  }
-
   function pushPreview() {
-    if (!previewPushUrl) return refreshPreviewFrame();
-    fetch(previewPushUrl, {
+    if (!previewPushUrl) return Promise.resolve();
+    return fetch(previewPushUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'same-origin',
       body: JSON.stringify({ elements: serialize(), canvas: {} })
-    }).then(function () { refreshPreviewFrame(); }).catch(function () { refreshPreviewFrame(); });
+    }).then(function () {
+      if (window.PePagePreview) PePagePreview.refresh();
+    }).catch(function () {});
   }
 
   function save() {
@@ -435,7 +432,7 @@
           if (cancelBtn) cancelBtn.hidden = true;
           renderPubBtn();
           setState(published ? 'Enregistré · publié' : 'Enregistré', 'is-saved');
-          refreshPreviewFrame();
+          pushPreview();
         } else {
           setState((res.j && res.j.error) || 'Erreur', 'is-dirty');
         }
@@ -670,4 +667,12 @@
   });
 
   load();
+
+  if (window.PePagePreview && previewFrameUrl) {
+    PePagePreview.init({
+      previewUrl: previewFrameUrl,
+      publicUrl: publicUrl,
+      beforeOpen: function () { return pushPreview(); }
+    });
+  }
 })();

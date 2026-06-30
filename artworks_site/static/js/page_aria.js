@@ -9,11 +9,15 @@
   var previewUrl = shell ? shell.getAttribute('data-preview-url') : '';
   var draftApplyUrl = shell ? shell.getAttribute('data-draft-apply') : '';
   var draftDiscardUrl = shell ? shell.getAttribute('data-draft-discard') : '';
+  var publicUrl = shell ? shell.getAttribute('data-public-url') : '';
   var log = root.querySelector('[data-aria-log]');
   var form = root.querySelector('[data-aria-form]');
   var input = root.querySelector('[data-aria-input]');
-  var previewFrame = shell ? shell.querySelector('[data-aria-preview-frame]') : null;
   var busy = false;
+
+  function refreshPreview() {
+    if (window.PePagePreview) PePagePreview.refresh();
+  }
 
   function escapeHtml(s) {
     return String(s).replace(/[&<>"']/g, function (c) {
@@ -63,11 +67,6 @@
     return div;
   }
 
-  function refreshPreview() {
-    if (!previewFrame || !previewUrl) return;
-    previewFrame.src = previewUrl + (previewUrl.indexOf('?') >= 0 ? '&' : '?') + 't=' + Date.now();
-  }
-
   function showDraftBar() {
     if (!shell) return;
     var bar = shell.querySelector('[data-draft-bar]');
@@ -78,6 +77,7 @@
     bar.innerHTML =
       '<span>Modifications en attente — validez pour publier ou annulez.</span>' +
       '<div class="pe-draft-actions">' +
+      '<button type="button" class="pe-tool pe-preview-btn" data-open-preview>Aperçu en direct</button>' +
       '<button type="button" class="pe-tool" data-draft-discard>Annuler</button>' +
       '<button type="button" class="btn-solid" data-draft-apply>Enregistrer</button>' +
       '</div>';
@@ -193,5 +193,8 @@
   });
 
   bindDraftButtons(shell);
-  refreshPreview();
+
+  if (window.PePagePreview && previewUrl) {
+    PePagePreview.init({ previewUrl: previewUrl, publicUrl: publicUrl });
+  }
 })();

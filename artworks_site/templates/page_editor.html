@@ -16,6 +16,9 @@
   </div>
   <div class="dash-hero-actions">
     <a href="{{ public_url }}" target="_blank" rel="noopener" class="btn-line">Voir la page publique</a>
+    {% if page_mode in ('createur', 'intelligent') %}
+    <button type="button" class="btn-solid" data-open-preview>Aperçu en direct</button>
+    {% endif %}
   </div>
 </header>
 {% endblock %}
@@ -92,6 +95,7 @@
        data-save-url="{{ url_for('main.page_layout_save') }}"
        data-preview-url="{{ url_for('main.page_preview_push') }}"
        data-preview-frame="{{ preview_url }}"
+       data-public-url="{{ public_url }}"
        data-upload-url="{{ url_for('main.page_image_upload') }}"
        data-published="{{ '1' if published else '0' }}"
        data-layout='{{ (layout | tojson) if layout else "null" }}'>
@@ -108,32 +112,22 @@
       </div>
       <div class="pe-tool-group pe-tool-right">
         <span class="pe-save-state" data-save-state></span>
+        <button type="button" class="pe-tool pe-preview-btn" data-open-preview>Aperçu en direct</button>
         <button type="button" class="pe-tool" data-cancel hidden>Annuler</button>
         <button type="button" class="pe-tool pe-tool-danger" data-clear>Tout effacer</button>
         <button type="button" class="pe-tool pe-pub-btn" data-publish aria-pressed="false">Publier sur ma page</button>
         <button type="button" class="btn-solid pe-save-btn" data-save>Enregistrer</button>
       </div>
     </div>
-    <div class="pe-builder-split">
-      <div class="pe-builder-editor">
-        <p class="pe-hint">Glissez pour positionner · <strong>double-clic</strong> pour éditer le texte ou choisir une image · panneau de droite pour le style.</p>
-        <input type="file" accept="image/jpeg,image/png,image/gif,image/webp" data-upload-input hidden>
-        <div class="pe-builder-stage">
-          <div class="pe-canvas-wrap">
-            <div class="pe-canvas" data-canvas tabindex="0" aria-label="Zone de composition"></div>
-          </div>
-          <aside class="pe-props" data-props aria-label="Propriétés de l'élément">
-            <p class="pe-prop-empty">Sélectionnez un élément pour modifier son style.</p>
-          </aside>
-        </div>
+    <p class="pe-hint">Glissez pour positionner · <strong>double-clic</strong> pour éditer le texte ou choisir une image · panneau de droite pour le style · <strong>Aperçu en direct</strong> pour voir le rendu réel.</p>
+    <input type="file" accept="image/jpeg,image/png,image/gif,image/webp" data-upload-input hidden>
+    <div class="pe-builder-stage">
+      <div class="pe-canvas-wrap">
+        <div class="pe-canvas" data-canvas tabindex="0" aria-label="Zone de composition"></div>
       </div>
-      <div class="pe-live-preview">
-        <div class="pe-preview-bar">
-          <span>Aperçu en direct</span>
-          <a href="{{ public_url }}" target="_blank" rel="noopener">Page publique ↗</a>
-        </div>
-        <iframe title="Aperçu de votre page" data-preview-frame loading="lazy"></iframe>
-      </div>
+      <aside class="pe-props" data-props aria-label="Propriétés de l'élément">
+        <p class="pe-prop-empty">Sélectionnez un élément pour modifier son style.</p>
+      </aside>
     </div>
   </div>
 </section>
@@ -144,6 +138,7 @@
   {% if aria_ready %}
   <div class="pe-intelligent" id="pe-intelligent"
        data-preview-url="{{ preview_url }}"
+       data-public-url="{{ public_url }}"
        data-draft-apply="{{ url_for('main.page_draft_apply') }}"
        data-draft-discard="{{ url_for('main.page_draft_discard') }}"
        data-has-draft="{{ '1' if has_page_draft else '0' }}">
@@ -151,38 +146,33 @@
     <div class="pe-draft-bar" data-draft-bar>
       <span>Modifications en attente — validez pour publier ou annulez pour revenir en arrière.</span>
       <div class="pe-draft-actions">
+        <button type="button" class="pe-tool pe-preview-btn" data-open-preview>Aperçu en direct</button>
         <button type="button" class="pe-tool" data-draft-discard>Annuler</button>
         <button type="button" class="btn-solid" data-draft-apply>Enregistrer</button>
       </div>
     </div>
     {% endif %}
-    <div class="pe-intelligent-split">
-      <div class="pe-aria" id="pe-aria" data-api-url="{{ url_for('main.aria_chat') }}">
-        <div class="pe-aria-head">
-          <div class="pe-aria-avatar" aria-hidden="true">A</div>
-          <div>
-            <h3>Aria — votre assistante page</h3>
-            <p>Décrivez la page souhaitée. Aria prépare un brouillon que vous validez avant publication.</p>
-          </div>
+    <div class="pe-aria" id="pe-aria" data-api-url="{{ url_for('main.aria_chat') }}">
+      <div class="pe-aria-head">
+        <div class="pe-aria-avatar" aria-hidden="true">A</div>
+        <div class="pe-aria-head-text">
+          <h3>Aria — votre assistante page</h3>
+          <p>Décrivez la page souhaitée. Aria prépare un brouillon que vous validez avant publication.</p>
         </div>
-        <div class="pe-aria-suggestions">
-          <button type="button" class="pe-aria-chip" data-prompt="Rédige une présentation professionnelle pour ma page à partir de mon profil.">Rédige ma présentation</button>
-          <button type="button" class="pe-aria-chip" data-prompt="Propose une structure de page idéale pour vendre mes œuvres.">Structure ma page</button>
-          <button type="button" class="pe-aria-chip" data-prompt="Améliore le référencement (SEO) de ma page publique.">Optimise mon SEO</button>
+        <div class="pe-aria-head-actions">
+          <button type="button" class="pe-tool pe-preview-btn" data-open-preview>Aperçu en direct</button>
         </div>
-        <div class="pe-aria-log" data-aria-log aria-live="polite"></div>
-        <form class="pe-aria-form" data-aria-form>
-          <textarea data-aria-input rows="2" maxlength="2000" placeholder="Ex. : Crée une page avec mon nom, une bio courte et mes 3 dernières œuvres…" aria-label="Message à Aria"></textarea>
-          <button type="submit" class="btn-solid" data-aria-send>Envoyer</button>
-        </form>
       </div>
-      <div class="pe-live-preview pe-live-preview--aria">
-        <div class="pe-preview-bar">
-          <span>Aperçu en direct</span>
-          <a href="{{ public_url }}" target="_blank" rel="noopener" data-preview-public>Page publique ↗</a>
-        </div>
-        <iframe title="Aperçu de votre page" data-aria-preview-frame loading="lazy" src="{{ preview_url }}"></iframe>
+      <div class="pe-aria-suggestions">
+        <button type="button" class="pe-aria-chip" data-prompt="Rédige une présentation professionnelle pour ma page à partir de mon profil.">Rédige ma présentation</button>
+        <button type="button" class="pe-aria-chip" data-prompt="Propose une structure de page idéale pour vendre mes œuvres.">Structure ma page</button>
+        <button type="button" class="pe-aria-chip" data-prompt="Améliore le référencement (SEO) de ma page publique.">Optimise mon SEO</button>
       </div>
+      <div class="pe-aria-log" data-aria-log aria-live="polite"></div>
+      <form class="pe-aria-form" data-aria-form>
+        <textarea data-aria-input rows="3" maxlength="2000" placeholder="Ex. : Crée une page avec mon nom, une bio courte et mes 3 dernières œuvres…" aria-label="Message à Aria"></textarea>
+        <button type="submit" class="btn-solid" data-aria-send>Envoyer</button>
+      </form>
     </div>
   </div>
   {% else %}
@@ -194,10 +184,35 @@
 </section>
 {% endif %}
 
+{% if page_mode in ('createur', 'intelligent') and (page_mode != 'intelligent' or aria_ready) %}
+<div class="pe-preview-modal" id="pe-preview-modal" hidden aria-hidden="true">
+  <div class="pe-preview-modal-backdrop" data-preview-close tabindex="-1" aria-hidden="true"></div>
+  <div class="pe-preview-modal-panel" role="dialog" aria-modal="true" aria-labelledby="pe-preview-title">
+    <header class="pe-preview-modal-head">
+      <div>
+        <h2 id="pe-preview-title">Aperçu en direct</h2>
+        <p>Rendu réel de votre page — tel que la verront vos visiteurs</p>
+      </div>
+      <div class="pe-preview-modal-actions">
+        <a href="{{ public_url }}" target="_blank" rel="noopener" class="btn-line" data-preview-public-link>Page publique ↗</a>
+        <button type="button" class="pe-tool" data-preview-refresh>Actualiser</button>
+        <button type="button" class="pe-preview-modal-close" data-preview-close aria-label="Fermer">×</button>
+      </div>
+    </header>
+    <div class="pe-preview-modal-body">
+      <iframe title="Aperçu de votre page" data-preview-modal-frame loading="lazy"></iframe>
+    </div>
+  </div>
+</div>
+{% endif %}
+
 {% endblock %}
 
 {% block dash_scripts %}
 {{ super() }}
+{% if page_mode in ('createur', 'intelligent') and (page_mode != 'intelligent' or aria_ready) %}
+<script src="{{ url_for('static', filename='js/pe_preview_modal.js') }}" defer></script>
+{% endif %}
 {% if page_mode == 'createur' %}
 <script src="{{ url_for('static', filename='js/page_builder.js') }}" defer></script>
 {% endif %}
