@@ -7,6 +7,8 @@ from flask_login import current_user, login_required
 def is_staff_user(user):
     if not user or not user.is_authenticated:
         return False
+    if getattr(user, 'role', None) == 'admin':
+        return True
     if getattr(user, 'is_staff', False):
         return True
     admin_emails = current_app.config.get('ADMIN_EMAILS') or []

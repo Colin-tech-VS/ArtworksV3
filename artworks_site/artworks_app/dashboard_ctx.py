@@ -1,5 +1,7 @@
 """Shared dashboard copy and profile completion helpers."""
 
+from .crm.auth import is_staff_user
+
 ROLE_META = {
     'artiste': {
         'label': 'Artiste',
@@ -81,9 +83,9 @@ _PROFILE_CHECKS = {
 
 
 def role_meta(user):
-    role = (user.role if user else None) or 'collectionneur'
-    if role == 'admin' or getattr(user, 'is_staff', False) and role == 'admin':
+    if is_staff_user(user):
         return ROLE_META['admin']
+    role = (user.role if user else None) or 'collectionneur'
     return ROLE_META.get(role, ROLE_META['collectionneur'])
 
 

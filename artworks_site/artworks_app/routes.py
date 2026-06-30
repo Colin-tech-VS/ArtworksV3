@@ -3,6 +3,7 @@ from flask import (Blueprint, render_template, request, redirect, url_for,
 from .models import Artwork, User, Series, CmsPage
 from . import db
 from flask_login import current_user, login_required
+from .crm.auth import is_staff_user
 from datetime import datetime
 
 bp = Blueprint('main', __name__)
@@ -361,7 +362,7 @@ def favorites_toggle(artwork_id):
 @bp.route('/dashboard')
 @login_required
 def dashboard():
-    if current_user.role == 'admin' or getattr(current_user, 'is_staff', False):
+    if is_staff_user(current_user):
         return redirect(url_for('crm.index'))
     from .dashboard_ctx import profile_completion, dashboard_stats
     from .entitlements import user_entitlements
@@ -1077,7 +1078,7 @@ def _preview_layout_for_user():
 @login_required
 def page_editor():
     """Hub d'édition de la page publique : rédacteur, créateur (canvas) ou intelligent (Aria)."""
-    if current_user.role == 'admin' or getattr(current_user, 'is_staff', False):
+    if is_staff_user(current_user):
         return redirect(url_for('crm.index'))
     requested = request.args.get('mode')
     mode = _normalize_page_mode(requested or current_user.page_mode)

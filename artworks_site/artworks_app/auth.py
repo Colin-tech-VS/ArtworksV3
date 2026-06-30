@@ -10,14 +10,9 @@ from .forms import RegistrationForm, LoginForm
 from .models import User
 from . import db
 from flask_login import login_user, logout_user, current_user
+from .auth_redirect import ROLE_LABELS, redirect_after_login, redirect_if_authenticated
 
 bp = Blueprint('auth', __name__)
-
-_ROLE_LABELS = {
-    'collectionneur': 'Collectionneur',
-    'galerie': 'Galerie',
-    'artiste': 'Artiste',
-}
 
 
 def _find_user(identifier):
@@ -110,40 +105,6 @@ def _apply_free_plan(user: User, role: str, plan_slug: str) -> str:
     return None
 
 
-def _redirect_after_login(user: User, *, next_page: str | None = None):
-    if user.role == 'admin' or getattr(user, 'is_staff', False):
-        flash(f'Bienvenue, {user.name} (Administrateur).', 'success')
-        return redirect(url_for('crm.index'))
-    label = _ROLE_LABELS.get(user.role, user.role)
-    flash(f'Bienvenue, {user.name} ({label}).', 'success')
-    if next_page:
-        return redirect(next_page)
-    if user.role == 'artiste':
-        from .entitlements import has_public_portfolio, portfolio_subscription_active
-        if not has_public_portfolio(user):
-            if portfolio_subscription_active(user):
-                flash(
-                    'Connectez Stripe pour encaisser vos ventes et activer votre portfolio public.',
-                    'info',
-                )
-                return redirect(url_for('main.encaissements'))
-            flash(
-                'Activez Portfolio Marketplace pour publier vos œuvres et apparaître sur Google.',
-                'info',
-            )
-            return redirect(url_for('main.subscription'))
-    elif user.role == 'galerie':
-        from .entitlements import has_public_portfolio
-        from .stripe_connect import connect_required_for
-        if connect_required_for(user) and not has_public_portfolio(user):
-            flash(
-                'Connectez Stripe pour encaisser vos ventes et activer votre page galerie publique.',
-                'info',
-            )
-            return redirect(url_for('main.encaissements'))
-    return redirect(url_for('main.dashboard'))
-
-
 def _start_paid_checkout(user: User, plan_slug: str):
     from . import billing
     from .stripe_connect import connect_required_for
@@ -166,6 +127,10 @@ def _start_paid_checkout(user: User, plan_slug: str):
         'warning',
     )
     return redirect(url_for('main.subscription'))
+
+
+def _redirect_after_login(user: User, *, next_page: str | None = None):
+    return redirect_after_login(user, next_page=next_page)
 
 
 def _finish_registration(user: User, *, pending_paid_plan: str | None):
@@ -191,7 +156,7 @@ def _finish_registration(user: User, *, pending_paid_plan: str | None):
 @bp.route('/register', methods=['GET', 'POST'])
 def register():
     if current_user.is_authenticated:
-        return redirect(url_for('main.index'))
+        return redirect_if_authenticated(current_user)
     form = RegistrationForm()
     plans_by_role, normalize_plan = _plans_register_context()
     if form.validate_on_submit():
@@ -220,7 +185,7 @@ def register():
         flash('Veuillez corriger les erreurs du formulaire.', 'warning')
     role_prefill = request.args.get('role', '')
     plan_prefill = request.args.get('plan', '')
-    if role_prefill in _ROLE_LABELS and request.method == 'GET':
+    if role_prefill in ('collectionneur', 'galerie', 'artiste') and request.method == 'GET':
         form.role.data = role_prefill
     if plan_prefill and request.method == 'GET':
         form.plan.data = normalize_plan(role_prefill or form.role.data, plan_prefill)
@@ -230,7 +195,7 @@ def register():
 @bp.route('/login', methods=['GET', 'POST'])
 def login():
     if current_user.is_authenticated:
-        return redirect(url_for('main.index'))
+        return redirect_if_authenticated(current_user)
     form = LoginForm()
     if form.validate_on_submit():
         user = _find_user(form.username.data)
@@ -243,7 +208,7 @@ def login():
             else:
                 flash('Identifiant ou mot de passe invalide.', 'error')
             return redirect(url_for('auth.login'))
-        login_user(user)
+        login_user(user, remember=True)
         return _redirect_after_login(user, next_page=request.args.get('next'))
     if request.method == 'POST':
         if form.errors.get('csrf_token'):
@@ -271,7 +236,7 @@ def google_start():
     role = (request.args.get('role') or '').strip()
     plan = (request.args.get('plan') or 'free').strip()
     if action == 'register':
-        if role not in _ROLE_LABELS:
+        if role not in ('collectionneur', 'galerie', 'artiste'):
             flash('Choisissez d\'abord votre profil (collectionneur, galerie ou artiste).', 'warning')
             return redirect(url_for('auth.register'))
         plan = normalize_plan(role, plan)
@@ -342,7 +307,7 @@ def google_callback():
         return redirect(url_for('auth.register'))
 
     role = state_payload.get('r') or 'collectionneur'
-    if role not in _ROLE_LABELS:
+    if role not in ('collectionneur', 'galerie', 'artiste'):
         role = 'collectionneur'
     plan = normalize_plan(role, state_payload.get('p') or 'free')
     if plan not in role_plans_catalog().get(role, {}):

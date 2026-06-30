@@ -6,6 +6,7 @@ from datetime import datetime
 from typing import Any
 
 from .subscriptions import ROLE_LABELS, normalize_plan, is_paid_plan, portfolio_required_for_role
+from .crm.auth import is_staff_user
 
 _PLAN_CAPS: dict[tuple[str, str], dict[str, Any]] = {
     ('artiste', 'free'): {
@@ -246,7 +247,7 @@ def entitlements_for(role: str, plan_slug: str) -> dict[str, Any]:
 
 
 def user_entitlements(user) -> dict[str, Any]:
-    if getattr(user, 'role', '') == 'admin' or (getattr(user, 'is_staff', False) and user.role == 'admin'):
+    if is_staff_user(user):
         return {
             'role': 'admin', 'plan': 'free', 'role_label': 'Administrateur',
             'artwork_limit': 0, 'portfolio_public': True, 'seo_level': 'max',

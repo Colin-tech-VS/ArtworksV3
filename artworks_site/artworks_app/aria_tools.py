@@ -10,6 +10,7 @@ from typing import Any
 from flask import current_app, session, url_for
 from flask_login import current_user, login_user
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy import or_
 
 from . import db
 from .models import Artwork, GalleryArtist, PriceAlert, Series, User
@@ -376,9 +377,10 @@ def _side(ctx: dict, effect: dict) -> None:
 
 
 def _auth_success_side(ctx: dict, user: User) -> None:
-    """Après connexion / inscription : rediriger vers le dashboard (plus fiable qu'un reload)."""
+    """Après connexion / inscription : CRM pour admin, dashboard pour les membres."""
+    from .auth_redirect import home_url_for
     _side(ctx, {'type': 'login', 'user_id': user.id})
-    _side(ctx, {'type': 'redirect', 'url': '/dashboard'})
+    _side(ctx, {'type': 'redirect', 'url': home_url_for(user)})
 
 
 def _resolve_image(args: dict, ctx: dict) -> str | None:
@@ -675,13 +677,15 @@ def execute_tool(name: str, args: dict, ctx: dict) -> dict:
     if name == 'login_account':
         if user:
             return {'error': 'Vous êtes déjà connecté.', 'username': user.username}
-        email = (args.get('email') or '').strip().lower()
+        ident = (args.get('email') or args.get('username') or '').strip()
         password = args.get('password') or ''
-        if not email or not password:
-            return {'error': 'Email et mot de passe requis.'}
-        u = User.query.filter_by(email=email).first()
+        if not ident or not password:
+            return {'error': 'Identifiant (email ou nom d\'utilisateur) et mot de passe requis.'}
+        u = User.query.filter(
+            or_(User.email == ident.lower(), User.username == ident)
+        ).first()
         if not u:
-            return {'error': 'Aucun compte avec cet email.'}
+            return {'error': 'Aucun compte avec cet identifiant.'}
         if not u.check_password(password):
             return {'error': 'Mot de passe incorrect.'}
         login_user(u)
