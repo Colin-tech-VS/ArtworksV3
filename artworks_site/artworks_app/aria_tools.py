@@ -280,19 +280,18 @@ TOOLS_AUTH = [
     ),
     _tool(
         'set_page_layout',
-        'CONSTRUIT/REMPLACE réellement la page publique (mode intelligent). Fournis une '
-        'liste ORDONNÉE de blocs (de haut en bas) ; le site les empile et les centre '
-        'automatiquement, puis publie la page. Utilise get_my_page avant pour récupérer '
-        'les images d\'œuvres.',
+        'Construit la page publique (brouillon). Blocs ORDONNÉS, texte BRUT sans emoji ni markdown. '
+        'Types : heading (titres courts), text (paragraphes 2-4 lignes max), divider, gallery/slider '
+        '(images réelles de get_my_page), button (href requis). Appelle get_my_page avant.',
         {
             'blocks': {
                 'type': 'array',
-                'description': 'Blocs ordonnés haut → bas.',
+                'description': '8–14 blocs max, texte plain uniquement (pas de ** ni emojis).',
                 'items': {
                     'type': 'object',
                     'properties': {
                         'type': {'type': 'string', 'enum': ['heading', 'text', 'button', 'image', 'divider', 'slider', 'gallery']},
-                        'text': {'type': 'string', 'description': 'Titre/texte/libellé du bouton'},
+                        'text': {'type': 'string', 'description': 'Texte brut FR, court, sans markdown ni emoji'},
                         'href': {'type': 'string', 'description': 'Lien du bouton (interne ou http)'},
                         'src': {'type': 'string', 'description': 'URL image (type image)'},
                         'images': {'type': 'array', 'items': {'type': 'string'}, 'description': 'URLs (slider/gallery)'},
