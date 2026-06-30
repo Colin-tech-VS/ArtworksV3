@@ -326,6 +326,117 @@ def _extract_plan(low: str) -> str | None:
     return m.group(1) if m else None
 
 
+def _last_assistant_text(history: list[dict]) -> str:
+    for m in reversed(history):
+        if m.get('role') == 'assistant' and m.get('content'):
+            return str(m['content'])
+    return ''
+
+
+def _role_from_assistant(text: str) -> str | None:
+    low = text.lower()
+    role = _detect_role(low)
+    if role:
+        return role
+    if 'compte' in low and 'galerie' in low:
+        return 'galerie'
+    if 'compte' in low and 'artiste' in low:
+        return 'artiste'
+    if 'compte' in low and 'collectionneur' in low:
+        return 'collectionneur'
+    return None
+
+
+def _last_user_email(history: list[dict]) -> str | None:
+    for m in reversed(history):
+        if m.get('role') != 'user':
+            continue
+        em = _extract_email(m.get('content') or '')
+        if em:
+            return em
+    return None
+
+
+def _capture_password(text: str) -> str | None:
+    pw = _extract_password_labeled(text)
+    if pw:
+        return pw
+    cand = text.strip().strip('"\'').rstrip('.,;')
+    if ' ' in cand:
+        toks = [t for t in re.split(r'\s+', cand) if t]
+        cand = toks[-1] if toks else cand
+    if 6 <= len(cand) <= 128 and '@' not in cand:
+        return cand
+    return None
+
+
+def _recover_signup_from_history(history: list[dict], text: str) -> dict | None:
+    """Reconstitue l'inscription si la session a été perdue entre deux messages."""
+    if not history:
+        return None
+    last_a = _last_assistant_text(history)
+    if not last_a:
+        return None
+    low_a = last_a.lower()
+    role = _role_from_assistant(last_a)
+    for m in history:
+        if m.get('role') == 'assistant':
+            r = _role_from_assistant(m.get('content') or '')
+            if r:
+                role = r
+                break
+
+    if 'mot de passe' in low_a or 'password' in low_a:
+        email = _extract_email(text) or _last_user_email(history)
+        if not email:
+            return None
+        pw = _capture_password(text)
+        if not pw:
+            return None
+        return {
+            'active': True,
+            'role': role or 'galerie',
+            'email': email,
+            'password': pw,
+            'display_name': '',
+            'plan': 'free',
+            'awaiting': None,
+        }
+
+    if 'adresse email' in low_a or 'adresse e-mail' in low_a or 'votre email' in low_a:
+        em = _extract_email(text)
+        if not em:
+            return None
+        return {
+            'active': True,
+            'role': role or 'galerie',
+            'email': em,
+            'password': None,
+            'display_name': None,
+            'plan': 'free',
+            'awaiting': 'password',
+        }
+
+    if 'nom de votre galerie' in low_a or "nom d'artiste" in low_a or 'nom souhaitez-vous' in low_a:
+        if low_a and text.strip().lower() in _SIGNUP_SKIP:
+            dn = ''
+        else:
+            dn = text.strip().strip('"\'')[:120]
+        email = _last_user_email(history)
+        if not email:
+            return None
+        return {
+            'active': True,
+            'role': role or 'galerie',
+            'email': email,
+            'password': _capture_password(text),
+            'display_name': dn,
+            'plan': 'free',
+            'awaiting': None,
+        }
+    return None
+
+
 def _signup_reply(message: str, ctx: dict[str, Any] | None = None) -> dict[str, Any]:
     out: dict[str, Any] = {'reply': message, 'name': ARIA_NAME}
     if ctx and ctx.get('side_effects'):
@@ -338,23 +449,40 @@ def _save_signup_state(state: dict) -> None:
     session.modified = True
 
 
-def _handle_signup_flow(text: str, ctx: dict[str, Any]) -> dict[str, Any] | None:
+def _handle_signup_flow(text: str, ctx: dict[str, Any], history: list[dict] | None = None) -> dict[str, Any] | None:
     """Collecte guidée des informations d'inscription, étape par étape.
 
     Retourne une réponse Aria si la conversation porte sur une inscription,
     sinon None (le LLM prend le relais). Ne crée jamais le compte tant que
     l'email ET le mot de passe n'ont pas été donnés explicitement."""
     from flask_login import current_user
-    from .aria_tools import execute_tool, format_signup_reply
+    from .aria_tools import execute_tool, format_signup_reply, parse_signup_credentials
 
     if current_user.is_authenticated:
         session.pop('aria_signup', None)
         return None
 
+    history = history or []
     low = text.lower().strip()
     state = session.get('aria_signup')
     if not isinstance(state, dict):
         state = None
+
+    # Inscription en une ligne (email + mdp + rôle dans le même message)
+    one_shot = parse_signup_credentials(text)
+    if one_shot and one_shot.get('email') and one_shot.get('password'):
+        role = one_shot.get('role') or _detect_role(low) or 'galerie'
+        result = execute_tool('create_account', {
+            'email': one_shot['email'],
+            'password': one_shot['password'],
+            'role': role,
+            'plan': one_shot.get('plan') or 'free',
+            'display_name': one_shot.get('display_name') or '',
+        }, ctx)
+        if result.get('ok'):
+            session.pop('aria_signup', None)
+            session.modified = True
+        return _signup_reply(format_signup_reply(result, role=role), ctx)
 
     # Annulation explicite
     if state and state.get('active') and any(w in low for w in _SIGNUP_CANCEL):
@@ -367,14 +495,24 @@ def _handle_signup_flow(text: str, ctx: dict[str, Any]) -> dict[str, Any] | None
 
     role = _detect_role(low)
     if not state or not state.get('active'):
-        if not _has_signup_intent(low):
+        recovered = _recover_signup_from_history(history, text)
+        if recovered:
+            state = recovered
+        elif not _has_signup_intent(low):
             return None
-        state = {
-            'active': True, 'role': role, 'email': None, 'password': None,
-            'display_name': None, 'plan': 'free', 'awaiting': None,
-        }
+        else:
+            state = {
+                'active': True, 'role': role, 'email': None, 'password': None,
+                'display_name': None, 'plan': 'free', 'awaiting': None,
+            }
 
     awaiting = state.get('awaiting')
+    last_a = _last_assistant_text(history).lower()
+    if not awaiting and last_a:
+        if 'mot de passe' in last_a or 'password' in last_a:
+            awaiting = state['awaiting'] = 'password'
+        elif 'adresse email' in last_a or 'adresse e-mail' in last_a:
+            awaiting = state['awaiting'] = 'email'
 
     # Changement de rôle tant que l'email n'est pas fixé
     if role and not state.get('email') and role != state.get('role'):
@@ -396,14 +534,13 @@ def _handle_signup_flow(text: str, ctx: dict[str, Any]) -> dict[str, Any] | None
     if nlab:
         state['display_name'] = nlab
 
-    # Mot de passe positionnel : on a explicitement demandé le mot de passe
-    if awaiting == 'password' and not state.get('password') and not em:
-        cand = text.strip().strip('"\'').rstrip('.,;')
-        if ' ' in cand:
-            toks = [t for t in re.split(r'\s+', cand) if t]
-            cand = toks[-1] if toks else cand
-        if 6 <= len(cand) <= 128:
-            state['password'] = cand
+    # Mot de passe : étape explicite OU déduit de l'historique (session perdue)
+    if not state.get('password') and not em:
+        need_pw = awaiting == 'password' or 'mot de passe' in last_a
+        if need_pw:
+            pw = _capture_password(text)
+            if pw:
+                state['password'] = pw
 
     # Nom positionnel : on a explicitement demandé le nom
     if (
@@ -441,16 +578,9 @@ def _handle_signup_flow(text: str, ctx: dict[str, Any]) -> dict[str, Any] | None
             "Il restera confidentiel."
         )
 
+    # Nom optionnel : création directe (modifiable dans le profil ensuite)
     if state.get('display_name') is None:
-        state['awaiting'] = 'name'
-        _save_signup_state(state)
-        if state['role'] == 'galerie':
-            q = "Et quel est le **nom de votre galerie** ? (ou répondez « passer »)"
-        elif state['role'] == 'artiste':
-            q = "Sous quel **nom d'artiste** souhaitez-vous apparaître ? (ou « passer »)"
-        else:
-            q = "Quel **nom** souhaitez-vous afficher sur votre profil ? (ou « passer »)"
-        return _signup_reply(q)
+        state['display_name'] = ''
 
     # Tout est collecté → création
     result = execute_tool('create_account', {
@@ -465,7 +595,6 @@ def _handle_signup_flow(text: str, ctx: dict[str, Any]) -> dict[str, Any] | None
         session.pop('aria_signup', None)
         session.modified = True
     elif result.get('code') == 'email_taken' or 'mot de passe' in (result.get('error') or '').lower():
-        # Email déjà pris / mauvais mot de passe → on redemande le mot de passe
         state['password'] = None
         state['awaiting'] = 'password'
         _save_signup_state(state)
@@ -494,7 +623,7 @@ def chat(user_message: str, *, reset: bool = False) -> dict[str, Any]:
         'side_effects': [],
     }
 
-    signup = _handle_signup_flow(text, ctx)
+    signup = _handle_signup_flow(text, ctx, history)
     if signup:
         history.append({'role': 'user', 'content': text})
         history.append({'role': 'assistant', 'content': signup['reply']})
