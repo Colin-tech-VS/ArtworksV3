@@ -167,10 +167,11 @@ OUTILS — RÈGLE D'OR :
 - Quand il demande une **action** (autre que l'inscription) → **APPELLE L'OUTIL** immédiatement.
 
 ÉDITEUR DE PAGE (compte artiste/galerie connecté) :
-- Quand on te demande de **structurer / construire / refaire la page** : appelle `get_my_page` puis `set_page_layout` (brouillon). L'utilisateur valide avec **Enregistrer** ou **Annuler** — ne dis pas que c'est publié tant qu'il n'a pas validé.
+- Quand on te demande de **structurer / construire / refaire la page** : le site applique automatiquement un brouillon — **ne montre JAMAIS** de JSON, de code `set_page_layout` ni de blocs à copier-coller. Réponds en 2–3 phrases après l'application.
+- Si tu dois quand même agir via outil : appelle `get_my_page` puis `set_page_layout` (brouillon). L'utilisateur valide avec **Enregistrer** ou **Annuler**.
 - **Refonte** : si `current_blocks` ou `has_draft` est vrai, `set_page_layout` **remplace** toute la page — réutilise le contenu utile des blocs existants, ne recopie pas en plus le profil/bio déjà présents dans les blocs.
 - **Design galerie haut de gamme** : sobre, éditorial, typographie élégante (Cormorant). Inspirations : page de galerie d'art contemporain (pas de blog, pas de flyer).
-- **INTERDIT dans les blocs `text` / `heading`** : emojis, markdown (`**`, `##`, listes `-`), liens markdown `[texte](url)`. Uniquement **texte français brut**.
+- **INTERDIT** : emojis dans les blocs, JSON de mise en page, instructions « copiez dans l'éditeur », URLs d'images inventées.
 - **Structure type** (8–14 blocs, courts) :
   1. `heading` — nom (5–8 mots)
   2. `text` — accroche (2 phrases max)
@@ -726,6 +727,101 @@ def _handle_login_flow(text: str, ctx: dict[str, Any], history: list[dict]) -> d
     return None
 
 
+def _norm_page_msg(text: str) -> str:
+    return (text or '').lower().replace('œ', 'oe').replace('’', "'")
+
+
+def _has_page_structure_intent(low: str) -> bool:
+    keys = (
+        'structure ma page', 'structure de page', 'structurer ma page',
+        'structurer la page', 'structure ideale', 'page ideale',
+        'refaire la structure', 'refaire la page', 'reconstruire la page',
+        'construire ma page', 'construire la page', 'mise en page',
+        'pour vendre mes oeuvres', 'vendre mes oeuvres',
+    )
+    if any(k in low for k in keys):
+        return True
+    return 'page' in low and any(v in low for v in ('structur', 'construi', 'refair', 'cree', 'cré', 'creer'))
+
+
+def _has_presentation_intent(low: str) -> bool:
+    if 'redige ma presentation' in low or 'rédige ma présentation' in low:
+        return True
+    return 'presentation' in low and any(v in low for v in ('redige', 'rédige', 'ecris', 'écris', 'rediger', 'rédiger'))
+
+
+def _has_seo_intent(low: str) -> bool:
+    return 'seo' in low or 'referencement' in low or 'référencement' in low
+
+
+def _handle_page_editor_flow(text: str, ctx: dict, history: list) -> dict[str, Any] | None:
+    """Applique directement la mise en page (brouillon) — fiable, sans JSON copier-coller."""
+    from flask_login import current_user
+    from .aria_tools import execute_tool
+    from .page_layout_builder import (
+        build_presentation_page_blocks,
+        build_selling_page_blocks,
+        build_seo_page_blocks,
+    )
+
+    user = ctx.get('user') or current_user
+    if not user.is_authenticated or user.role not in ('artiste', 'galerie'):
+        return None
+
+    low = _norm_page_msg(text)
+    mode = None
+    if _has_presentation_intent(low):
+        mode = 'presentation'
+    elif _has_seo_intent(low):
+        mode = 'seo'
+    elif _has_page_structure_intent(low):
+        mode = 'selling'
+    else:
+        return None
+
+    page_data = execute_tool('get_my_page', {}, ctx)
+    if not page_data.get('ok'):
+        return {
+            'reply': f"**{page_data.get('error', 'Impossible de lire votre page.')}**",
+            'name': ARIA_NAME,
+            'actions': list(ctx.get('side_effects') or []),
+        }
+
+    builders = {
+        'selling': build_selling_page_blocks,
+        'presentation': build_presentation_page_blocks,
+        'seo': build_seo_page_blocks,
+    }
+    blocks = builders[mode](user, page_data)
+    result = execute_tool('set_page_layout', {'blocks': blocks, 'publish': False, 'draft': True}, ctx)
+
+    if not result.get('ok'):
+        return {
+            'reply': f"**{result.get('error', 'Échec de la mise en page.')}**",
+            'name': ARIA_NAME,
+            'actions': list(ctx.get('side_effects') or []),
+        }
+
+    count = result.get('count', len(blocks))
+    labels = {
+        'selling': (
+            f'**Page structurée** ({count} blocs) — consultez l\'aperçu à droite. '
+            'Cliquez sur **Enregistrer** pour publier ou **Annuler** pour revenir en arrière.'
+        ),
+        'presentation': (
+            f'**Présentation rédigée** ({count} blocs). Vérifiez l\'aperçu à droite, puis **Enregistrer** pour publier.'
+        ),
+        'seo': (
+            f'**Page optimisée** ({count} blocs). L\'aperçu est à jour — validez avec **Enregistrer** si cela vous convient.'
+        ),
+    }
+    out: dict[str, Any] = {'reply': labels[mode], 'name': ARIA_NAME}
+    effects = ctx.get('side_effects') or []
+    if effects:
+        out['actions'] = effects
+    return out
+
+
 def chat(
     user_message: str,
     *,
@@ -772,6 +868,16 @@ def chat(
         history.append({'role': 'assistant', 'content': signup['reply']})
         _save_history(history)
         out = dict(signup)
+        if not out.get('actions'):
+            out.pop('actions', None)
+        return out
+
+    page_flow = _handle_page_editor_flow(text, ctx, history)
+    if page_flow:
+        history.append({'role': 'user', 'content': text})
+        history.append({'role': 'assistant', 'content': page_flow['reply']})
+        _save_history(history)
+        out = dict(page_flow)
         if not out.get('actions'):
             out.pop('actions', None)
         return out
