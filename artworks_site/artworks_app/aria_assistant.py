@@ -2,6 +2,8 @@
 from __future__ import annotations
 
 import logging
+import re
+import secrets
 import time
 from typing import Any
 
@@ -191,6 +193,30 @@ def _save_history(messages: list[dict[str, str]]) -> None:
     session.modified = True
 
 
+def _normalize_tool_calls(tool_calls: list) -> list[dict]:
+    """Réécrit les tool_calls Mistral avec un id valide (a-zA-Z0-9, longueur 9).
+
+    Mistral rejette tout `tool_call_id` non conforme : on régénère un id propre
+    quand celui renvoyé est absent ou invalide, et on s'assure que l'id du message
+    `assistant` correspond exactement à celui du message `tool` (même objet réutilisé
+    par run_tool_calls)."""
+    norm = []
+    for tc in tool_calls or []:
+        fn = tc.get('function') or {}
+        tid = tc.get('id')
+        if not (isinstance(tid, str) and re.fullmatch(r'[a-zA-Z0-9]{9}', tid)):
+            tid = secrets.token_hex(5)[:9]
+        norm.append({
+            'id': tid,
+            'type': 'function',
+            'function': {
+                'name': fn.get('name') or '',
+                'arguments': fn.get('arguments') or '{}',
+            },
+        })
+    return norm
+
+
 def clear_history() -> None:
     session.pop('aria_history', None)
     session.pop('aria_signup_role', None)
@@ -300,9 +326,12 @@ def chat(user_message: str, *, reset: bool = False) -> dict[str, Any]:
         return out
 
     tools = tools_for_user(current_user)
+    # Boucle conversationnelle temps réel : on privilégie le modèle rapide.
+    # Un appel d'outil enchaîne plusieurs requêtes séquentielles — le modèle lourd
+    # (mistral-large) les rend trop lentes et fait « bloquer » Aria / expirer le worker.
     model = (
-        current_app.config.get('MISTRAL_MODEL_HEAVY')
-        or current_app.config.get('MISTRAL_MODEL')
+        current_app.config.get('MISTRAL_MODEL')
+        or current_app.config.get('MISTRAL_MODEL_HEAVY')
         or 'mistral-small-latest'
     )
 
@@ -321,7 +350,7 @@ def chat(user_message: str, *, reset: bool = False) -> dict[str, Any]:
                 temperature=0.35,
                 max_tokens=1200,
                 model=model,
-                timeout=90,
+                timeout=45,
             )
             choices = data.get('choices') or []
             if not choices:
@@ -329,6 +358,7 @@ def chat(user_message: str, *, reset: bool = False) -> dict[str, Any]:
             msg = choices[0].get('message') or {}
             tool_calls = msg.get('tool_calls')
             if tool_calls:
+                tool_calls = _normalize_tool_calls(tool_calls)
                 messages.append({
                     'role': 'assistant',
                     'content': msg.get('content') or '',

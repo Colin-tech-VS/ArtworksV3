@@ -33,18 +33,18 @@
   --info:      var(--salon-navy);
   --info-bg:   rgba(36,52,66,.06);
 
-  --shadow-art: 0 24px 48px -20px rgba(26,40,50,.18);
-  --shadow-soft: 0 12px 32px rgba(26,40,50,.07);
-  --shadow-lift: 0 20px 48px rgba(26,40,50,.12);
+  --shadow-art: 0 2px 14px -6px rgba(26,40,50,.18);
+  --shadow-soft: 0 1px 4px rgba(26,40,50,.06);
+  --shadow-lift: 0 4px 16px rgba(26,40,50,.1);
 
   --ease: cubic-bezier(.22,.61,.36,1);
   --ease-spring: cubic-bezier(.34,1.08,.64,1);
-  --radius-xs: 4px;
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 18px;
-  --radius-xl: 24px;
-  --radius-pill: 999px;
+  --radius-xs: 0px;
+  --radius-sm: 2px;
+  --radius-md: 2px;
+  --radius-lg: 3px;
+  --radius-xl: 4px;
+  --radius-pill: 2px;
   --maxw: 1240px;
   --gutter: clamp(20px, 4vw, 48px);
   --section-y: clamp(72px, 11vw, 128px);
@@ -76,10 +76,7 @@ body{
 body::before{
   content:"";
   position:fixed; inset:0; z-index:-1; pointer-events:none;
-  background:
-    radial-gradient(ellipse 70% 50% at 0% 0%, rgba(184,115,74,.06), transparent 50%),
-    radial-gradient(ellipse 50% 40% at 100% 100%, rgba(36,52,66,.04), transparent 55%),
-    var(--bg);
+  background:var(--bg);
 }
 img{ display:block; max-width:100%; }
 a{ color:inherit; text-decoration:none; transition:color .2s ease; }
@@ -117,15 +114,14 @@ button{ font-family:inherit; cursor:pointer; }
    ============================================================ */
 .site-head{
   position:sticky; top:0; z-index:60;
-  background:rgba(247,244,238,.9);
-  backdrop-filter:saturate(120%) blur(14px);
-  border-bottom:1px solid transparent;
-  transition:background .25s, border-color .25s, box-shadow .25s;
+  background:var(--bg);
+  border-bottom:1px solid var(--hair-soft);
+  transition:border-color .25s, box-shadow .25s;
 }
 .site-head.scrolled{
   border-bottom-color:var(--hair);
-  background:rgba(255,252,247,.96);
-  box-shadow:0 8px 28px rgba(26,40,50,.06);
+  background:var(--bg-pure);
+  box-shadow:0 1px 0 var(--hair);
 }
 .head-inner{
   display:flex; align-items:center; gap:20px;
@@ -183,7 +179,7 @@ button{ font-family:inherit; cursor:pointer; }
   background:var(--salon-navy); color:#fff;
   font-size:9px; font-weight:700;
   min-width:16px; height:16px; line-height:16px; text-align:center;
-  font-family:var(--sans); padding:0 4px; border-radius:var(--radius-pill);
+  font-family:var(--sans); padding:0 4px; border-radius:50%;
 }
 
 .btn-line{
@@ -194,8 +190,6 @@ button{ font-family:inherit; cursor:pointer; }
 }
 .btn-line:hover{
   background:var(--salon-navy); color:#fff;
-  transform:translateY(-1px);
-  box-shadow:var(--shadow-soft);
 }
 
 .btn-solid{
@@ -206,8 +200,6 @@ button{ font-family:inherit; cursor:pointer; }
 }
 .btn-solid:hover{
   background:var(--accent-dk); border-color:var(--accent-dk);
-  transform:translateY(-1px);
-  box-shadow:0 10px 24px rgba(184,115,74,.28);
 }
 
 .burger{ display:none; background:none; border:none; padding:8px; border-radius:var(--radius-sm); }
@@ -488,4 +480,37 @@ button{ font-family:inherit; cursor:pointer; }
 @media (prefers-reduced-motion: no-preference){
   body{ animation:pageIn .5s ease both; }
   @keyframes pageIn{ from{ opacity:0 } to{ opacity:1 } }
+}
+
+/* ============================================================
+   RESPONSIVE — filet de sécurité mobile global
+   ============================================================ */
+img, svg, video, iframe, table, pre{ max-width:100%; }
+
+@media (max-width:600px){
+  html{ -webkit-text-size-adjust:100%; }
+  /* iOS zoome les champs dont la police < 16px : on neutralise */
+  .field input, .field textarea, .field select,
+  input[type=email], input[type=text], input[type=password],
+  input[type=search], input[type=tel], input[type=number], textarea, select{
+    font-size:16px;
+  }
+  /* Cibles tactiles plus généreuses */
+  .btn-solid, .btn-line{ padding:12px 20px; }
+  /* Pied de page empilé proprement */
+  .foot-grid{ grid-template-columns:1fr 1fr; }
+  .foot-bottom{ flex-direction:column; align-items:flex-start; }
+}
+
+@media (max-width:440px){
+  .foot-grid{ grid-template-columns:1fr; }
+}
+
+/* Onglets tarifs : défilement horizontal plutôt que débordement */
+@media (max-width:560px){
+  .tarifs-tabs{ display:flex; max-width:100%; overflow-x:auto; -webkit-overflow-scrolling:touch; }
+  .tarifs-tabs a{ white-space:nowrap; }
+  /* Formulaire d'achat œuvre : email + bouton empilés */
+  .buy-row{ flex-wrap:wrap; }
+  .buy-row form{ flex-direction:column; width:100%; }
 }
