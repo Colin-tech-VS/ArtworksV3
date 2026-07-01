@@ -1,6 +1,7 @@
 {% extends '_dashboard_layout.html' %}
 {% set dash_active = 'page' %}
 {% if page_mode in ('intelligent', 'createur') %}{% set hide_aria_fab = true %}{% endif %}
+{% block body_class %}is-dashboard is-page-studio{% endblock %}
 {% block title %}Ma page — Artworks{% endblock %}
 
 {% block dash_css %}
@@ -11,16 +12,22 @@
 <link rel="stylesheet" href="{{ url_for('static', filename='css/page_editor.css') }}">
 {% endblock %}
 
+{% set status_key = 'live' if published else ('draft' if has_page_draft else 'off') %}
+{% set status_label = 'Publiée' if published else ('Brouillon' if has_page_draft else 'Non publiée') %}
+
 {% block dash_header %}
-<header class="dash-hero reveal in">
-  <div class="dash-hero-text">
-    <div class="eyebrow"><span class="line"></span><span class="cartel">{{ meta.eyebrow|default('Ma page') }}</span></div>
-    <h1>{{ meta.welcome|default('Ma page publique') }}</h1>
-    <p class="lead">{{ meta.tagline|default('Composez votre page, visualisez le rendu en direct et publiez en un clic.') }}</p>
+<header class="pe-topbar reveal in">
+  <div class="pe-topbar-lead">
+    <span class="pe-topbar-eyebrow">Ma page publique</span>
+    <h1>Studio de page</h1>
   </div>
-  <div class="dash-hero-actions">
-    <a href="{{ public_url }}" target="_blank" rel="noopener" class="btn-line">Voir en ligne ↗</a>
-    <button type="button" class="btn-solid" data-open-preview>Aperçu plein écran</button>
+  <div class="pe-topbar-tools">
+    <span class="pe-topbar-status is-{{ status_key }}">{{ status_label }}</span>
+    <a href="{{ public_url }}" target="_blank" rel="noopener" class="pe-topbar-link">Voir en ligne ↗</a>
+    <button type="button" class="btn-solid pe-topbar-btn" data-open-preview>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3h7M3 3v7M21 21h-7M21 21v-7M21 3h-7M21 3v7M3 21h7M3 21v-7"/></svg>
+      Plein écran
+    </button>
   </div>
 </header>
 {% endblock %}
@@ -29,25 +36,27 @@
 <aside class="pe-preview-panel" id="pe-preview-panel" data-preview-mode="{{ preview_mode }}" aria-label="Aperçu en direct">
   <header class="pe-preview-head">
     <div class="pe-preview-head-left">
+      <span class="pe-preview-live-dot" aria-hidden="true"></span>
       <strong>Aperçu en direct</strong>
-      <span class="pe-preview-status is-{{ 'live' if published else ('draft' if has_page_draft else 'off') }}" data-preview-status>
-        {{ 'Publiée' if published else ('Brouillon' if has_page_draft else 'Non publiée') }}
-      </span>
+      <span class="pe-preview-status is-{{ status_key }}" data-preview-status>{{ status_label }}</span>
     </div>
     <div class="pe-preview-head-right">
       <div class="pe-device-tabs" role="group" aria-label="Taille d'écran">
-        <button type="button" class="pe-device-btn is-active" data-device="desktop" title="Bureau">
+        <button type="button" class="pe-device-btn is-active" data-device="desktop" title="Bureau" aria-label="Bureau">
           <svg viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="14" rx="2"/><path d="M8 22h8M12 18v4"/></svg>
         </button>
-        <button type="button" class="pe-device-btn" data-device="tablet" title="Tablette">
+        <button type="button" class="pe-device-btn" data-device="tablet" title="Tablette" aria-label="Tablette">
           <svg viewBox="0 0 24 24"><rect x="4" y="2" width="16" height="20" rx="2"/></svg>
         </button>
-        <button type="button" class="pe-device-btn" data-device="mobile" title="Mobile">
+        <button type="button" class="pe-device-btn" data-device="mobile" title="Mobile" aria-label="Mobile">
           <svg viewBox="0 0 24 24"><rect x="7" y="2" width="10" height="20" rx="2"/></svg>
         </button>
       </div>
-      <button type="button" class="pe-icon-btn" data-preview-refresh title="Actualiser">
+      <button type="button" class="pe-icon-btn" data-preview-refresh title="Actualiser" aria-label="Actualiser">
         <svg viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-2.6-6.3"/><path d="M21 3v6h-6"/></svg>
+      </button>
+      <button type="button" class="pe-icon-btn pe-preview-expand" data-open-preview title="Plein écran" aria-label="Plein écran">
+        <svg viewBox="0 0 24 24"><path d="M3 9V3h6M21 15v6h-6M21 9V3h-6M3 15v6h6"/></svg>
       </button>
     </div>
   </header>
@@ -73,30 +82,41 @@
 <div class="pe-studio reveal in">
   <nav class="pe-modes" role="tablist" aria-label="Mode d'édition">
     <a href="{{ url_for('main.page_editor', mode='redacteur') }}"
-       class="pe-mode-tab {{ 'is-active' if page_mode == 'redacteur' }}" role="tab">
-      <span class="pe-mode-num">1</span>
+       class="pe-mode-tab {{ 'is-active' if page_mode == 'redacteur' }}" role="tab" aria-selected="{{ 'true' if page_mode == 'redacteur' else 'false' }}">
+      <span class="pe-mode-ic">
+        <svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+      </span>
       <span class="pe-mode-txt">
         <strong>Rédacteur</strong>
-        <small>Profil, œuvres et séries — le plus simple</small>
+        <small>Profil, œuvres et séries</small>
       </span>
     </a>
     <a href="{{ url_for('main.page_editor', mode='createur') }}"
-       class="pe-mode-tab {{ 'is-active' if page_mode == 'createur' }}" role="tab">
-      <span class="pe-mode-num">2</span>
+       class="pe-mode-tab {{ 'is-active' if page_mode == 'createur' }}" role="tab" aria-selected="{{ 'true' if page_mode == 'createur' else 'false' }}">
+      <span class="pe-mode-ic">
+        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="11" rx="1"/><rect x="14" y="16" width="7" height="5" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>
+      </span>
       <span class="pe-mode-txt">
         <strong>Créateur</strong>
-        <small>Canvas libre — blocs, styles, mise en page</small>
+        <small>Canvas libre, blocs &amp; styles</small>
       </span>
     </a>
     <a href="{{ url_for('main.page_editor', mode='intelligent') }}"
-       class="pe-mode-tab {{ 'is-active' if page_mode == 'intelligent' }}" role="tab">
-      <span class="pe-mode-num">3</span>
+       class="pe-mode-tab {{ 'is-active' if page_mode == 'intelligent' }}" role="tab" aria-selected="{{ 'true' if page_mode == 'intelligent' else 'false' }}">
+      <span class="pe-mode-ic">
+        <svg viewBox="0 0 24 24"><path d="M12 3l1.9 4.3L18 9l-4.1 1.7L12 15l-1.9-4.3L6 9l4.1-1.7Z"/><path d="M18 15l.9 2.1L21 18l-2.1.9L18 21l-.9-2.1L15 18l2.1-.9Z"/></svg>
+      </span>
       <span class="pe-mode-txt">
         <strong>Intelligent</strong>
-        <small>Aria structure et rédige pour vous</small>
+        <small>Aria structure &amp; rédige</small>
       </span>
     </a>
   </nav>
+
+  <div class="pe-pane-switch" role="tablist" aria-label="Affichage">
+    <button type="button" class="pe-pane-switch-btn is-active" data-pane="editor" role="tab">Édition</button>
+    <button type="button" class="pe-pane-switch-btn" data-pane="preview" role="tab">Aperçu</button>
+  </div>
 
   <div class="pe-workspace" data-page-mode="{{ page_mode }}">
 
@@ -105,7 +125,7 @@
       <section class="pe-redacteur">
         <div class="pe-redacteur-intro">
           <h2>Votre page classique</h2>
-          <p>Complétez votre profil et votre catalogue — l'aperçu à droite montre exactement ce que voient vos visiteurs.</p>
+          <p>Complétez votre profil et votre catalogue — l'aperçu montre exactement ce que voient vos visiteurs.</p>
         </div>
 
         <div class="pe-profile-meter">
@@ -127,7 +147,7 @@
               <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
             </span>
             <div class="pe-step-body">
-              <h3>Présentation & profil</h3>
+              <h3>Présentation &amp; profil</h3>
               <p>Nom, bio, statement, photo et bannière.</p>
             </div>
             <span class="pe-step-arrow">→</span>
@@ -333,6 +353,19 @@ document.addEventListener('DOMContentLoaded', function () {
       publicUrl: {{ public_url | tojson }}
     });
   }
+
+  // Bascule Édition / Aperçu sur petit écran
+  var studio = document.querySelector('.pe-studio');
+  var workspace = studio && studio.querySelector('.pe-workspace');
+  var switchBtns = studio ? studio.querySelectorAll('[data-pane]') : [];
+  switchBtns.forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var pane = btn.getAttribute('data-pane');
+      if (workspace) workspace.classList.toggle('show-preview', pane === 'preview');
+      switchBtns.forEach(function (b) { b.classList.toggle('is-active', b === btn); });
+      if (pane === 'preview' && window.PeLivePreview) PeLivePreview.refresh();
+    });
+  });
 });
 </script>
 {% if page_mode == 'createur' %}

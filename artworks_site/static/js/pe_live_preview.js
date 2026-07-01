@@ -27,6 +27,7 @@
   }
 
   function setDevice(d) {
+    if (!panel && !ensure()) return;
     device = DEVICES[d] ? d : 'desktop';
     var viewport = panel.querySelector('[data-preview-viewport]');
     if (viewport) viewport.style.maxWidth = DEVICES[device].width;
@@ -36,6 +37,7 @@
   }
 
   function setMode(m) {
+    if (!panel && !ensure()) return;
     mode = m === 'full' ? 'full' : 'canvas';
     if (canvasHost) canvasHost.hidden = mode !== 'canvas';
     if (fullFrame) fullFrame.hidden = mode !== 'full';
@@ -99,6 +101,7 @@
       opts = opts || {};
       publicUrl = opts.publicUrl || '';
       layoutUrl = opts.layoutUrl || '';
+      if (!ensure()) return;
       setMode(opts.mode || 'canvas');
       bind();
       if (mode === 'full') refreshFull();
