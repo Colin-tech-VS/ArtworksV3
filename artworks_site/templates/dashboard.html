@@ -1,5 +1,4 @@
 {% extends '_dashboard_layout.html' %}
-{% from '_macros.html' import artcard %}
 {% set dash_active = 'overview' %}
 {% block title %}Tableau de bord — Artworks{% endblock %}
 
@@ -11,8 +10,7 @@
     <p class="lead">{{ role_meta.tagline }}</p>
   </div>
   <div class="dash-hero-actions">
-    <a href="{{ url_for('main.artist', artist_id=current_user.id) }}" class="btn-line">Profil public</a>
-    <a href="{{ url_for('main.page_editor') }}" class="btn-line">Créer ma page</a>
+    <a href="{{ url_for('main.artist', artist_id=current_user.id) }}" class="btn-line" target="_blank" rel="noopener">Voir ma page ↗</a>
     <a href="{{ url_for('main.create_artwork') }}" class="btn-solid">{{ role_meta.publish }}</a>
   </div>
 </header>
@@ -20,268 +18,51 @@
 
 {% block dash_content %}
 
+{% if connect.show_section|default(false) and (connect.needs_connect or connect.needs_subscription) %}
 {% include '_stripe_connect_panel.html' %}
-
-<div class="dash-kpis reveal in">
-  <article class="dash-kpi accent">
-    <div class="val">{{ stats.artworks_count }}</div>
-    <div class="lbl">{{ role_meta.works_title }}</div>
-    <div class="hint">{{ stats.dispo_count }} dispo · {{ stats.reserve_count }} réservée{{ 's' if stats.reserve_count != 1 }}</div>
-  </article>
-  <article class="dash-kpi">
-    <div class="val">{{ stats.series_count }}</div>
-    <div class="lbl">Séries</div>
-    <div class="hint">Regroupements thématiques</div>
-  </article>
-  <article class="dash-kpi">
-    <div class="val">{{ current_user.followers or 0 }}</div>
-    <div class="lbl">Abonnés</div>
-    <div class="hint">Sur votre profil public</div>
-  </article>
-  <article class="dash-kpi">
-    <div class="val">{{ user_plan.name if user_plan else 'Découverte' }}</div>
-    <div class="lbl">Abonnement</div>
-    <div class="hint">
-      {% if current_user.subscription_status == 'cancelled' %}Annulation programmée
-      {% elif current_user.subscription_status == 'past_due' %}Paiement en attente
-      {% else %}Actif{% endif %}
-    </div>
-  </article>
-</div>
-
-<section class="dash-panel reveal in" id="favoris">
-  <div class="dash-panel-head">
-    <div>
-      <h2>Mes favoris</h2>
-      <p class="sub">Œuvres enregistrées depuis votre compte — cliquez sur ♥ sur une fiche œuvre pour les ajouter.</p>
-    </div>
-    <a href="{{ url_for('main.explorer') }}" class="btn-line">Explorer la collection</a>
-  </div>
-  <div class="dash-panel-body">
-    {% if favorite_artworks %}
-    <div class="art-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:20px">
-      {% for a in favorite_artworks %}{{ artcard(a, 'meta') }}{% endfor %}
-    </div>
-    {% else %}
-    <p style="color:var(--grey);margin:0">Aucun favori pour l'instant. Parcourez la <a href="{{ url_for('main.explorer') }}" style="color:var(--accent)">collection</a> et cliquez sur le cœur d'une œuvre.</p>
-    {% endif %}
-  </div>
-</section>
+{% endif %}
 
 {% if profile_pct < 100 %}
 <section class="dash-progress reveal in">
   <div class="dash-progress-ring" style="--pct:{{ profile_pct }}" data-label="{{ profile_pct }}%"></div>
   <div class="dash-progress-body">
     <h3>Complétez votre profil</h3>
-    <p>{{ role_meta.profile_hint }} — {{ profile_done }}/{{ profile_total }} éléments renseignés.</p>
-    {% if profile_missing %}
-    <div class="dash-progress-tags">
-      {% for item in profile_missing[:4] %}
-      <span>{{ item }}</span>
-      {% endfor %}
-    </div>
+    <p>{{ profile_done }}/{{ profile_total }} éléments — {{ role_meta.profile_hint }}</p>
+  </div>
+  <a href="{{ url_for('main.edit_profile') }}" class="btn-solid">Compléter</a>
+</section>
+{% endif %}
+
+<div class="dash-kpis reveal in dash-kpis-compact">
+  <article class="dash-kpi accent">
+    <div class="val">{{ stats.artworks_count }}</div>
+    <div class="lbl">{{ role_meta.works_title }}</div>
+    {% if current_user.role != 'collectionneur' %}
+    <div class="hint">{{ stats.dispo_count }} dispo{% if stats.reserve_count %} · {{ stats.reserve_count }} réservée{{ 's' if stats.reserve_count != 1 }}{% endif %}</div>
     {% endif %}
-  </div>
-  <a href="{{ url_for('main.edit_profile') }}" class="btn-solid">Compléter →</a>
-</section>
-{% endif %}
-
-{% if ent.stats_level in ('basic', 'advanced') %}
-<section class="dash-panel reveal in">
-  <div class="dash-panel-head"><div><h2>Statistiques</h2><p class="sub">Vues cumulées sur vos œuvres{% if ent.stats_level == 'advanced' %} — export CSV disponible{% endif %}.</p></div>
-    {% if ent.stats_level == 'advanced' %}
-    <a href="{{ url_for('main.export_stats') }}" class="btn-line">Exporter CSV</a>
-    {% endif %}
-  </div>
-  <div class="dash-panel-body">
-    <div class="dash-kpis" style="margin-bottom:0">
-      <article class="dash-kpi accent"><div class="val">{{ stats.total_views }}</div><div class="lbl">Vues totales</div></article>
-      <article class="dash-kpi"><div class="val">{{ stats.artworks_count }}</div><div class="lbl">Œuvres en ligne</div></article>
-      {% if ent.artwork_limit %}<article class="dash-kpi"><div class="val">{{ stats.artworks_count }}/{{ ent.artwork_limit }}</div><div class="lbl">Quota œuvres</div></article>{% endif %}
-    </div>
-  </div>
-</section>
-{% endif %}
-
-{% if current_user.role == 'galerie' and ent.collector_matching %}
-<section class="dash-panel reveal in">
-  <div class="dash-panel-head"><div><h2>Matching artistes &amp; collectionneurs</h2><p class="sub">Inclus dans Galerie Premium — mise en relation curatoriale.</p></div></div>
-  <div class="dash-panel-body">
-    <a href="mailto:contact@artworksdigital.fr?subject=Matching galerie — {{ current_user.name }}" class="btn-solid">Demander un matching</a>
-  </div>
-</section>
-{% endif %}
-
-{% if current_user.role == 'galerie' and ent.gallery_artist_limit != 0 %}
-<section class="dash-panel reveal in" id="artistes-galerie">
-  <div class="dash-panel-head"><div><h2>Artistes de la galerie</h2><p class="sub">Multi-artistes {% if ent.gallery_artist_limit %}— {{ gallery_artists|length }}/{{ ent.gallery_artist_limit }}{% else %}— illimité{% endif %}.</p></div></div>
-  <div class="dash-panel-body">
-    {% if gallery_artists %}
-    <ul class="dash-series-list" style="margin-bottom:20px">
-      {% for ga in gallery_artists %}
-      <li class="dash-series-item">
-        <div class="info"><h3>{{ ga.name }}</h3><p>{{ ga.discipline or 'Discipline non renseignée' }}</p></div>
-        <form method="post" action="{{ url_for('main.delete_gallery_artist', ga_id=ga.id) }}"><button type="submit" class="btn-line" style="font-size:12px">Retirer</button></form>
-      </li>
-      {% endfor %}
-    </ul>
-    {% endif %}
-    <form method="post" action="{{ url_for('main.add_gallery_artist') }}" class="form-grid" style="display:grid;grid-template-columns:1fr 1fr auto;gap:12px;align-items:end">
-      <div class="field" style="margin:0"><label>Nom de l'artiste</label><input type="text" name="name" required placeholder="Ex. Camille Dupont"></div>
-      <div class="field" style="margin:0"><label>Discipline</label><input type="text" name="discipline" placeholder="Peinture, sculpture…"></div>
-      <button type="submit" class="btn-solid">Ajouter</button>
-    </form>
-  </div>
-</section>
-{% endif %}
-
-{% if current_user.role == 'collectionneur' and ent.price_alerts %}
-<section class="dash-panel reveal in">
-  <div class="dash-panel-head"><div><h2>Alertes prix</h2><p class="sub">{{ price_alerts|length }} alerte(s) active(s) — notification email à venir sur changement de prix.</p></div></div>
-  <div class="dash-panel-body">
-    {% if price_alerts %}
-    <ul style="margin:0;padding:0;list-style:none">
-      {% for pa in price_alerts %}
-      <li style="padding:10px 0;border-bottom:1px solid var(--hair);display:flex;justify-content:space-between;gap:12px">
-        <a href="{{ url_for('main.artwork_detail', artwork_id=pa.artwork_id) }}">{{ pa.artwork.title if pa.artwork else 'Œuvre #' ~ pa.artwork_id }}</a>
-        <form method="post" action="{{ url_for('main.price_alert', artwork_id=pa.artwork_id) }}"><button type="submit" class="btn-line" style="font-size:12px;padding:6px 12px">Retirer</button></form>
-      </li>
-      {% endfor %}
-    </ul>
-    {% else %}
-    <p style="color:var(--grey);font-size:14px">Activez une alerte depuis la fiche d'une œuvre dans l'explorateur.</p>
-    {% endif %}
-  </div>
-</section>
-{% endif %}
-
-{% if ent.collector_matching %}
-<section class="dash-panel reveal in">
-  <div class="dash-panel-head"><div><h2>Matching collectionneur</h2><p class="sub">Suggestions d'artistes selon vos critères de profil.</p></div></div>
-  <div class="dash-panel-body">
-    <a href="{{ url_for('main.explorer') }}" class="btn-solid">Explorer les œuvres recommandées</a>
-    <p style="margin:14px 0 0;font-size:13px;color:var(--grey)">Pour un accompagnement personnalisé : <a href="mailto:contact@artworksdigital.fr?subject=Matching collectionneur — {{ current_user.name }}">contact@artworksdigital.fr</a></p>
-  </div>
-</section>
-{% endif %}
-
-{% if current_user.role == 'collectionneur' and ent.shareable_wishlist and current_user.wishlist_share_token %}
-<section class="dash-panel reveal in">
-  <div class="dash-panel-head"><div><h2>Wishlist partageable</h2><p class="sub">Lien public activé par votre abonnement {{ user_plan.name if user_plan else '' }}.</p></div></div>
-  <div class="dash-panel-body">
-    <p style="font-size:14px;color:var(--grey);margin:0 0 12px">Partagez votre sélection :</p>
-    <code style="display:block;padding:12px 16px;background:var(--bg-alt);border-radius:var(--radius-sm);font-size:13px;word-break:break-all">{{ url_for('main.public_wishlist', token=current_user.wishlist_share_token, _external=true) }}</code>
-  </div>
-</section>
-{% endif %}
-
-{% if current_user.role == 'collectionneur' and ent.curator_session %}
-<section class="dash-panel reveal in">
-  <div class="dash-panel-head"><div><h2>Conseil curatoral Patron</h2><p class="sub">1 session / mois incluse — contactez-nous pour planifier.</p></div></div>
-  <div class="dash-panel-body">
-    <a href="mailto:contact@artworksdigital.fr?subject=Session curatorale Patron — {{ current_user.name }}" class="btn-solid">Réserver ma session</a>
-  </div>
-</section>
-{% endif %}
-
-<div class="dash-quick reveal in">
-  <a href="{{ url_for('main.create_artwork') }}" class="dash-quick-card">
-    <svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="1"/><path d="M12 9v6M9 12h6"/></svg>
-    <strong>{{ role_meta.publish }}</strong>
-    <span>Ajoutez titre, prix, format et image.</span>
-  </a>
-  <a href="{{ url_for('main.create_series') }}" class="dash-quick-card">
-    <svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
-    <strong>Nouvelle série</strong>
-    <span>Structurez vos œuvres par thème ou expo.</span>
-  </a>
-  <a href="{{ url_for('main.edit_profile') }}" class="dash-quick-card">
-    <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
-    <strong>Modifier le profil</strong>
-    <span>Identité, logo, description, abonnement.</span>
-  </a>
+  </article>
+  <article class="dash-kpi">
+    <div class="val">{{ stats.series_count }}</div>
+    <div class="lbl">Séries</div>
+    <div class="hint">Regroupements thématiques</div>
+  </article>
 </div>
 
-<!-- Œuvres -->
 <section class="dash-panel" id="oeuvres">
   <div class="dash-panel-head">
     <div>
       <h2>{{ role_meta.works_title }}</h2>
       <p class="sub">{{ role_meta.works_sub }}</p>
     </div>
-    <div class="dash-panel-tools">
-      {% if artworks %}
-      <div class="dash-view-toggle" data-dash-view="artworks" aria-label="Mode d'affichage">
-        <button type="button" data-view="table" class="is-on" title="Liste">
-          <svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
-        </button>
-        <button type="button" data-view="grid" title="Grille">
-          <svg viewBox="0 0 24 24"><rect x="3" y="3" width="8" height="8"/><rect x="13" y="3" width="8" height="8"/><rect x="3" y="13" width="8" height="8"/><rect x="13" y="13" width="8" height="8"/></svg>
-        </button>
-      </div>
-      {% endif %}
-      <a href="{{ url_for('main.create_artwork') }}" class="btn-solid" style="padding:10px 18px;font-size:14px">+ Publier</a>
-    </div>
+    <a href="{{ url_for('main.create_artwork') }}" class="btn-solid dash-btn-sm">+ Ajouter</a>
   </div>
-
   <div class="dash-panel-body">
     {% if artworks %}
-    <div class="dash-table-wrap" data-dash-table="artworks">
-      <table class="dash-table">
-        <thead>
-          <tr>
-            <th></th>
-            <th>Titre</th>
-            <th>Série</th>
-            <th>Format</th>
-            <th>Dimensions</th>
-            <th>Prix</th>
-            <th>Statut</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for a in artworks %}
-          <tr>
-            <td class="thumb">
-              <a href="{{ url_for('main.artwork_detail', artwork_id=a.id) }}">
-                <img src="{{ img_url(a.image) or url_for('static', filename='demo/art-01.jpg') }}" alt="{{ a.title }}">
-              </a>
-            </td>
-            <td class="title-cell">
-              <strong>{{ a.title }}</strong>
-              {% if a.year %}<span class="meta">{{ a.year }}{% if a.discipline %} · {{ a.discipline }}{% endif %}</span>{% endif %}
-            </td>
-            <td>{{ a.series.name if a.series else '—' }}</td>
-            <td>{{ a.format|capitalize if a.format else '—' }}</td>
-            <td>{{ a.dimensions or '—' }}</td>
-            <td class="price">{{ a.price_str }}</td>
-            <td>
-              {% if a.status == 'reserve' %}
-                <span class="dash-badge warn">Réservée</span>
-              {% else %}
-                <span class="dash-badge ok">Disponible</span>
-              {% endif %}
-            </td>
-            <td>
-              <div class="acts">
-                <a href="{{ url_for('main.edit_artwork', artwork_id=a.id) }}">Modifier</a>
-                <form method="post" action="{{ url_for('main.delete_artwork', artwork_id=a.id) }}" onsubmit="return confirm('Supprimer définitivement cette œuvre ?');">
-                  <button type="submit" class="del">Suppr.</button>
-                </form>
-              </div>
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-
-    <div class="dash-art-grid is-hidden" data-dash-grid="artworks">
+    <div class="dash-art-grid">
       {% for a in artworks %}
       <article class="dash-art-card">
         <a href="{{ url_for('main.artwork_detail', artwork_id=a.id) }}" class="img">
-          <img src="{{ img_url(a.image) or url_for('static', filename='demo/art-01.jpg') }}" alt="{{ a.title }}">
+          <img src="{{ img_url(a.image) or url_for('static', filename='demo/art-01.jpg') }}" alt="{{ a.title }}" loading="lazy">
           <span class="badge-pos">
             {% if a.status == 'reserve' %}
               <span class="dash-badge warn">Réservée</span>
@@ -293,17 +74,9 @@
         <div class="body">
           <h3>{{ a.title }}</h3>
           <div class="meta">
-            {% if a.series %}{{ a.series.name }} · {% endif %}
-            {{ a.format|capitalize if a.format else 'Format —' }}
-            {% if a.dimensions %} · {{ a.dimensions }}{% endif %}
+            {% if a.series %}{{ a.series.name }}{% if a.price_str or a.dimensions %} · {% endif %}{% endif %}
+            {{ a.dimensions or '' }}{% if a.dimensions and a.price_str %} · {% endif %}{{ a.price_str }}
           </div>
-          <div class="price">{{ a.price_str }}</div>
-          {% if a.deviantart_deviation_id %}
-          <div class="meta" style="margin-top:6px;font-size:12px;color:var(--grey)">
-            DeviantArt · {{ a.deviantart_views or 0 }} vues · {{ a.deviantart_favorites or 0 }} favoris
-            {% if a.deviantart_url %} · <a href="{{ a.deviantart_url }}" target="_blank" rel="noopener">Voir</a>{% endif %}
-          </div>
-          {% endif %}
           <div class="acts">
             <a href="{{ url_for('main.edit_artwork', artwork_id=a.id) }}">Modifier</a>
             <form method="post" action="{{ url_for('main.delete_artwork', artwork_id=a.id) }}" onsubmit="return confirm('Supprimer cette œuvre ?');">
@@ -316,56 +89,44 @@
     </div>
     {% else %}
     <div class="dash-empty">
-      <svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="1"/><path d="M3 9h18M8 13h8"/></svg>
-      <h3>Aucune œuvre pour l'instant</h3>
+      <h3>Aucune œuvre</h3>
       <p>{{ role_meta.empty_works }}</p>
       <div class="actions">
         <a href="{{ url_for('main.create_artwork') }}" class="btn-solid">{{ role_meta.publish }}</a>
-        <a href="{{ url_for('main.create_series') }}" class="btn-line">Créer une série d'abord</a>
       </div>
     </div>
     {% endif %}
   </div>
 </section>
 
-<!-- Séries -->
 <section class="dash-panel" id="series">
   <div class="dash-panel-head">
     <div>
-      <h2>Mes séries</h2>
+      <h2>Séries</h2>
       <p class="sub">{{ role_meta.series_sub }}</p>
     </div>
-    <a href="{{ url_for('main.create_series') }}" class="btn-solid" style="padding:10px 18px;font-size:14px">+ Nouvelle série</a>
+    <a href="{{ url_for('main.create_series') }}" class="btn-solid dash-btn-sm">+ Nouvelle série</a>
   </div>
-
   <div class="dash-panel-body">
     {% if series %}
     <div class="dash-series-list">
       {% for s in series %}
       <article class="dash-series-item">
         <div class="cov">
-          {% if s.cover %}<img src="{{ img_url(s.cover) }}" alt="{{ s.name }}">{% endif %}
+          {% if s.cover %}<img src="{{ img_url(s.cover) }}" alt="{{ s.name }}" loading="lazy">{% endif %}
         </div>
         <div class="info">
           <h3>{{ s.name }}</h3>
-          <p>
-            {{ s.artworks|length }} œuvre{{ 's' if s.artworks|length != 1 }}
-            {% if s.year %} · {{ s.year }}{% endif %}
-            {% if s.description %} · {{ s.description|truncate(80) }}{% endif %}
-          </p>
+          <p>{{ s.artworks|length }} œuvre{{ 's' if s.artworks|length != 1 }}{% if s.year %} · {{ s.year }}{% endif %}</p>
         </div>
         <div class="acts">
-          <a href="{{ url_for('main.edit_series', series_id=s.id) }}" class="btn-line" style="padding:8px 14px;font-size:13px">Modifier</a>
-          <form method="post" action="{{ url_for('main.delete_series', series_id=s.id) }}" onsubmit="return confirm('Supprimer cette série ? Les œuvres ne seront pas supprimées.');">
-            <button type="submit" class="btn-line" style="padding:8px 14px;font-size:13px;border-color:var(--error);color:var(--error)">Supprimer</button>
-          </form>
+          <a href="{{ url_for('main.edit_series', series_id=s.id) }}" class="btn-line dash-btn-sm">Modifier</a>
         </div>
       </article>
       {% endfor %}
     </div>
     {% else %}
     <div class="dash-empty">
-      <svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
       <h3>Aucune série</h3>
       <p>{{ role_meta.empty_series }}</p>
       <div class="actions">
@@ -373,42 +134,6 @@
       </div>
     </div>
     {% endif %}
-  </div>
-</section>
-
-<!-- Raccourcis compte -->
-<section class="dash-panel">
-  <div class="dash-panel-head">
-    <div>
-      <h2>Paramètres du compte</h2>
-      <p class="sub">Profil, sécurité et abonnement — tout au même endroit.</p>
-    </div>
-  </div>
-  <div class="dash-panel-body" style="padding-top:0">
-    <div class="dash-quick" style="margin-bottom:0">
-      <a href="{{ url_for('main.edit_profile') }}" class="dash-quick-card">
-        <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
-        <strong>Profil &amp; identité</strong>
-        <span>Nom, logo, description, note curatoriale.</span>
-      </a>
-      <a href="{{ url_for('main.change_password') }}" class="dash-quick-card">
-        <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-        <strong>Mot de passe</strong>
-        <span>Modifiez votre mot de passe en toute sécurité.</span>
-      </a>
-      <a href="{{ url_for('main.subscription') }}" class="dash-quick-card">
-        <svg viewBox="0 0 24 24"><path d="M12 2v20M5 7h14a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2z"/></svg>
-        <strong>Abonnement</strong>
-        <span>Formule {{ user_plan.name if user_plan else 'Découverte' }} — voir les offres {{ role_meta.eyebrow|lower }}.</span>
-      </a>
-      {% if connect.show_section|default(false) %}
-      <a href="{{ url_for('main.encaissements') }}" class="dash-quick-card">
-        <svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
-        <strong>Encaissements Stripe</strong>
-        <span>{% if connect.ready %}Connecté — portfolio public{% elif connect.needs_subscription %}Abonnement requis{% else %}Obligatoire pour portfolio public{% endif %}</span>
-      </a>
-      {% endif %}
-    </div>
   </div>
 </section>
 

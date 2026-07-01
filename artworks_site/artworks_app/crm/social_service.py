@@ -14,12 +14,8 @@ from ..social.targeting import build_destination_url, pick_featured_artwork, res
 
 
 def _absolute_upload(path: str) -> str:
-    if not path:
-        return ''
-    if path.startswith(('http://', 'https://')):
-        return path
-    site = (current_app.config.get('SITE_URL') or '').rstrip('/')
-    return f'{site}/static/uploads/{path.lstrip("/")}'
+    from ..storage import absolute_url
+    return absolute_url(path) or ''
 
 
 def resolve_post_image(post: SocialPost) -> str:

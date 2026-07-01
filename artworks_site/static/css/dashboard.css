@@ -76,6 +76,8 @@ body.is-dashboard main{ padding:0; }
 .dash-kpi .hint{ font-size:12px; color:var(--grey-soft); margin-top:4px; }
 .dash-kpi.accent{ border-color:rgba(184,115,74,.35); background:rgba(184,115,74,.04); }
 .dash-kpi.accent .val{ color:var(--accent); }
+.dash-kpis-compact{ grid-template-columns:repeat(2,1fr); max-width:520px; }
+.dash-btn-sm{ padding:8px 16px !important; font-size:13px !important; }
 
 /* --- Profile completion --- */
 .dash-progress{

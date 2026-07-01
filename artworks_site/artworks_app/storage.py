@@ -80,13 +80,44 @@ def save_upload(file_storage) -> str | None:
     return key
 
 
+def normalize_image_ref(value: str | None) -> str | None:
+    """Normalise une référence image (clé, chemin demo, URL legacy) pour stockage/résolution."""
+    if not value:
+        return None
+    value = str(value).strip()
+    if not value:
+        return None
+    if value.startswith('http://') or value.startswith('https://'):
+        marker = '/storage/v1/object/public/'
+        if marker in value:
+            rest = value.split(marker, 1)[1]
+            if '/' in rest:
+                return rest.split('/', 1)[1]
+        for prefix in ('/static/uploads/', '/uploads/'):
+            if prefix in value:
+                return value.split(prefix, 1)[1].split('?')[0]
+        return value
+    if value.startswith('/static/uploads/'):
+        return value.replace('/static/uploads/', '', 1).split('?')[0]
+    if value.startswith('uploads/'):
+        return value.replace('uploads/', '', 1).split('?')[0]
+    return value.split('?')[0]
+
+
 def public_url(value: str | None) -> str | None:
     """URL publique d'une image (Supabase ou /static/uploads/)."""
     if not value:
         return None
     value = str(value).strip()
     if value.startswith('http://') or value.startswith('https://'):
+        key = normalize_image_ref(value)
+        if key and key != value:
+            return public_url(key)
         return value
+    if value.startswith('/static/uploads/'):
+        value = value.replace('/static/uploads/', '', 1)
+    elif value.startswith('uploads/'):
+        value = value.replace('uploads/', '', 1)
     if '/' in value and not value.startswith('uploads/'):
         return url_for('static', filename=value)
     key = value.split('/')[-1] if '/' in value else value
@@ -95,6 +126,18 @@ def public_url(value: str | None) -> str | None:
         bucket = current_app.config['SUPABASE_STORAGE_BUCKET']
         return f'{base}/storage/v1/object/public/{bucket}/{key}'
     return url_for('static', filename=f'uploads/{key}')
+
+
+def img_resolve_config() -> dict:
+    """Config JS pour résoudre les clés images côté client (aperçu live)."""
+    if remote_enabled():
+        base = current_app.config['SUPABASE_URL'].rstrip('/')
+        bucket = current_app.config['SUPABASE_STORAGE_BUCKET']
+        return {
+            'uploadBase': f'{base}/storage/v1/object/public/{bucket}/',
+            'staticPrefix': '/static/',
+        }
+    return {'uploadBase': '/static/uploads/', 'staticPrefix': '/static/'}
 
 
 def absolute_url(value: str | None) -> str | None:

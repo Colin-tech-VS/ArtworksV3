@@ -15,12 +15,8 @@ log = logging.getLogger(__name__)
 
 
 def _absolute_image_url(artwork: Artwork) -> str:
-    if not artwork.image:
-        return ''
-    if artwork.image.startswith(('http://', 'https://')):
-        return artwork.image
-    site = (current_app.config.get('SITE_URL') or '').rstrip('/')
-    return f'{site}/static/uploads/{artwork.image.lstrip("/")}'
+    from ..storage import absolute_url
+    return absolute_url(artwork.image) or ''
 
 
 def _portfolio_url(user: User) -> str:

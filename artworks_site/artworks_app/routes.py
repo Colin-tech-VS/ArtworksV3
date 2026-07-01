@@ -366,31 +366,12 @@ def dashboard():
         return redirect(url_for('crm.index'))
     from .dashboard_ctx import profile_completion, dashboard_stats
     from .entitlements import user_entitlements
-    import secrets
     artworks = current_user.artworks
     series = current_user.series
     pct, done, total, missing = profile_completion(current_user)
     stats = dashboard_stats(current_user, artworks, series)
     ent = user_entitlements(current_user)
-    if ent.get('shareable_wishlist') and not current_user.wishlist_share_token:
-        current_user.wishlist_share_token = secrets.token_urlsafe(12)[:32]
-        db.session.commit()
-    gallery_artists = []
-    price_alerts = []
-    if current_user.role == 'galerie':
-        from .models import GalleryArtist
-        gallery_artists = GalleryArtist.query.filter_by(gallery_id=current_user.id).all()
-    if current_user.role == 'collectionneur' and ent.get('price_alerts'):
-        from .models import PriceAlert
-        price_alerts = PriceAlert.query.filter_by(user_id=current_user.id).all()
-    if current_user.role in ('artiste', 'galerie'):
-        from .social.stats import sync_artwork_deviantart_stats
-        for art in artworks:
-            if art.deviantart_deviation_id:
-                sync_artwork_deviantart_stats(art)
     from .stripe_connect import connect_status, payout_label_for_role
-    from . import billing
-    from .favorites import favorite_artworks_for_user
     return render_template(
         'dashboard.html',
         artworks=artworks,
@@ -401,12 +382,8 @@ def dashboard():
         profile_missing=missing,
         stats=stats,
         ent=ent,
-        gallery_artists=gallery_artists,
-        price_alerts=price_alerts,
-        favorite_artworks=favorite_artworks_for_user(current_user),
         connect=connect_status(current_user),
         connect_payout_label=payout_label_for_role(current_user.role or ''),
-        stripe_ready=billing.stripe_ready(),
     )
 
 
@@ -992,6 +969,7 @@ def aria_chat():
 def aria_upload():
     from .aria_assistant import aria_enabled
     from .aria_tools import push_pending_image, save_upload_file
+    from .storage import public_url
 
     if not aria_enabled():
         return jsonify({'error': 'Aria indisponible.'}), 503
@@ -1008,7 +986,8 @@ def aria_upload():
     return jsonify({
         'ok': True,
         'filename': name,
-        'url': url_for('static', filename=f'uploads/{name}'),
+        'key': name,
+        'url': public_url(name),
         'message': 'Image reçue — dites à Aria de l\'assigner à une œuvre ou au profil.',
     })
 
@@ -1050,6 +1029,7 @@ def published_page(user):
 def _layout_to_custom_page(layout):
     """Convertit un dict layout en données template custom_page."""
     from .page_blocks import layout_height, style_to_css
+    from .storage import public_url, normalize_image_ref
     if not layout or not layout.get('elements'):
         return None
     elements = []
@@ -1058,6 +1038,13 @@ def _layout_to_custom_page(layout):
             continue
         item = dict(el)
         item['style_css'] = style_to_css(el.get('style') or {})
+        if el.get('src'):
+            item['src'] = public_url(normalize_image_ref(el['src']))
+        imgs = el.get('images')
+        if isinstance(imgs, list):
+            item['images'] = [
+                public_url(normalize_image_ref(u)) for u in imgs if u and public_url(normalize_image_ref(u))
+            ]
         elements.append(item)
     return {'elements': elements, 'height': layout_height(elements)}
 
@@ -1124,7 +1111,16 @@ def page_editor_set_mode():
 def _sanitize_page_element(el):
     """Garde un élément de canvas propre et borné (anti-XSS / valeurs aberrantes)."""
     from .page_blocks import sanitize_element
-    return sanitize_element(el)
+    from .storage import normalize_image_ref
+    clean = sanitize_element(el)
+    if not clean:
+        return None
+    if clean.get('src'):
+        clean['src'] = normalize_image_ref(clean['src']) or clean['src']
+    imgs = clean.get('images')
+    if isinstance(imgs, list):
+        clean['images'] = [normalize_image_ref(u) or u for u in imgs if u]
+    return clean
 
 
 @bp.route('/api/page/layout', methods=['POST'])
@@ -1178,12 +1174,16 @@ def page_layout_current():
     """Layout courant pour aperçu client instantané (sans rechargement iframe)."""
     from .page_staging import has_page_draft, draft_element_count
     layout = _preview_layout_for_user()
+    custom = _layout_to_custom_page(layout)
+    client_layout = layout
+    if custom and layout:
+        client_layout = {**layout, 'elements': custom['elements']}
     elements = []
-    if layout and isinstance(layout.get('elements'), list):
-        elements = layout['elements']
+    if client_layout and isinstance(client_layout.get('elements'), list):
+        elements = client_layout['elements']
     return jsonify({
         'ok': True,
-        'layout': layout,
+        'layout': client_layout,
         'element_count': len(elements) or draft_element_count(current_user),
         'has_draft': has_page_draft(current_user),
         'published': bool(current_user.page_published),
@@ -1261,4 +1261,5 @@ def page_image_upload():
     name = _save_upload(f)
     if not name:
         return jsonify({'error': 'Échec de l\'upload.'}), 400
-    return jsonify({'ok': True, 'url': url_for('static', filename=f'uploads/{name}')})
+    from .storage import public_url
+    return jsonify({'ok': True, 'key': name, 'url': public_url(name)})

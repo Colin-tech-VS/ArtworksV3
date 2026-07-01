@@ -11,6 +11,25 @@
 
   var DEFAULT_H = { heading: 60, button: 48, divider: 24, text: 44 };
 
+  function resolveImg(ref) {
+    if (!ref) return '';
+    ref = String(ref).trim();
+    if (ref.indexOf('http://') === 0 || ref.indexOf('https://') === 0) {
+      if (ref.indexOf('/static/uploads/') >= 0) {
+        var k = ref.split('/static/uploads/').pop().split('?')[0];
+        var c = window.__IMG_CFG__ || {};
+        return (c.uploadBase || '/static/uploads/') + k;
+      }
+      return ref;
+    }
+    var cfg = window.__IMG_CFG__ || { uploadBase: '/static/uploads/', staticPrefix: '/static/' };
+    if (ref.indexOf('demo/') === 0) return cfg.staticPrefix + ref;
+    if (ref.indexOf('/') >= 0 && ref.indexOf('uploads/') !== 0) {
+      return cfg.staticPrefix + ref.replace(/^\//, '');
+    }
+    return cfg.uploadBase + ref.replace(/^uploads\//, '');
+  }
+
   function styleToCss(style) {
     if (!style || typeof style !== 'object') return '';
     var parts = [];
@@ -56,7 +75,7 @@
     if (type === 'image' && el.src) {
       node.className = 'pubpage-el t-image';
       node.style.cssText = posStyle(el) + 'width:' + (el.w || 240) + 'px;height:' + (el.h || 160) + 'px;' + css;
-      node.innerHTML = '<img src="' + esc(el.src) + '" alt="" loading="lazy">';
+      node.innerHTML = '<img src="' + esc(resolveImg(el.src)) + '" alt="" loading="lazy">';
       return node;
     }
     if (type === 'heading') {
@@ -92,7 +111,7 @@
       (el.images || []).forEach(function (src) {
         var slide = document.createElement('div');
         slide.className = 'pubpage-slide';
-        slide.innerHTML = '<img src="' + esc(src) + '" alt="" loading="lazy">';
+        slide.innerHTML = '<img src="' + esc(resolveImg(src)) + '" alt="" loading="lazy">';
         node.appendChild(slide);
       });
       return node;
@@ -103,7 +122,7 @@
       (el.images || []).forEach(function (src) {
         var cell = document.createElement('div');
         cell.className = 'pubpage-cell';
-        cell.innerHTML = '<img src="' + esc(src) + '" alt="" loading="lazy">';
+        cell.innerHTML = '<img src="' + esc(resolveImg(src)) + '" alt="" loading="lazy">';
         node.appendChild(cell);
       });
       return node;
@@ -142,6 +161,7 @@
   window.PePageRenderer = {
     render: render,
     styleToCss: styleToCss,
-    layoutHeight: layoutHeight
+    layoutHeight: layoutHeight,
+    resolveImg: resolveImg
   };
 })();

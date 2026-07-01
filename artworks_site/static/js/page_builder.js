@@ -103,6 +103,11 @@
     pubBtn.textContent = published ? 'Publiée ✓' : 'Publier';
   }
 
+  function imgSrc(ref) {
+    if (window.PePageRenderer && PePageRenderer.resolveImg) return PePageRenderer.resolveImg(ref);
+    return ref || '';
+  }
+
   function renderStrip(type, images) {
     var wrap = document.createElement('div');
     wrap.className = 'pe-strip pe-strip-' + type;
@@ -115,7 +120,7 @@
     }
     images.forEach(function (src) {
       var img = document.createElement('img');
-      img.src = src;
+      img.src = imgSrc(src);
       img.alt = '';
       wrap.appendChild(img);
     });
@@ -137,7 +142,7 @@
       if (model.h) el.style.height = model.h + 'px';
       if (model.src) {
         var img = document.createElement('img');
-        img.src = model.src;
+        img.src = imgSrc(model.src);
         img.alt = '';
         el.appendChild(img);
       } else {
@@ -358,7 +363,7 @@
           return fetch(uploadUrl, { method: 'POST', body: fd, credentials: 'same-origin' })
             .then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }); })
             .then(function (res) {
-              if (res.ok && res.j.url) applyImage(targetId, res.j.url, multi);
+              if (res.ok && (res.j.url || res.j.key)) applyImage(targetId, res.j.key || res.j.url, multi);
             });
         });
       });

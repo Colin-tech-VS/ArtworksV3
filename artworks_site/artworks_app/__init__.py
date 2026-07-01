@@ -93,6 +93,8 @@ def create_app():
         from .aria_assistant import aria_enabled, aria_show_on_vitrine
         ctx['aria_enabled'] = aria_enabled() and aria_show_on_vitrine(request.endpoint, request.blueprint)
         ctx['site_url'] = (app.config.get('SITE_URL') or '').rstrip('/') or 'https://artworksdigital.fr'
+        from .storage import img_resolve_config
+        ctx['img_resolve'] = img_resolve_config()
         if request.blueprint == 'crm':
             from .crm.crm_ctx import (
                 ARTWORK_STATUS_LABELS, CAMPAIGN_STATUS_LABELS, NAV_META,

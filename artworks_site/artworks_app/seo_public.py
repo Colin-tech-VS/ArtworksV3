@@ -17,10 +17,8 @@ def _site_url() -> str:
 
 def _abs_image(value: str | None, placeholder: str = 'demo/art-01.jpg') -> str:
     """URL absolue d'une image (œuvre/profil) pour Open Graph & JSON-LD."""
-    base = _site_url()
-    raw = value or placeholder
-    path = raw if '/' in raw else f'uploads/{raw}'
-    return f'{base}/static/{path}'
+    from .storage import absolute_url
+    return absolute_url(value or placeholder) or f'{_site_url()}/static/{placeholder}'
 
 
 def seo_level(user) -> str:

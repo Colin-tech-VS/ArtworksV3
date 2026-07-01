@@ -12,7 +12,7 @@
 <div class="dash-page">
   <div class="wrap dash-shell">
 
-    <aside class="dash-aside" aria-label="Navigation du tableau de bord">
+    <aside class="dash-aside" aria-label="Navigation">
       <div class="dash-user">
         <div class="dash-avatar">
           {% if current_user.avatar or current_user.logo %}
@@ -28,16 +28,15 @@
       </div>
 
       <nav class="dash-nav">
-        <span class="dash-nav-label">Tableau de bord</span>
         <a href="{{ url_for('main.dashboard') }}" class="dash-nav-link {{ 'is-active' if dash_active == 'overview' }}">
           <svg viewBox="0 0 24 24"><rect x="3" y="3" width="8" height="8" rx="1"/><rect x="13" y="3" width="8" height="5" rx="1"/><rect x="13" y="10" width="8" height="11" rx="1"/><rect x="3" y="13" width="8" height="8" rx="1"/></svg>
-          Vue d'ensemble
+          Accueil
         </a>
-        <a href="{{ url_for('main.dashboard') }}#oeuvres" class="dash-nav-link {{ 'is-active' if dash_active == 'oeuvres' }}">
+        <a href="{{ url_for('main.dashboard') }}#oeuvres" class="dash-nav-link">
           <svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="1"/><path d="M3 9h18"/></svg>
-          {{ meta.works_title|default('Mes œuvres') }}
+          {{ meta.works_title|default('Œuvres') }}
         </a>
-        <a href="{{ url_for('main.dashboard') }}#series" class="dash-nav-link {{ 'is-active' if dash_active == 'series' }}">
+        <a href="{{ url_for('main.dashboard') }}#series" class="dash-nav-link">
           <svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
           Séries
         </a>
@@ -45,19 +44,9 @@
           <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
           Ma page
         </a>
-
-        <span class="dash-nav-label">Compte</span>
         <a href="{{ url_for('main.edit_profile') }}" class="dash-nav-link {{ 'is-active' if dash_active == 'profile' }}">
           <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
-          Profil
-        </a>
-        <a href="{{ url_for('main.change_password') }}" class="dash-nav-link {{ 'is-active' if dash_active == 'password' }}">
-          <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-          Mot de passe
-        </a>
-        <a href="{{ url_for('main.subscription') }}" class="dash-nav-link {{ 'is-active' if dash_active == 'subscription' }}">
-          <svg viewBox="0 0 24 24"><path d="M12 2v20M5 7h14a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2z"/></svg>
-          Abonnement
+          Profil & compte
         </a>
         {% if connect.show_section|default(false) %}
         <a href="{{ url_for('main.encaissements') }}" class="dash-nav-link {{ 'is-active' if dash_active == 'payouts' }}">
@@ -69,10 +58,6 @@
       </nav>
 
       <div class="dash-aside-foot">
-        <a href="{{ url_for('main.artist', artist_id=current_user.id) }}" class="dash-nav-link">
-          <svg viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
-          Profil public
-        </a>
         <a href="{{ url_for('main.create_artwork') }}" class="btn-solid dash-cta">{{ meta.publish|default('+ Publier') }}</a>
       </div>
     </aside>
@@ -89,7 +74,7 @@
       <svg viewBox="0 0 24 24"><rect x="3" y="3" width="8" height="8" rx="1"/><rect x="13" y="3" width="8" height="5" rx="1"/><rect x="13" y="10" width="8" height="11" rx="1"/><rect x="3" y="13" width="8" height="8" rx="1"/></svg>
       Accueil
     </a>
-    <a href="{{ url_for('main.dashboard') }}#oeuvres" class="{{ 'is-active' if dash_active == 'oeuvres' }}">
+    <a href="{{ url_for('main.dashboard') }}#oeuvres">
       <svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="1"/><path d="M3 9h18"/></svg>
       Œuvres
     </a>
@@ -104,16 +89,6 @@
       <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
       Profil
     </a>
-    <a href="{{ url_for('main.subscription') }}" class="{{ 'is-active' if dash_active == 'subscription' }}">
-      <svg viewBox="0 0 24 24"><path d="M12 2v20M5 7h14a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2z"/></svg>
-      Offre
-    </a>
-    {% if connect.show_section|default(false) %}
-    <a href="{{ url_for('main.encaissements') }}" class="{{ 'is-active' if dash_active == 'payouts' }}">
-      <svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
-      Encaissements
-    </a>
-    {% endif %}
   </nav>
 </div>
 {% endblock %}
