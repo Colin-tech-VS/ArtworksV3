@@ -92,20 +92,18 @@ body.page-home .site-foot{ margin-top:0; }
   position:relative;
   background:var(--bg-pure);
   border:1px solid var(--hair);
-  border-radius:var(--radius-xl);
   padding:clamp(28px,4vw,40px);
   display:flex; flex-direction:column;
   min-height:340px;
-  transition:transform .3s var(--ease), box-shadow .3s var(--ease), border-color .3s;
+  transition:border-color .3s;
   overflow:hidden;
 }
 .salon-audience-card::before{
-  content:""; position:absolute; top:0; left:0; right:0; height:3px;
+  content:""; position:absolute; top:0; left:0; right:0; height:2px;
   background:var(--accent);
 }
 .salon-audience-card:hover{
-  box-shadow:var(--shadow-soft);
-  border-color:rgba(184,115,74,.35);
+  border-color:rgba(184,115,74,.4);
 }
 .salon-audience-role{
   font-size:11px; font-weight:700; letter-spacing:.14em; text-transform:uppercase;

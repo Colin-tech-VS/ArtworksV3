@@ -24,7 +24,11 @@
 
 {% if profile_pct < 100 %}
 <section class="dash-progress reveal in">
-  <div class="dash-progress-ring" style="--pct:{{ profile_pct }}" data-label="{{ profile_pct }}%"></div>
+  <div class="dash-progress-meter" style="--pct:{{ profile_pct }}">
+    <span class="cartel">Profil</span>
+    <strong>{{ profile_pct }}%</strong>
+    <div class="dash-progress-track"><span></span></div>
+  </div>
   <div class="dash-progress-body">
     <h3>Complétez votre profil</h3>
     <p>{{ profile_done }}/{{ profile_total }} éléments — {{ role_meta.profile_hint }}</p>

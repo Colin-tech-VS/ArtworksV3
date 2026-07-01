@@ -268,20 +268,17 @@ body.page-auth{ background:var(--bg-pure); }
 
 .auth-submit{
   width:100%; margin-top:6px;
-  padding:16px 24px; font-family:var(--sans);
-  font-size:15px; font-weight:600; letter-spacing:.02em;
-  color:#fff; background:var(--salon-navy);
-  border:none; border-radius:var(--radius-pill);
+  padding:15px 24px; font-family:var(--sans);
+  font-size:12px; font-weight:500; letter-spacing:.08em; text-transform:uppercase;
+  color:var(--salon-paper); background:var(--salon-ink);
+  border:1px solid var(--salon-ink);
   cursor:pointer;
-  transition:background .22s, transform .22s var(--ease-spring), box-shadow .22s;
-  box-shadow:0 10px 28px rgba(36,52,66,.22);
+  transition:background .22s, border-color .22s, color .22s;
 }
 .auth-submit:hover{
-  background:var(--ink);
-  transform:translateY(-2px);
-  box-shadow:0 16px 36px rgba(26,40,50,.28);
+  background:var(--accent); border-color:var(--accent); color:#fff;
 }
-.auth-submit:active{ transform:translateY(0); }
+.auth-submit:active{ opacity:.92; }
 
 .auth-secure{
   display:flex; align-items:center; justify-content:center; gap:8px;

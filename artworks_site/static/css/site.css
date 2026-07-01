@@ -76,7 +76,15 @@ body{
 body::before{
   content:"";
   position:fixed; inset:0; z-index:-1; pointer-events:none;
-  background:var(--bg);
+  background:
+    radial-gradient(ellipse 100% 60% at 50% -10%, rgba(184,115,74,.035), transparent 50%),
+    linear-gradient(180deg, var(--salon-paper) 0%, var(--bg) 35%, var(--bg) 100%);
+}
+body.is-dashboard::before,
+body.is-page-studio::before{
+  background:
+    radial-gradient(ellipse 90% 50% at 80% 0%, rgba(184,115,74,.04), transparent 45%),
+    linear-gradient(180deg, var(--salon-paper), var(--salon-ivory));
 }
 img{ display:block; max-width:100%; }
 a{ color:inherit; text-decoration:none; transition:color .2s ease; }
@@ -98,15 +106,14 @@ button{ font-family:inherit; cursor:pointer; }
 .wrap{ max-width:var(--maxw); margin:0 auto; padding:0 var(--gutter); }
 
 .eyebrow-v2{
-  display:inline-flex; align-items:center; gap:8px;
+  display:inline-flex; align-items:center; gap:10px;
   margin:0 0 16px;
-  padding:6px 14px;
   font-size:11px; font-weight:600;
-  letter-spacing:.12em; text-transform:uppercase;
-  color:var(--salon-navy);
-  background:rgba(36,52,66,.06);
-  border-radius:var(--radius-pill);
-  border:1px solid var(--hair);
+  letter-spacing:.14em; text-transform:uppercase;
+  color:var(--salon-sage);
+}
+.eyebrow-v2::before{
+  content:""; width:28px; height:1px; background:var(--accent);
 }
 
 /* ============================================================
@@ -114,14 +121,14 @@ button{ font-family:inherit; cursor:pointer; }
    ============================================================ */
 .site-head{
   position:sticky; top:0; z-index:60;
-  background:var(--bg);
-  border-bottom:1px solid var(--hair-soft);
-  transition:border-color .25s, box-shadow .25s;
+  background:rgba(247,244,238,.92);
+  backdrop-filter:blur(10px);
+  border-bottom:1px solid var(--hair);
+  transition:border-color .25s;
 }
 .site-head.scrolled{
+  background:rgba(255,252,247,.95);
   border-bottom-color:var(--hair);
-  background:var(--bg-pure);
-  box-shadow:0 1px 0 var(--hair);
 }
 .head-inner{
   display:flex; align-items:center; gap:20px;
@@ -142,26 +149,24 @@ button{ font-family:inherit; cursor:pointer; }
   color:var(--accent); margin-left:.45em; vertical-align:middle;
 }
 
-.nav{ display:flex; align-items:center; gap:2px; margin-left:8px; flex-wrap:nowrap; }
+.nav{ display:flex; align-items:center; gap:0; margin-left:12px; flex-wrap:nowrap; }
 .nav a{
-  font-size:13px; font-weight:500; color:var(--grey);
-  padding:8px 14px; border-radius:var(--radius-pill);
-  transition:color .15s, background .15s;
+  font-size:12.5px; font-weight:500; letter-spacing:.04em;
+  color:var(--grey); padding:8px 16px;
+  border-bottom:2px solid transparent;
+  transition:color .15s, border-color .15s;
 }
-.nav a:hover{ color:var(--ink); background:rgba(36,52,66,.05); }
-.nav a.active{ color:var(--ink); background:rgba(184,115,74,.12); }
+.nav a:hover{ color:var(--ink); }
+.nav a.active{ color:var(--ink); border-bottom-color:var(--accent); background:none; }
 
-.head-tools{ margin-left:auto; display:flex; align-items:center; gap:10px; }
+.head-tools{ margin-left:auto; display:flex; align-items:center; gap:12px; }
 .search-mini{
   display:flex; align-items:center; gap:8px;
   border:1px solid var(--hair); padding:8px 14px;
-  background:var(--bg-pure); border-radius:var(--radius-pill);
-  transition:border-color .2s, box-shadow .2s;
+  background:var(--bg-pure);
+  transition:border-color .2s;
 }
-.search-mini:focus-within{
-  border-color:rgba(184,115,74,.45);
-  box-shadow:0 0 0 3px rgba(184,115,74,.1);
-}
+.search-mini:focus-within{ border-color:var(--accent); }
 .search-mini input{
   border:none; outline:none; background:transparent;
   font-family:var(--sans); font-size:13px; width:150px; color:var(--ink);
@@ -183,23 +188,23 @@ button{ font-family:inherit; cursor:pointer; }
 }
 
 .btn-line{
-  font-size:13px; font-weight:500; padding:10px 20px;
-  border:1px solid var(--salon-navy); background:transparent; color:var(--salon-navy);
-  border-radius:var(--radius-pill);
+  font-size:12px; font-weight:500; letter-spacing:.06em; text-transform:uppercase;
+  padding:10px 20px;
+  border:1px solid var(--salon-ink); background:transparent; color:var(--salon-ink);
   transition:all .22s var(--ease); white-space:nowrap;
 }
 .btn-line:hover{
-  background:var(--salon-navy); color:#fff;
+  background:var(--salon-ink); color:var(--salon-paper);
 }
 
 .btn-solid{
-  font-size:13px; font-weight:500; padding:10px 22px;
-  border:1px solid var(--accent); background:var(--accent); color:#fff;
-  border-radius:var(--radius-pill);
+  font-size:12px; font-weight:500; letter-spacing:.06em; text-transform:uppercase;
+  padding:10px 22px;
+  border:1px solid var(--salon-ink); background:var(--salon-ink); color:var(--salon-paper);
   transition:all .22s var(--ease); white-space:nowrap;
 }
 .btn-solid:hover{
-  background:var(--accent-dk); border-color:var(--accent-dk);
+  background:var(--accent); border-color:var(--accent); color:#fff;
 }
 
 .burger{ display:none; background:none; border:none; padding:8px; border-radius:var(--radius-sm); }
@@ -264,20 +269,20 @@ button{ font-family:inherit; cursor:pointer; }
 
 .art{
   position:relative; display:flex; flex-direction:column;
-  transition:transform .3s var(--ease);
+  transition:opacity .3s var(--ease);
 }
-.art:hover{ transform:translateY(-4px); }
+.art:hover{ opacity:.98; }
 .art-frame{
   position:relative; overflow:hidden;
   background:var(--bg-alt);
-  border-radius:var(--radius-md);
-  box-shadow:var(--shadow-soft);
+  border:1px solid var(--hair);
+  box-shadow:inset 0 0 0 8px var(--salon-paper);
 }
 .art-frame img{
   width:100%; height:auto;
-  transition:transform .55s var(--ease);
+  transition:transform .7s var(--ease);
 }
-.art:hover .art-frame img{ transform:scale(1.04); }
+.art:hover .art-frame img{ transform:scale(1.03); }
 
 .art-cartel{
   position:absolute; left:0; right:0; bottom:0;
@@ -454,7 +459,7 @@ button{ font-family:inherit; cursor:pointer; }
   border-radius:var(--radius-pill);
   transition:background .2s, transform .2s;
 }
-.btn-full:hover{ background:var(--accent-dk); transform:translateY(-1px); }
+.btn-full:hover{ background:var(--accent-dk); }
 .auth .alt{ text-align:center; margin-top:24px; font-size:14px; color:var(--grey); }
 .auth .alt a{ color:var(--accent); font-weight:500; }
 .form-grid{ display:grid; grid-template-columns:1fr 1fr; gap:0 18px; }

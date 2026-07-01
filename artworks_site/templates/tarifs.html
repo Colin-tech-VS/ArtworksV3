@@ -18,22 +18,23 @@
 }
 .tarifs-hero .lead{ color:var(--grey); font-size:clamp(16px,1.5vw,18px); max-width:54ch; margin:0 auto 36px; line-height:1.65; }
 .tarifs-tabs{
-  display:inline-flex; gap:6px; padding:6px; border:1px solid var(--hair);
-  border-radius:var(--radius-pill); background:#fff; margin-bottom:clamp(40px,5vw,56px);
+  display:inline-flex; gap:0; border:none; border-bottom:1px solid var(--hair);
+  background:transparent; margin-bottom:clamp(40px,5vw,56px);
 }
 .tarifs-tabs a{
-  padding:10px 22px; border-radius:var(--radius-pill); font-size:14px;
-  transition:all .25s var(--ease-spring); color:var(--grey);
+  padding:10px 20px; font-size:12px; letter-spacing:.06em; text-transform:uppercase;
+  transition:color .2s, border-color .2s; color:var(--grey);
+  border-bottom:2px solid transparent; margin-bottom:-1px;
 }
 .tarifs-tabs a:hover{ color:var(--ink); }
-.tarifs-tabs a.is-on{ background:var(--salon-navy); color:#fff; }
+.tarifs-tabs a.is-on{ color:var(--ink); border-bottom-color:var(--accent); background:transparent; }
 .tarifs-section{ padding-bottom:clamp(60px,8vw,100px); }
 .tarifs-intro{ text-align:center; max-width:52ch; margin:0 auto 32px; }
 .tarifs-intro h2{ font-family:var(--serif); font-weight:300; font-size:clamp(24px,3vw,32px); margin:0 0 10px; }
 .tarifs-intro p{ color:var(--grey); font-size:15px; line-height:1.6; margin:0; }
 .tarifs-compare{
-  margin-top:48px; padding:32px; border:1px solid var(--hair); border-radius:var(--radius-xl);
-  background:var(--bg-alt); text-align:center;
+  margin-top:48px; padding:32px 0; border-top:1px solid var(--hair);
+  background:transparent; text-align:center;
 }
 .tarifs-compare p{ color:var(--grey); margin:0 0 16px; }
 </style>
