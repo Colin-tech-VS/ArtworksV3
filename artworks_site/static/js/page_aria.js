@@ -26,10 +26,9 @@
   }
 
   function refreshPreview() {
-    if (window.PeLivePreview) {
-      PeLivePreview.refreshFromServer();
-    } else if (window.PePagePreview) {
-      PePagePreview.refresh();
+    if (window.PePagePreview) {
+      if (PePagePreview.refreshFromServer) PePagePreview.refreshFromServer();
+      else PePagePreview.refresh();
     }
   }
 
@@ -44,8 +43,8 @@
       .then(function (r) { return r.json(); })
       .then(function (d) {
         var count = d.element_count || 0;
-        if (window.PeLivePreview && d.layout) {
-          PeLivePreview.render(d.layout);
+        if (window.PePagePreview && PePagePreview.render && d.layout) {
+          PePagePreview.render(d.layout);
         }
         if (count >= expectedCount || attempt >= 5 || !expectedCount) {
           refreshPreview();

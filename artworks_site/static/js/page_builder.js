@@ -66,8 +66,8 @@
   }
 
   function updateInstantPreview() {
-    if (window.PeLivePreview) {
-      PeLivePreview.render({ elements: serialize() });
+    if (window.PePagePreview && PePagePreview.render) {
+      PePagePreview.render({ elements: serialize() });
     }
   }
 
@@ -442,7 +442,7 @@
           renderPubBtn();
           setState(published ? 'Enregistré · publié' : 'Enregistré', 'is-saved');
           updateInstantPreview();
-          if (window.PeLivePreview) PeLivePreview.refreshFromServer();
+          if (window.PePagePreview) PePagePreview.refreshFromServer();
         } else {
           setState((res.j && res.j.error) || 'Erreur', 'is-dirty');
         }
@@ -656,7 +656,7 @@
   });
   if (clearBtn) clearBtn.addEventListener('click', function () {
     if (!elements.length) return;
-    if (window.confirm('Effacer tous les éléments de la page ?')) {
+    if (window.confirm('Effacer tous les blocs ?')) {
       elements = [];
       selectedId = null;
       renderCanvas();
@@ -679,9 +679,15 @@
   load();
 
   if (window.PePagePreview && previewFrameUrl) {
+    var rawLayout = root.getAttribute('data-layout');
+    var initialLayout = null;
+    try { initialLayout = rawLayout && rawLayout !== 'null' ? JSON.parse(rawLayout) : null; } catch (_) {}
     PePagePreview.init({
+      mode: 'canvas',
       previewUrl: previewFrameUrl,
       publicUrl: publicUrl,
+      layoutUrl: root.getAttribute('data-layout-api') || '',
+      initialLayout: initialLayout,
       beforeOpen: function () {
         updateInstantPreview();
         return pushPreview();
