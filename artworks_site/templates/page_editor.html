@@ -16,17 +16,21 @@
 {% set status_label = 'Publiée' if published else ('Brouillon' if has_page_draft else 'Non publiée') %}
 
 {% block dash_header %}
-<header class="pe-topbar reveal in">
-  <div class="pe-topbar-lead">
-    <span class="pe-topbar-eyebrow">{{ meta.eyebrow|default('Ma page') }}</span>
-    <h1>Créer ma page</h1>
+<header class="pe-masthead reveal in">
+  <div class="pe-masthead-main">
+    <div class="eyebrow">
+      <span class="line"></span>
+      <span class="cartel">{{ meta.eyebrow|default('Espace personnel') }}</span>
+    </div>
+    <h1 class="pe-masthead-title">Composer sa page</h1>
+    <p class="pe-masthead-lead">Votre vitrine sur le salon — profil, œuvres et mise en scène, à votre rythme.</p>
   </div>
-  <div class="pe-topbar-tools">
-    <span class="pe-topbar-status is-{{ status_key }}" data-preview-status>{{ status_label }}</span>
-    <a href="{{ public_url }}" target="_blank" rel="noopener" class="pe-topbar-link">En ligne ↗</a>
-    <button type="button" class="btn-solid pe-topbar-preview" data-open-preview>
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
-      <span>Aperçu en direct</span>
+  <div class="pe-masthead-actions">
+    <span class="pe-state is-{{ status_key }}" data-preview-status>{{ status_label }}</span>
+    <a href="{{ public_url }}" target="_blank" rel="noopener" class="pe-link-quiet">Voir la vitrine ↗</a>
+    <button type="button" class="pe-btn-preview" data-open-preview>
+      <span class="pe-btn-preview-label">Aperçu</span>
+      <span class="pe-btn-preview-sub">en direct</span>
     </button>
   </div>
 </header>
@@ -35,76 +39,92 @@
 {% block dash_content %}
 
 <div class="pe-studio reveal in">
-  <nav class="pe-modes" role="tablist" aria-label="Comment créer votre page">
+  <nav class="pe-mode-rail" role="tablist" aria-label="Trois manières de composer">
     <a href="{{ url_for('main.page_editor', mode='redacteur') }}"
-       class="pe-mode-tab {{ 'is-active' if page_mode == 'redacteur' }}" role="tab">
-      <span class="pe-mode-ic">
-        <svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
-      </span>
-      <span class="pe-mode-txt">
-        <strong>1 · Rédacteur</strong>
-        <small>Profil + œuvres — le plus simple</small>
+       class="pe-mode-item {{ 'is-active' if page_mode == 'redacteur' }}" role="tab">
+      <span class="pe-mode-roman">I</span>
+      <span class="pe-mode-label">
+        <em>Rédacteur</em>
+        <span>Profil &amp; catalogue</span>
       </span>
     </a>
+    <span class="pe-mode-sep" aria-hidden="true"></span>
     <a href="{{ url_for('main.page_editor', mode='createur') }}"
-       class="pe-mode-tab {{ 'is-active' if page_mode == 'createur' }}" role="tab">
-      <span class="pe-mode-ic">
-        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="11" rx="1"/><rect x="14" y="16" width="7" height="5" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>
-      </span>
-      <span class="pe-mode-txt">
-        <strong>2 · Créateur</strong>
-        <small>Blocs visuels — glisser-déposer</small>
+       class="pe-mode-item {{ 'is-active' if page_mode == 'createur' }}" role="tab">
+      <span class="pe-mode-roman">II</span>
+      <span class="pe-mode-label">
+        <em>Créateur</em>
+        <span>Composition libre</span>
       </span>
     </a>
+    <span class="pe-mode-sep" aria-hidden="true"></span>
     <a href="{{ url_for('main.page_editor', mode='intelligent') }}"
-       class="pe-mode-tab {{ 'is-active' if page_mode == 'intelligent' }}" role="tab">
-      <span class="pe-mode-ic">
-        <svg viewBox="0 0 24 24"><path d="M12 3l1.9 4.3L18 9l-4.1 1.7L12 15l-1.9-4.3L6 9l4.1-1.7Z"/></svg>
-      </span>
-      <span class="pe-mode-txt">
-        <strong>3 · Intelligent</strong>
-        <small>Aria construit pour vous</small>
+       class="pe-mode-item {{ 'is-active' if page_mode == 'intelligent' }}" role="tab">
+      <span class="pe-mode-roman">III</span>
+      <span class="pe-mode-label">
+        <em>Intelligent</em>
+        <span>Avec Aria</span>
       </span>
     </a>
   </nav>
 
-  <div class="pe-editor-full" data-page-mode="{{ page_mode }}">
+  <div class="pe-atelier" data-page-mode="{{ page_mode }}">
 
     {% if page_mode == 'redacteur' %}
     <section class="pe-redacteur">
-      <div class="pe-redacteur-head">
-        <h2>Page classique</h2>
-        <p>Remplissez votre profil et votre catalogue — votre page se construit automatiquement. Utilisez <strong>Aperçu en direct</strong> pour voir le résultat visiteur.</p>
+      <header class="pe-section-head">
+        <span class="cartel">Voie classique</span>
+        <h2>La page se construit avec votre profil</h2>
+        <p>Chaque étape enrichit votre vitrine. Ouvrez l'<button type="button" class="pe-inline-link" data-open-preview>aperçu</button> pour contempler le rendu.</p>
+      </header>
+
+      <div class="pe-profile-meter" style="--pct:{{ prof_pct }}">
+        <div class="pe-profile-meter-inner">
+          <span class="cartel">Complétion</span>
+          <strong class="pe-profile-pct">{{ prof_pct }}%</strong>
+        </div>
+        <div class="pe-profile-track"><span></span></div>
+        {% if prof_missing %}<p class="pe-profile-note">Encore : {{ prof_missing|join(' · ') }}</p>{% endif %}
       </div>
 
-      <div class="pe-profile-meter">
-        <div class="pe-profile-meter-top"><span>Profil</span><strong>{{ prof_pct }}%</strong></div>
-        <div class="pe-profile-meter-bar"><span style="width:{{ prof_pct }}%"></span></div>
-        {% if prof_missing %}<p class="pe-profile-meter-hint">À compléter : {{ prof_missing|join(', ') }}</p>{% endif %}
-      </div>
-
-      <div class="pe-step-grid">
-        <a href="{{ url_for('main.edit_profile') }}" class="pe-step-card">
-          <span class="pe-step-num">1</span>
-          <div class="pe-step-body"><h3>Profil &amp; présentation</h3><p>Photo, bio, bannière, statement.</p></div>
-          <span class="pe-step-go">→</span>
-        </a>
-        <a href="{{ url_for('main.create_artwork') }}" class="pe-step-card">
-          <span class="pe-step-num">2</span>
-          <div class="pe-step-body"><h3>Ajouter une œuvre</h3><p>Image, prix, disponibilité.</p></div>
-          <span class="pe-step-go">→</span>
-        </a>
-        <a href="{{ url_for('main.dashboard') }}#series" class="pe-step-card">
-          <span class="pe-step-num">3</span>
-          <div class="pe-step-body"><h3>Créer des séries</h3><p>Expositions et thèmes.</p></div>
-          <span class="pe-step-go">→</span>
-        </a>
-        <a href="{{ url_for('main.page_editor', mode='createur') }}" class="pe-step-card is-accent">
-          <span class="pe-step-num">+</span>
-          <div class="pe-step-body"><h3>Page sur-mesure</h3><p>Passer au mode créateur.</p></div>
-          <span class="pe-step-go">→</span>
-        </a>
-      </div>
+      <ol class="pe-placards">
+        <li>
+          <a href="{{ url_for('main.edit_profile') }}" class="pe-placard">
+            <span class="pe-placard-num">01</span>
+            <div class="pe-placard-body">
+              <h3>Présentation</h3>
+              <p>Portrait, biographie, statement, bannière.</p>
+            </div>
+          </a>
+        </li>
+        <li>
+          <a href="{{ url_for('main.create_artwork') }}" class="pe-placard">
+            <span class="pe-placard-num">02</span>
+            <div class="pe-placard-body">
+              <h3>Œuvres</h3>
+              <p>Ajouter une pièce au catalogue.</p>
+            </div>
+          </a>
+        </li>
+        <li>
+          <a href="{{ url_for('main.dashboard') }}#series" class="pe-placard">
+            <span class="pe-placard-num">03</span>
+            <div class="pe-placard-body">
+              <h3>Séries</h3>
+              <p>Accrochage thématique ou exposition.</p>
+            </div>
+          </a>
+        </li>
+        <li>
+          <a href="{{ url_for('main.page_editor', mode='createur') }}" class="pe-placard is-featured">
+            <span class="pe-placard-num">→</span>
+            <div class="pe-placard-body">
+              <h3>Composition sur-mesure</h3>
+              <p>Passer au mode créateur.</p>
+            </div>
+          </a>
+        </li>
+      </ol>
     </section>
 
     {% elif page_mode == 'createur' %}
@@ -119,25 +139,26 @@
          data-layout='{{ (layout | tojson) if layout else "null" }}'>
 
       <header class="pe-builder-bar">
-        <div class="pe-blocks" aria-label="Ajouter un bloc">
-          <button type="button" class="pe-block" data-add="heading"><span>Titre</span></button>
-          <button type="button" class="pe-block" data-add="text"><span>Texte</span></button>
-          <button type="button" class="pe-block" data-add="image"><span>Image</span></button>
-          <button type="button" class="pe-block" data-add="gallery"><span>Galerie</span></button>
-          <button type="button" class="pe-block" data-add="button"><span>Bouton</span></button>
-          <button type="button" class="pe-block is-muted" data-add="divider" title="Séparateur">—</button>
-          <button type="button" class="pe-block is-muted" data-add="slider" title="Slider">▸</button>
+        <div class="pe-palette" aria-label="Éléments de composition">
+          <span class="cartel pe-palette-label">Éléments</span>
+          <button type="button" class="pe-palette-item" data-add="heading">Titre</button>
+          <button type="button" class="pe-palette-item" data-add="text">Texte</button>
+          <button type="button" class="pe-palette-item" data-add="image">Image</button>
+          <button type="button" class="pe-palette-item" data-add="gallery">Galerie</button>
+          <button type="button" class="pe-palette-item" data-add="button">Lien</button>
+          <button type="button" class="pe-palette-item is-light" data-add="divider" title="Séparateur">—</button>
+          <button type="button" class="pe-palette-item is-light" data-add="slider" title="Défilement">◇</button>
         </div>
         <div class="pe-builder-acts">
           <span class="pe-save-state" data-save-state></span>
-          <button type="button" class="pe-tool" data-cancel hidden>Annuler</button>
-          <button type="button" class="pe-tool" data-clear>Effacer</button>
-          <button type="button" class="pe-tool pe-pub-btn" data-publish aria-pressed="false">Publier</button>
-          <button type="button" class="btn-solid" data-save>Enregistrer</button>
+          <button type="button" class="pe-act" data-cancel hidden>Annuler</button>
+          <button type="button" class="pe-act" data-clear>Effacer</button>
+          <button type="button" class="pe-act pe-pub-btn" data-publish aria-pressed="false">Publier</button>
+          <button type="button" class="pe-act pe-act-primary" data-save>Enregistrer</button>
         </div>
       </header>
 
-      <p class="pe-tip">Double-cliquez un bloc pour le modifier · glissez pour déplacer · <button type="button" class="pe-tip-link" data-open-preview>Aperçu en direct</button></p>
+      <p class="pe-canvas-note">Double-clic pour éditer · glisser pour composer · <button type="button" class="pe-inline-link" data-open-preview>voir l'aperçu</button></p>
 
       <input type="file" accept="image/jpeg,image/png,image/gif,image/webp" data-upload-input hidden>
 
@@ -146,7 +167,8 @@
           <div class="pe-canvas" data-canvas tabindex="0" aria-label="Composition"></div>
         </div>
         <aside class="pe-props" data-props>
-          <p class="pe-prop-empty">Cliquez un bloc pour éditer texte, couleurs et images.</p>
+          <p class="cartel pe-props-label">Propriétés</p>
+          <p class="pe-prop-empty">Sélectionnez un élément sur la feuille.</p>
         </aside>
       </div>
     </div>
@@ -166,30 +188,31 @@
       <div class="pe-draft-bar" data-draft-bar>
         <span>Modifications en attente</span>
         <div class="pe-draft-actions">
-          <button type="button" class="pe-tool" data-draft-discard>Annuler</button>
-          <button type="button" class="btn-solid" data-draft-apply>Enregistrer</button>
+          <button type="button" class="pe-act" data-draft-discard>Annuler</button>
+          <button type="button" class="pe-act pe-act-primary" data-draft-apply>Enregistrer</button>
         </div>
       </div>
       {% endif %}
 
       <div class="pe-aria" id="pe-aria" data-api-url="{{ url_for('main.aria_chat') }}">
         <header class="pe-aria-top">
-          <div class="pe-aria-avatar">A</div>
+          <div class="pe-aria-mark" aria-hidden="true">A</div>
           <div>
-            <h3>Aria — votre assistante</h3>
-            <p>Décrivez la page souhaitée. Ouvrez l'<button type="button" class="pe-tip-link" data-open-preview>aperçu en direct</button> pour voir le rendu.</p>
+            <span class="cartel">Salon · Aria</span>
+            <h3>Votre conseillère curatoriale</h3>
+            <p>Décrivez l'ambiance souhaitée — ouvrez l'<button type="button" class="pe-inline-link" data-open-preview>aperçu</button> pour voir la mise en page.</p>
           </div>
         </header>
         <div class="pe-aria-chips">
-          <button type="button" class="pe-chip" data-prompt="Rédige ma présentation professionnelle à partir de mon profil et applique-la sur ma page.">Ma présentation</button>
-          <button type="button" class="pe-chip" data-prompt="Structure ma page pour vendre mes œuvres et applique le brouillon maintenant.">Structure vente</button>
-          <button type="button" class="pe-chip" data-prompt="Refais entièrement la structure de ma page en gardant le contenu utile.">Refaire la page</button>
-          <button type="button" class="pe-chip" data-prompt="Optimise le référencement SEO de ma page publique et applique le brouillon.">SEO</button>
+          <button type="button" class="pe-suggestion" data-prompt="Rédige ma présentation professionnelle à partir de mon profil et applique-la sur ma page.">Ma présentation</button>
+          <button type="button" class="pe-suggestion" data-prompt="Structure ma page pour vendre mes œuvres et applique le brouillon maintenant.">Structure de vente</button>
+          <button type="button" class="pe-suggestion" data-prompt="Refais entièrement la structure de ma page en gardant le contenu utile.">Nouvelle composition</button>
+          <button type="button" class="pe-suggestion" data-prompt="Optimise le référencement SEO de ma page publique et applique le brouillon.">Référencement</button>
         </div>
         <div class="pe-aria-log" data-aria-log aria-live="polite"></div>
         <form class="pe-aria-form" data-aria-form>
           <textarea data-aria-input rows="2" maxlength="2000" placeholder="Ex. : Page avec mon nom, une bio et mes 3 dernières œuvres…" aria-label="Message"></textarea>
-          <button type="submit" class="btn-solid">Envoyer</button>
+          <button type="submit" class="pe-act pe-act-primary">Envoyer</button>
         </form>
       </div>
     </div>
@@ -197,7 +220,7 @@
     <div class="pe-empty-state">
       <h3>Aria indisponible</h3>
       <p>Utilisez le mode rédacteur ou créateur.</p>
-      <a href="{{ url_for('main.page_editor', mode='createur') }}" class="btn-solid">Mode créateur</a>
+      <a href="{{ url_for('main.page_editor', mode='createur') }}" class="pe-act pe-act-primary">Mode créateur</a>
     </div>
     {% endif %}
     {% endif %}
@@ -205,9 +228,8 @@
   </div>
 </div>
 
-<button type="button" class="pe-fab-preview" data-open-preview aria-label="Aperçu en direct">
-  <svg viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
-  Aperçu
+<button type="button" class="pe-fab-preview" data-open-preview aria-label="Aperçu">
+  <span class="pe-fab-preview-txt">Aperçu</span>
 </button>
 
 <div class="pe-preview-modal" id="pe-preview-modal" hidden aria-hidden="true">
@@ -215,31 +237,31 @@
   <div class="pe-preview-modal-panel" role="dialog" aria-modal="true" aria-labelledby="pe-preview-title">
     <header class="pe-preview-modal-head">
       <div class="pe-preview-modal-title">
+        <span class="cartel">Vitrine</span>
         <h2 id="pe-preview-title">Aperçu en direct</h2>
-        <span class="pe-preview-status is-{{ status_key }}" data-preview-status>{{ status_label }}</span>
+        <span class="pe-state is-{{ status_key }}" data-preview-status>{{ status_label }}</span>
       </div>
       <div class="pe-preview-modal-toolbar">
-        <div class="pe-preview-view-tabs" role="tablist" aria-label="Type d'aperçu">
-          <button type="button" class="pe-preview-view-btn is-active" data-preview-view="live" role="tab">Blocs live</button>
-          <button type="button" class="pe-preview-view-btn" data-preview-view="public" role="tab">Page visiteur</button>
+        <div class="pe-preview-view-tabs" role="tablist">
+          <button type="button" class="pe-view-tab is-active" data-preview-view="live" role="tab">Composition</button>
+          <button type="button" class="pe-view-tab" data-preview-view="public" role="tab">Page publique</button>
         </div>
-        <div class="pe-device-tabs" role="group" aria-label="Taille écran">
-          <button type="button" class="pe-device-btn is-active" data-device="desktop" title="Bureau">🖥</button>
-          <button type="button" class="pe-device-btn" data-device="tablet" title="Tablette">📱</button>
-          <button type="button" class="pe-device-btn" data-device="mobile" title="Mobile">📲</button>
+        <div class="pe-device-rail" role="group" aria-label="Format">
+          <button type="button" class="pe-device is-active" data-device="desktop">Bureau</button>
+          <button type="button" class="pe-device" data-device="tablet">Tablette</button>
+          <button type="button" class="pe-device" data-device="mobile">Mobile</button>
         </div>
-        <a href="{{ public_url }}" target="_blank" rel="noopener" class="btn-line" data-preview-public-link>Ouvrir ↗</a>
-        <button type="button" class="pe-tool" data-preview-refresh>Actualiser</button>
-        <button type="button" class="pe-preview-modal-close" data-preview-close aria-label="Fermer">×</button>
+        <a href="{{ public_url }}" target="_blank" rel="noopener" class="pe-link-quiet" data-preview-public-link>Ouvrir ↗</a>
+        <button type="button" class="pe-act" data-preview-refresh>Actualiser</button>
+        <button type="button" class="pe-preview-close" data-preview-close aria-label="Fermer">×</button>
       </div>
     </header>
     <div class="pe-preview-modal-body">
       <div class="pe-preview-viewport" data-preview-viewport>
-        <div class="pe-preview-browser">
-          <div class="pe-preview-browser-chrome"><span></span><span></span><span></span></div>
-          <div class="pe-preview-browser-content">
+        <div class="pe-preview-frame">
+          <div class="pe-preview-mat">
             <div class="pe-preview-canvas-host pubpage-sec" data-preview-canvas></div>
-            <iframe class="pe-preview-iframe" title="Blocs serveur" data-preview-blocks-frame hidden loading="lazy"></iframe>
+            <iframe class="pe-preview-iframe" title="Composition serveur" data-preview-blocks-frame hidden loading="lazy"></iframe>
             <iframe class="pe-preview-iframe" title="Page visiteur" data-preview-public-frame hidden loading="lazy"></iframe>
           </div>
         </div>

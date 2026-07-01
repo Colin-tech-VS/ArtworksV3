@@ -87,13 +87,9 @@
     if (!modal) return;
     var label = published ? 'Publiée' : (hasDraft ? 'Brouillon' : 'Non publiée');
     var key = published ? 'live' : (hasDraft ? 'draft' : 'off');
-    modal.querySelectorAll('[data-preview-status]').forEach(function (el) {
+    document.querySelectorAll('[data-preview-status]').forEach(function (el) {
       el.textContent = label;
-      el.className = 'pe-preview-status is-' + key;
-    });
-    document.querySelectorAll('.pe-topbar-status').forEach(function (el) {
-      el.textContent = label;
-      el.className = 'pe-topbar-status is-' + key;
+      el.className = 'pe-state is-' + key;
     });
   }
 
@@ -118,7 +114,7 @@
       modal.hidden = false;
       modal.setAttribute('aria-hidden', 'false');
       document.body.classList.add('pe-preview-open');
-      var closeBtn = modal.querySelector('.pe-preview-modal-close');
+      var closeBtn = modal.querySelector('.pe-preview-close');
       if (closeBtn) closeBtn.focus();
     });
   }

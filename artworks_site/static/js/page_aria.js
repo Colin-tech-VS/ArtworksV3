@@ -113,8 +113,8 @@
     bar.innerHTML =
       '<span>Modifications en attente — validez pour publier ou annulez.</span>' +
       '<div class="pe-draft-actions">' +
-      '<button type="button" class="pe-tool" data-draft-discard>Annuler</button>' +
-      '<button type="button" class="btn-solid" data-draft-apply>Enregistrer</button>' +
+      '<button type="button" class="pe-act" data-draft-discard>Annuler</button>' +
+      '<button type="button" class="pe-act pe-act-primary" data-draft-apply>Enregistrer</button>' +
       '</div>';
     shell.insertBefore(bar, shell.firstChild);
     bindDraftButtons(bar);
