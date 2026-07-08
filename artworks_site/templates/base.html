@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>{% block title %}Artworks — Galeries & collectionneurs d'art contemporain{% endblock %}</title>
+<title>{% block title %}Artworks Digital — Marketplace d'art contemporain{% endblock %}</title>
 {% block meta %}{% endblock %}
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -24,9 +24,10 @@
 <!-- ===== HEADER ===== -->
 <header class="site-head">
   <div class="head-inner">
-    <a href="{{ url_for('main.index') }}" class="brand">Artworks<span class="brand-tag">Salon</span></a>
+    <a href="{{ url_for('main.index') }}" class="brand">Artworks<span class="brand-tag">Digital</span></a>
     <nav class="nav">
       <a href="{{ url_for('main.explorer') }}" class="{{ 'active' if active=='explorer' }}">Collection</a>
+      <a href="{{ url_for('main.offre_artiste') }}" class="{{ 'active' if active=='artiste' }}">Artistes</a>
       <a href="{{ url_for('main.offre_galerie') }}" class="{{ 'active' if active=='galerie' }}">Galeries</a>
       <a href="{{ url_for('main.offre_collectionneur') }}" class="{{ 'active' if active=='collectionneur' }}">Collectionneurs</a>
       <a href="{{ url_for('main.tarifs') }}" class="{{ 'active' if active=='tarifs' }}">Formules</a>
@@ -66,13 +67,14 @@
 <!-- mobile drawer -->
 <div class="drawer">
   <div class="top">
-    <span class="brand">Artworks<span class="brand-tag">Salon</span></span>
+    <span class="brand">Artworks<span class="brand-tag">Digital</span></span>
     <button class="icon-btn" data-close-drawer aria-label="Fermer">
       <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 6l12 12M18 6 6 18"/></svg>
     </button>
   </div>
   <nav>
     <a href="{{ url_for('main.explorer') }}">Collection</a>
+    <a href="{{ url_for('main.offre_artiste') }}">Artistes</a>
     <a href="{{ url_for('main.offre_galerie') }}">Galeries</a>
     <a href="{{ url_for('main.offre_collectionneur') }}">Collectionneurs</a>
     <a href="{{ url_for('main.tarifs') }}">Formules</a>
@@ -130,8 +132,8 @@
   <div class="wrap">
     <div class="foot-grid">
       <div class="foot-brand">
-        <span class="brand">Artworks<span class="brand-tag">Salon</span></span>
-        <p>La plateforme de référence pour galeries et collectionneurs d'art contemporain — acquisition, curation et vente en toute confiance.</p>
+        <span class="brand">Artworks<span class="brand-tag">Digital</span></span>
+        <p>Marketplace d'art contemporain — œuvres originales pour artistes, galeries et collectionneurs. Acquisition, curation et vente en toute confiance.</p>
         <form class="foot-news" onsubmit="return false">
           <input type="email" placeholder="Votre adresse e-mail">
           <button type="submit">S'abonner</button>
@@ -150,14 +152,14 @@
         <a href="{{ url_for('auth.register', role='galerie') }}">Créer un compte</a>
       </div>
       <div class="foot-col">
-        <h4>Confiance</h4>
-        <a href="#">Authenticité & provenance</a>
-        <a href="#">Livraison assurée</a>
-        <a href="#">Contact curatoral</a>
+        <h4>Artistes</h4>
+        <a href="{{ url_for('main.offre_artiste') }}">Publier & vendre</a>
+        <a href="{{ url_for('main.tarifs', profil='artiste') }}">Formules Portfolio</a>
+        <a href="{{ url_for('auth.register', role='artiste') }}">Créer un compte</a>
       </div>
     </div>
     <div class="foot-bottom">
-      <span>© 2026 Artworks. Tous droits réservés.</span>
+      <span>© 2026 Artworks Digital. Tous droits réservés.</span>
       <div class="socials">
         <a href="#">Instagram</a><a href="#">Pinterest</a><a href="#">LinkedIn</a><a href="#">Mentions légales</a>
       </div>

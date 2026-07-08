@@ -7,7 +7,7 @@ from flask import url_for
 
 from .entitlements import user_entitlements
 
-SITE_NAME = 'Artworks'
+SITE_NAME = 'Artworks Digital'
 
 
 def _site_url() -> str:
@@ -46,55 +46,65 @@ def page_meta(page_key: str, **overrides) -> dict:
     """Meta SEO par page — audience acheteur/collectionneur vs artiste."""
     pages = {
         'home': {
-            'title': f'Galeries & collectionneurs — Art contemporain curaté | {SITE_NAME}',
+            'title': f'Marketplace d\'art contemporain — Œuvres originales | {SITE_NAME}',
             'description': (
-                'Découvrez des œuvres d\'art contemporain sélectionnées par des galeries et '
-                'collectionneurs exigeants. Peinture, photographie, sculpture — achat sécurisé Stripe.'
+                'Achetez et vendez de l\'art contemporain en ligne. Œuvres originales de '
+                'artistes et galeries, outils pour collectionneurs. Peinture, photo, sculpture — '
+                'paiement sécurisé Stripe, SEO optimisé pour artistes, galeries et collectionneurs.'
             ),
             'keywords': (
-                'acheter art contemporain, oeuvre originale en ligne, galerie art en ligne, '
-                'collectionneur art, marketplace art'
+                'marketplace art contemporain, acheter oeuvre originale, vendre art en ligne, '
+                'galerie art en ligne, artiste contemporain, collectionneur art, art contemporain france'
             ),
             'robots': 'index, follow',
             'og_type': 'website',
         },
         'explorer': {
-            'title': f'Explorer la collection — Catalogue œuvres curatées | {SITE_NAME}',
+            'title': f'Catalogue d\'œuvres — Art contemporain à vendre | {SITE_NAME}',
             'description': (
-                'Parcourez le catalogue d\'œuvres originales : filtres par discipline, prix et '
-                'artiste. Achetez en ligne ou contactez la galerie. Art contemporain certifié.'
+                'Parcourez des centaines d\'œuvres originales : peinture, photographie, sculpture. '
+                'Filtrez par artiste, galerie, discipline et prix. Achetez en ligne ou contactez le vendeur.'
             ),
             'keywords': (
-                'catalogue art contemporain, acheter peinture originale, oeuvres à vendre, '
-                'art en ligne france, collection art'
+                'catalogue art contemporain, oeuvres à vendre, peinture originale, '
+                'sculpture contemporaine, art en ligne, collection art'
             ),
             'robots': 'index, follow',
             'og_type': 'website',
         },
         'tarifs_artiste': {
-            'title': f'Portfolio artiste payant — Publier & vendre vos œuvres | {SITE_NAME}',
+            'title': f'Artiste — Publier & vendre vos œuvres en ligne | {SITE_NAME}',
             'description': _artist_tarifs_description(),
-            'keywords': 'portfolio artiste, vendre oeuvre en ligne, seo artiste, marketplace art',
+            'keywords': (
+                'portfolio artiste seo, vendre oeuvre en ligne, marketplace artiste, '
+                'site web artiste, visibilité google artiste'
+            ),
             'robots': 'index, follow',
             'og_type': 'website',
         },
         'tarifs_galerie': {
-            'title': f'Offre galerie — Catalogue multi-artistes & ventes en ligne | {SITE_NAME}',
+            'title': f'Galerie — Catalogue multi-artistes & ventes en ligne | {SITE_NAME}',
             'description': (
-                'Galeries : page publique SEO, artistes rattachés, marketplace et matching '
-                'collectionneurs. Formules Pro et Premium sans engagement.'
+                'Galeries d\'art : page publique SEO, artistes rattachés, marketplace intégrée '
+                'et CRM collectionneurs. Formules Pro et Premium sans engagement.'
             ),
-            'keywords': 'offre galerie, vendre art en ligne, catalogue galerie, crm collectionneur',
+            'keywords': (
+                'galerie art en ligne, vendre art galerie, catalogue galerie seo, '
+                'crm collectionneur art, marketplace galerie'
+            ),
             'robots': 'index, follow',
             'og_type': 'website',
         },
         'tarifs_collectionneur': {
-            'title': f'Espace collectionneur — Alertes prix & avant-première art | {SITE_NAME}',
+            'title': f'Collectionneur — Alertes prix & collection d\'art | {SITE_NAME}',
             'description': (
-                'Collectionneurs : explorateur gratuit, alertes prix, accès avant-première 48 h, '
-                'wishlist privée et accompagnement curatoral Patron.'
+                'Collectionneurs : explorateur gratuit, alertes prix sur les œuvres, '
+                'wishlist privée, avant-premières 48 h et accompagnement curatoral Patron.'
             ),
-            'keywords': 'collectionneur art, alerte prix oeuvre, wishlist art privée, acheter art',
+            'keywords': (
+                'collectionneur art contemporain, alerte prix oeuvre, wishlist art, '
+                'acheter art en ligne, collection art privée'
+            ),
             'robots': 'index, follow',
             'og_type': 'website',
         },
@@ -131,12 +141,22 @@ def site_json_ld() -> dict:
         '@context': 'https://schema.org',
         '@type': 'WebSite',
         'name': SITE_NAME,
+        'alternateName': 'Artworks',
         'url': base,
-        'description': 'Salon d\'art contemporain — galeries, collectionneurs et œuvres originales en ligne.',
+        'description': (
+            'Marketplace d\'art contemporain — œuvres originales, artistes, galeries '
+            'et collectionneurs. Achat et vente en ligne avec SEO optimisé.'
+        ),
         'potentialAction': {
             '@type': 'SearchAction',
             'target': {'@type': 'EntryPoint', 'urlTemplate': f'{base}/explorer?q={{search_term_string}}'},
             'query-input': 'required name=search_term_string',
+        },
+        'publisher': {
+            '@type': 'Organization',
+            'name': SITE_NAME,
+            'url': base,
+            'description': 'Écosystème art contemporain pour artistes, galeries et collectionneurs.',
         },
     }
 
@@ -175,9 +195,9 @@ def artist_meta(artist) -> dict:
             f'Paiement sécurisé sur {SITE_NAME}.')
     desc = (desc or '')[:320]
     if ent.get('seo_level') == 'max':
-        title = f'{name} — Acheter {discipline} | Œuvres originales en ligne'
+        title = f'{name} — Œuvres originales {discipline} | Artiste | {SITE_NAME}'
     elif ent.get('seo_profile'):
-        title = f'{name} — {discipline} | Acheter art contemporain'
+        title = f'{name} — Artiste {discipline} | Acheter art contemporain'
     else:
         title = f'{name} | {SITE_NAME}'
     return {
@@ -250,7 +270,7 @@ def artwork_meta(artwork) -> dict:
     price_bit = ''
     if artwork.price and artwork.status != 'reserve':
         price_bit = f' — {int(artwork.price):,} €'.replace(',', ' ')
-    title = f'Acheter {artwork.title}{price_bit} — {owner_name} | {SITE_NAME}'
+    title = f'{artwork.title}{price_bit} — {owner_name} | Œuvre originale | {SITE_NAME}'
     medium = artwork.technique or artwork.medium or 'art contemporain'
     desc = (artwork.description or
             f'Œuvre originale « {artwork.title} » ({medium}) par {owner_name}. '

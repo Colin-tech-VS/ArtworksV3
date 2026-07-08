@@ -31,7 +31,7 @@ def generate_social_post(
         }
 
     site = (
-        'Artworks — salon d\'art contemporain pour galeries et collectionneurs. '
+        'Artworks Digital — marketplace d\'art contemporain pour artistes, galeries et collectionneurs. '
         'Portfolio payant, commission 18% à la vente.'
     )
 

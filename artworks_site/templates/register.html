@@ -14,7 +14,7 @@
    '<svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 0 18c1.4 0 2-1 2-2 0-1.4 1-2 2-2h2a3 3 0 0 0 3-3c0-5-4-9-11-9z"/><circle cx="7.5" cy="10.5" r="1"/><circle cx="12" cy="8" r="1"/><circle cx="16" cy="10.5" r="1"/></svg>')
 ] %}
 
-{% set auth_kicker = 'Rejoindre le salon' %}
+{% set auth_kicker = 'Rejoindre Artworks Digital' %}
 {% set auth_quote = "« Galeries et collectionneurs au cœur d'un écosystème curatorial exigeant. »" %}
 {% set auth_quote_by = 'Acquisition · curation · confiance' %}
 {% set auth_image = url_for('static', filename='demo/art-03.jpg') %}
@@ -31,12 +31,12 @@
   <div class="auth-panel">
     <div class="auth-panel-inner auth-panel-inner--wide">
       <div class="auth-panel-mobile-brand">
-        <a href="{{ url_for('main.index') }}" class="brand">Artworks<span class="brand-tag">Salon</span></a>
+        <a href="{{ url_for('main.index') }}" class="brand">Artworks<span class="brand-tag">Digital</span></a>
       </div>
 
       <a href="{{ url_for('main.index') }}" class="auth-back">
         <svg viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-        Retour au salon
+        Retour à l'accueil
       </a>
 
       <h1 class="auth-form-title">Créer un compte</h1>

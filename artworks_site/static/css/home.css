@@ -1,75 +1,120 @@
-/* Homepage — Salon Collection (galeries & collectionneurs) */
+/* Homepage — Artworks Digital (marketplace art-first) */
 
 body.page-home .site-foot{ margin-top:0; }
 
-/* ----- Hero éditorial clair ----- */
-.salon-hero{
+/* ----- Hero art-first : mosaïque + overlay ----- */
+.art-first-hero{
   position:relative;
-  padding:clamp(56px,9vw,100px) 0 clamp(48px,7vw,80px);
-  background:var(--bg-pure);
-  border-bottom:1px solid var(--hair);
+  min-height:clamp(520px, 85vh, 780px);
+  display:flex; align-items:flex-end;
+  padding:clamp(48px,7vw,80px) 0;
   overflow:hidden;
+  background:var(--salon-navy);
 }
-.salon-hero-grid{
+.art-mosaic{
+  position:absolute; inset:0;
   display:grid;
-  grid-template-columns:1.05fr .95fr;
-  gap:clamp(32px,5vw,64px);
-  align-items:center;
+  grid-template-columns:repeat(6, 1fr);
+  grid-template-rows:repeat(3, 1fr);
+  gap:6px;
+  opacity:.45;
+  filter:saturate(1.05);
 }
-.salon-hero-copy .salon-kicker{
+.art-mosaic-cell{
+  overflow:hidden; display:block;
+  border-radius:var(--radius-md);
+  animation:mosaicFade .8s var(--ease-soft) both;
+  animation-delay:calc(var(--i, 0) * 60ms);
+}
+.art-mosaic-cell img{
+  width:100%; height:100%; object-fit:cover;
+  transition:transform 1.2s var(--ease-soft), opacity .4s;
+}
+.art-mosaic-cell:hover img{ transform:scale(1.08); opacity:.9; }
+.art-mosaic-cell:nth-child(1){ grid-column:span 2; grid-row:span 2; }
+.art-mosaic-cell:nth-child(2){ grid-column:span 2; }
+.art-mosaic-cell:nth-child(3){ grid-column:span 2; }
+.art-mosaic-cell:nth-child(4){ grid-column:span 1; }
+.art-mosaic-cell:nth-child(5){ grid-column:span 2; }
+.art-mosaic-cell:nth-child(6){ grid-column:span 1; }
+@keyframes mosaicFade{
+  from{ opacity:0; transform:scale(1.04); }
+  to{ opacity:1; transform:none; }
+}
+
+.art-first-hero::after{
+  content:"";
+  position:absolute; inset:0;
+  background:linear-gradient(
+    105deg,
+    rgba(26,40,50,.92) 0%,
+    rgba(26,40,50,.75) 42%,
+    rgba(26,40,50,.35) 100%
+  );
+  pointer-events:none;
+}
+.art-first-overlay{
+  position:relative; z-index:2;
+  max-width:640px;
+  color:#fff;
+}
+.art-first-overlay .salon-kicker{
   display:inline-flex; align-items:center; gap:10px;
   font-size:11px; font-weight:600; letter-spacing:.14em; text-transform:uppercase;
-  color:var(--salon-sage); margin-bottom:20px;
+  color:rgba(255,255,255,.6); margin-bottom:20px;
 }
-.salon-hero-copy .salon-kicker::before{
-  content:""; width:28px; height:2px; background:var(--accent); border-radius:2px;
+.art-first-overlay .salon-kicker::before{
+  content:""; width:28px; height:2px; background:var(--museum-gold-soft); border-radius:2px;
 }
-.salon-hero-copy h1{
+.art-first-overlay h1{
   font-family:var(--serif); font-weight:500;
-  font-size:clamp(2.4rem,5.8vw,4.2rem);
-  line-height:1.06; letter-spacing:-.03em;
-  margin:0 0 20px; color:var(--ink);
-  max-width:14ch;
+  font-size:clamp(2.6rem,6vw,4.5rem);
+  line-height:1.04; letter-spacing:-.03em;
+  margin:0 0 20px; color:#fff;
 }
-.salon-hero-copy h1 em{
-  font-style:italic; color:var(--accent); font-weight:500;
+.art-first-overlay h1 em{
+  font-style:italic; color:var(--museum-gold-soft); font-weight:500;
 }
-.salon-hero-lead{
+.art-first-lead{
   font-size:clamp(16px,1.5vw,18px); line-height:1.7;
-  color:var(--grey); max-width:48ch; margin:0 0 32px;
+  color:rgba(255,255,255,.72); max-width:52ch; margin:0 0 28px;
 }
-.salon-hero-cta{ display:flex; flex-wrap:wrap; gap:12px; margin-bottom:36px; }
-.salon-hero-stats{
-  display:flex; flex-wrap:wrap; gap:clamp(20px,4vw,40px);
-  padding-top:28px; border-top:1px solid var(--hair);
-  list-style:none; margin:0; padding-left:0;
+.art-first-cta{ display:flex; flex-wrap:wrap; gap:12px; margin-bottom:32px; }
+.art-first-cta .btn-line{
+  border-color:rgba(255,255,255,.4); color:#fff;
 }
-.salon-hero-stats li{ display:flex; flex-direction:column; gap:4px; }
-.salon-hero-stats strong{
-  font-family:var(--serif); font-size:1.5rem; font-weight:500; color:var(--salon-navy);
+.art-first-cta .btn-line:hover{
+  background:#fff; color:var(--salon-navy); border-color:#fff;
 }
-.salon-hero-stats span{ font-size:12px; color:var(--grey-soft); letter-spacing:.02em; }
-
-.salon-hero-visual{
-  position:relative; border-radius:var(--radius-xl);
-  overflow:hidden; aspect-ratio:4/5; max-height:560px;
-  box-shadow:var(--shadow-lift);
+.art-first-cta .btn-solid{
+  background:var(--accent); border-color:var(--accent);
 }
-.salon-hero-visual img{
-  width:100%; height:100%; object-fit:cover;
+.art-first-spotlight{
+  display:inline-flex; align-items:center; gap:14px;
+  padding:10px 14px 10px 10px;
+  background:rgba(255,255,255,.1);
+  border:1px solid rgba(255,255,255,.18);
+  border-radius:var(--radius-xl);
+  backdrop-filter:blur(8px);
+  transition:background .3s var(--ease-soft), transform .3s var(--ease-soft);
+  max-width:100%;
 }
-.salon-hero-visual-cap{
-  position:absolute; left:16px; right:16px; bottom:16px;
-  padding:16px 18px; background:var(--bg-pure);
+.art-first-spotlight:hover{
+  background:rgba(255,255,255,.16);
+  transform:translateY(-2px);
+}
+.art-first-spotlight img{
+  width:56px; height:56px; object-fit:cover;
   border-radius:var(--radius-md);
-  border:1px solid var(--hair);
 }
-.salon-hero-visual-cap strong{
-  display:block; font-family:var(--serif); font-size:18px; font-weight:500;
+.art-first-spotlight-cap{
+  font-size:12px; color:rgba(255,255,255,.75); line-height:1.4;
 }
-.salon-hero-visual-cap span{ font-size:12px; color:var(--grey); }
+.art-first-spotlight-cap strong{
+  display:block; font-family:var(--serif); font-size:15px; font-weight:500; color:#fff;
+}
 
-/* ----- Audiences : galerie + collectionneur ----- */
+/* ----- Audiences : 3 colonnes ----- */
 .salon-audiences{
   padding:var(--section-y) 0;
   background:var(--bg);
@@ -88,22 +133,28 @@ body.page-home .site-foot{ margin-top:0; }
   display:grid; grid-template-columns:repeat(2,1fr);
   gap:clamp(20px,3vw,28px);
 }
+.salon-audience-grid-3{ grid-template-columns:repeat(3,1fr); }
+
 .salon-audience-card{
   position:relative;
   background:var(--bg-pure);
   border:1px solid var(--hair);
+  border-radius:var(--radius-xl);
   padding:clamp(28px,4vw,40px);
   display:flex; flex-direction:column;
   min-height:340px;
-  transition:border-color .3s;
+  transition:border-color .35s var(--ease-soft), transform .35s var(--ease-soft), box-shadow .35s;
   overflow:hidden;
 }
 .salon-audience-card::before{
-  content:""; position:absolute; top:0; left:0; right:0; height:2px;
-  background:var(--accent);
+  content:""; position:absolute; top:0; left:0; right:0; height:3px;
+  background:linear-gradient(90deg, var(--accent), var(--museum-gold-soft));
+  border-radius:var(--radius-xl) var(--radius-xl) 0 0;
 }
 .salon-audience-card:hover{
-  border-color:rgba(184,115,74,.4);
+  border-color:rgba(184,115,74,.35);
+  transform:translateY(-4px);
+  box-shadow:var(--shadow-lift);
 }
 .salon-audience-role{
   font-size:11px; font-weight:700; letter-spacing:.14em; text-transform:uppercase;
@@ -111,8 +162,8 @@ body.page-home .site-foot{ margin-top:0; }
 }
 .salon-audience-card h3{
   font-family:var(--serif); font-weight:500;
-  font-size:clamp(1.5rem,2.5vw,2rem); line-height:1.15;
-  margin:0 0 14px; max-width:18ch;
+  font-size:clamp(1.35rem,2.2vw,1.75rem); line-height:1.15;
+  margin:0 0 14px;
 }
 .salon-audience-card > p{
   color:var(--grey); font-size:15px; line-height:1.65; margin:0 0 20px; flex:1;
@@ -133,56 +184,58 @@ body.page-home .site-foot{ margin-top:0; }
 /* ----- Catalogue sélection ----- */
 .salon-catalog{
   padding:var(--section-y) 0;
-  background:var(--salon-navy);
-  color:#fff;
+  background:var(--bg-pure);
+  border-top:1px solid var(--hair);
+  color:var(--ink);
 }
 .salon-catalog-head{ margin-bottom:clamp(32px,4vw,48px); }
-.salon-catalog-head .salon-kicker{ color:rgba(255,255,255,.55); }
-.salon-catalog-head .salon-kicker::before{ background:var(--museum-gold-soft); }
+.salon-catalog-head .salon-kicker{ color:var(--salon-sage); }
+.salon-catalog-head .salon-kicker::before{ background:var(--accent); }
 .salon-catalog-head h2{
   font-family:var(--serif); font-weight:500;
-  font-size:clamp(2rem,3.5vw,2.6rem); margin:12px 0 10px; color:#fff;
+  font-size:clamp(2rem,3.5vw,2.6rem); margin:12px 0 10px; color:var(--ink);
 }
-.salon-catalog-head p{ color:rgba(255,255,255,.6); margin:0; max-width:48ch; }
+.salon-catalog-head p{ color:var(--grey); margin:0; max-width:48ch; }
 
 .salon-catalog-grid{
   display:grid;
   grid-template-columns:repeat(4,1fr);
-  gap:14px;
+  gap:16px;
 }
 .salon-catalog-item{
   position:relative; display:block; overflow:hidden;
-  border-radius:var(--radius-md);
+  border-radius:var(--radius-xl);
   aspect-ratio:3/4;
-  background:rgba(255,255,255,.06);
+  background:var(--bg-alt);
+  transition:transform .4s var(--ease-soft), box-shadow .4s;
+  box-shadow:var(--shadow-soft);
 }
 .salon-catalog-item:first-child{
   grid-column:span 2; grid-row:span 2; aspect-ratio:auto;
 }
+.salon-catalog-item:hover{
+  transform:translateY(-6px);
+  box-shadow:var(--shadow-lift);
+}
 .salon-catalog-item img{
   width:100%; height:100%; object-fit:cover;
-  transition:transform .5s var(--ease);
+  transition:transform .65s var(--ease-soft);
 }
-.salon-catalog-item:hover img{ transform:scale(1.05); }
+.salon-catalog-item:hover img{ transform:scale(1.06); }
 .salon-catalog-cap{
   position:absolute; inset:auto 0 0 0;
-  padding:40px 14px 14px;
-  background:linear-gradient(0deg, rgba(26,40,50,.9), transparent);
-  font-size:12px; line-height:1.4;
+  padding:48px 18px 18px;
+  background:linear-gradient(0deg, rgba(26,40,50,.88), transparent);
+  font-size:12px; line-height:1.4; color:rgba(255,255,255,.85);
+  border-radius:0 0 var(--radius-xl) var(--radius-xl);
 }
-.salon-catalog-cap strong{ display:block; font-family:var(--serif); font-size:15px; font-weight:500; }
-.salon-catalog-actions{ margin-top:32px; display:flex; gap:12px; flex-wrap:wrap; }
-.salon-catalog .btn-line{
-  border-color:rgba(255,255,255,.35); color:#fff;
-}
-.salon-catalog .btn-line:hover{ background:#fff; color:var(--salon-navy); border-color:#fff; }
-.salon-catalog .btn-solid{ background:#fff; color:var(--salon-navy); border-color:#fff; }
-.salon-catalog .btn-solid:hover{ background:var(--accent); border-color:var(--accent); color:#fff; }
+.salon-catalog-cap strong{ display:block; font-family:var(--serif); font-size:16px; font-weight:500; color:#fff; }
+.salon-catalog-actions{ margin-top:36px; display:flex; gap:12px; flex-wrap:wrap; }
 
-/* ----- Services curatoriaux ----- */
+/* ----- Services ----- */
 .salon-services{
   padding:var(--section-y) 0;
-  background:var(--bg-pure);
+  background:var(--bg);
   border-top:1px solid var(--hair);
 }
 .salon-services-grid{
@@ -191,11 +244,16 @@ body.page-home .site-foot{ margin-top:0; }
 .salon-service{
   padding:28px 24px;
   border:1px solid var(--hair);
-  border-radius:var(--radius-lg);
-  background:var(--bg);
-  transition:background .25s, border-color .25s;
+  border-radius:var(--radius-xl);
+  background:var(--bg-pure);
+  transition:background .3s, border-color .3s, transform .35s var(--ease-soft), box-shadow .35s;
 }
-.salon-service:hover{ background:var(--bg-pure); border-color:rgba(184,115,74,.3); }
+.salon-service:hover{
+  background:var(--bg-pure);
+  border-color:rgba(184,115,74,.3);
+  transform:translateY(-3px);
+  box-shadow:var(--shadow-soft);
+}
 .salon-service-num{
   font-family:var(--serif); font-size:2rem; font-weight:500;
   color:var(--accent); line-height:1; margin-bottom:12px;
@@ -206,24 +264,6 @@ body.page-home .site-foot{ margin-top:0; }
 }
 .salon-service p{ font-size:14px; color:var(--grey); margin:0; line-height:1.6; }
 
-/* ----- CTA artiste (secondaire) ----- */
-.salon-artist-cta{
-  padding:clamp(48px,7vw,72px) 0;
-  background:var(--bg-alt);
-  border-top:1px solid var(--hair);
-}
-.salon-artist-inner{
-  display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between;
-  gap:24px; padding:clamp(28px,4vw,36px);
-  background:var(--bg-pure); border:1px solid var(--hair);
-  border-radius:var(--radius-xl);
-}
-.salon-artist-inner h2{
-  font-family:var(--serif); font-weight:500;
-  font-size:clamp(1.4rem,2.5vw,1.85rem); margin:0 0 8px;
-}
-.salon-artist-inner p{ color:var(--grey); margin:0; font-size:14px; max-width:42ch; }
-
 /* legacy class aliases */
 .aw-section-badge{
   display:inline-flex; align-items:center; gap:8px;
@@ -232,19 +272,26 @@ body.page-home .site-foot{ margin-top:0; }
   border:1px solid var(--hair); border-radius:var(--radius-pill);
   font-size:11px; font-weight:600; letter-spacing:.1em; text-transform:uppercase;
   margin-bottom:14px;
+  transition:background .25s, border-color .25s;
 }
+.aw-section-badge:hover{ background:rgba(184,115,74,.08); border-color:rgba(184,115,74,.25); }
 .aw-section-badge-icon{ color:var(--accent); }
 
+@media (max-width:1100px){
+  .salon-audience-grid-3{ grid-template-columns:1fr; }
+  .art-mosaic{ grid-template-columns:repeat(4,1fr); grid-template-rows:repeat(4,1fr); }
+}
 @media (max-width:960px){
-  .salon-hero-grid{ grid-template-columns:1fr; }
-  .salon-hero-visual{ max-height:400px; aspect-ratio:16/10; }
   .salon-audience-grid{ grid-template-columns:1fr; }
   .salon-catalog-grid{ grid-template-columns:repeat(2,1fr); }
   .salon-catalog-item:first-child{ grid-column:span 2; grid-row:span 1; aspect-ratio:16/10; }
   .salon-services-grid{ grid-template-columns:1fr; }
+  .art-first-hero{ min-height:auto; padding-top:clamp(80px,15vw,120px); }
+  .art-mosaic{ opacity:.3; }
 }
 @media (max-width:560px){
-  .salon-hero-copy h1{ max-width:none; }
   .salon-catalog-grid{ grid-template-columns:1fr; }
   .salon-catalog-item:first-child{ grid-column:span 1; }
+  .art-mosaic{ display:none; }
+  .art-first-hero::after{ background:rgba(26,40,50,.88); }
 }

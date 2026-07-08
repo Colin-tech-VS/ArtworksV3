@@ -1,6 +1,6 @@
 /* ============================================================
-   Artworks V3 — Salon Collection
-   Design galeries & collectionneurs · ivoire · bleu nuit · cuivre
+   Artworks V3 — Artworks Digital
+   Marketplace art · artistes · galeries · collectionneurs
    ============================================================ */
 
 :root{
@@ -39,12 +39,13 @@
 
   --ease: cubic-bezier(.22,.61,.36,1);
   --ease-spring: cubic-bezier(.34,1.08,.64,1);
-  --radius-xs: 0px;
-  --radius-sm: 2px;
-  --radius-md: 2px;
-  --radius-lg: 3px;
-  --radius-xl: 4px;
-  --radius-pill: 2px;
+  --ease-soft: cubic-bezier(.25,.46,.45,.94);
+  --radius-xs: 6px;
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
+  --radius-pill: 999px;
   --maxw: 1240px;
   --gutter: clamp(20px, 4vw, 48px);
   --section-y: clamp(72px, 11vw, 128px);
@@ -121,14 +122,15 @@ button{ font-family:inherit; cursor:pointer; }
    ============================================================ */
 .site-head{
   position:sticky; top:0; z-index:60;
-  background:rgba(247,244,238,.92);
-  backdrop-filter:blur(10px);
+  background:rgba(247,244,238,.88);
+  backdrop-filter:blur(14px);
   border-bottom:1px solid var(--hair);
-  transition:border-color .25s;
+  transition:border-color .25s, box-shadow .25s;
 }
 .site-head.scrolled{
-  background:rgba(255,252,247,.95);
+  background:rgba(255,252,247,.94);
   border-bottom-color:var(--hair);
+  box-shadow:0 4px 24px -12px rgba(26,40,50,.12);
 }
 .head-inner{
   display:flex; align-items:center; gap:20px;
@@ -153,19 +155,22 @@ button{ font-family:inherit; cursor:pointer; }
 .nav a{
   font-size:12.5px; font-weight:500; letter-spacing:.04em;
   color:var(--grey); padding:8px 16px;
+  border-radius:var(--radius-pill);
   border-bottom:2px solid transparent;
-  transition:color .15s, border-color .15s;
+  transition:color .2s var(--ease-soft), background .2s, border-color .2s, transform .2s;
 }
-.nav a:hover{ color:var(--ink); }
-.nav a.active{ color:var(--ink); border-bottom-color:var(--accent); background:none; }
+.nav a:hover{ color:var(--ink); background:rgba(184,115,74,.06); }
+.nav a.active{ color:var(--ink); border-bottom-color:var(--accent); background:rgba(184,115,74,.08); }
 
 .head-tools{ margin-left:auto; display:flex; align-items:center; gap:12px; }
 .search-mini{
   display:flex; align-items:center; gap:8px;
   border:1px solid var(--hair); padding:8px 14px;
   background:var(--bg-pure);
-  transition:border-color .2s;
+  border-radius:var(--radius-pill);
+  transition:border-color .25s var(--ease-soft), box-shadow .25s var(--ease-soft);
 }
+.search-mini:hover{ border-color:rgba(184,115,74,.25); }
 .search-mini:focus-within{ border-color:var(--accent); }
 .search-mini input{
   border:none; outline:none; background:transparent;
@@ -191,20 +196,26 @@ button{ font-family:inherit; cursor:pointer; }
   font-size:12px; font-weight:500; letter-spacing:.06em; text-transform:uppercase;
   padding:10px 20px;
   border:1px solid var(--salon-ink); background:transparent; color:var(--salon-ink);
-  transition:all .22s var(--ease); white-space:nowrap;
+  border-radius:var(--radius-pill);
+  transition:all .28s var(--ease-soft); white-space:nowrap;
 }
 .btn-line:hover{
   background:var(--salon-ink); color:var(--salon-paper);
+  transform:translateY(-1px);
+  box-shadow:0 6px 20px -8px rgba(26,40,50,.35);
 }
 
 .btn-solid{
   font-size:12px; font-weight:500; letter-spacing:.06em; text-transform:uppercase;
   padding:10px 22px;
   border:1px solid var(--salon-ink); background:var(--salon-ink); color:var(--salon-paper);
-  transition:all .22s var(--ease); white-space:nowrap;
+  border-radius:var(--radius-pill);
+  transition:all .28s var(--ease-soft); white-space:nowrap;
 }
 .btn-solid:hover{
   background:var(--accent); border-color:var(--accent); color:#fff;
+  transform:translateY(-1px);
+  box-shadow:0 8px 24px -10px rgba(184,115,74,.55);
 }
 
 .burger{ display:none; background:none; border:none; padding:8px; border-radius:var(--radius-sm); }
@@ -269,20 +280,27 @@ button{ font-family:inherit; cursor:pointer; }
 
 .art{
   position:relative; display:flex; flex-direction:column;
-  transition:opacity .3s var(--ease);
+  transition:transform .35s var(--ease-soft), opacity .3s var(--ease);
 }
-.art:hover{ opacity:.98; }
+.art:hover{ opacity:1; transform:translateY(-4px); }
 .art-frame{
   position:relative; overflow:hidden;
   background:var(--bg-alt);
   border:1px solid var(--hair);
-  box-shadow:inset 0 0 0 8px var(--salon-paper);
+  border-radius:var(--radius-lg);
+  box-shadow:inset 0 0 0 6px var(--salon-paper), var(--shadow-soft);
+  transition:box-shadow .35s var(--ease-soft), border-color .3s;
+}
+.art:hover .art-frame{
+  border-color:rgba(184,115,74,.22);
+  box-shadow:inset 0 0 0 6px var(--salon-paper), var(--shadow-lift);
 }
 .art-frame img{
   width:100%; height:auto;
-  transition:transform .7s var(--ease);
+  border-radius:calc(var(--radius-lg) - 2px);
+  transition:transform .75s var(--ease-soft);
 }
-.art:hover .art-frame img{ transform:scale(1.03); }
+.art:hover .art-frame img{ transform:scale(1.045); }
 
 .art-cartel{
   position:absolute; left:0; right:0; bottom:0;

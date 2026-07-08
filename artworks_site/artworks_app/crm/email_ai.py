@@ -7,7 +7,7 @@ import re
 from ..ai import chat_completions, CuratorialAIError
 
 _EMAIL_SYSTEM = (
-    'Tu es rédacteur email marketing pour Artworks, salon d\'art contemporain pour galeries et collectionneurs. '
+    'Tu es rédacteur email marketing pour Artworks Digital, marketplace d\'art contemporain pour artistes, galeries et collectionneurs. '
     'Rédige des emails HTML concis, élégants, compatibles clients mail. '
     'Utilise des balises simples : h1, p, ul/li, strong, em. Style éditorial haut de gamme. '
     'Variables de personnalisation autorisées : {{name}}, {{email}}, {{username}}, {{role}}, {{role_label}}, {{plan}}. '

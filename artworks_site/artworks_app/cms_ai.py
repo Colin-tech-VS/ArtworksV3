@@ -7,7 +7,7 @@ import re
 from .ai import chat_completions, CuratorialAIError
 
 _SEO_SYSTEM = (
-    'Tu es expert SEO et rédacteur web pour Artworks Salon, plateforme d\'art contemporain '
+    'Tu es expert SEO et rédacteur web pour Artworks Digital, marketplace d\'art contemporain '
     'orientée galeries et collectionneurs. '
     'Objectif unique : référencement naturel maximal (Google, Bing) et conversion éditoriale. '
     'Règles strictes : '

@@ -1,6 +1,6 @@
-# Artworks V3 — Salon Collection
+# Artworks V3 — Artworks Digital
 
-Plateforme galeries & collectionneurs (Flask). Code applicatif dans `artworks_site/`.
+Marketplace d'art contemporain (artistes, galeries & collectionneurs). Code applicatif dans `artworks_site/`.
 
 ## Local
 
@@ -26,7 +26,16 @@ scalingo --app artworksv3 integrations github create Colin-tech-VS/ArtworksV3 br
 ## Base de données
 
 - **Prod V3** : Supabase PostgreSQL (`DATABASE_URL`)
-- **Migration clients V2** : voir [docs/MIGRATION_V2_V3.md](docs/MIGRATION_V2_V3.md)
+- **Migration depuis V2 / staging** : voir [docs/MIGRATION_V2_V3.md](docs/MIGRATION_V2_V3.md)
+
+```bash
+# Simulation migration V2 → V3
+cd artworks_site
+set V2_DATABASE_URL=postgresql://...   # staging-artworks-digital / artworksdigital
+set DATABASE_URL=postgresql://...      # Supabase ArtworksV3
+python ../scripts/migrate_v2_to_v3.py --dry-run
+python ../scripts/migrate_v2_to_v3.py --execute
+```
 
 ## Google OAuth
 

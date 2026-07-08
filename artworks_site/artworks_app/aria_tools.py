@@ -118,7 +118,7 @@ TOOLS_PUBLIC = [
         'display_name = nom public de la galerie (espaces OK). username optionnel (généré automatiquement).',
         {
             'role': {'type': 'string', 'enum': ['artiste', 'galerie', 'collectionneur']},
-            'display_name': {'type': 'string', 'description': 'Nom affiché public (ex. Artworks Salon)'},
+            'display_name': {'type': 'string', 'description': 'Nom affiché public (ex. Galerie Dupont)'},
             'username': {'type': 'string', 'description': 'Optionnel — identifiant technique, 3-64 car.'},
             'email': {'type': 'string'},
             'password': {'type': 'string'},

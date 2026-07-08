@@ -104,7 +104,7 @@ def render_branded_email(
 <td style="background:{_BRAND["primary"]};padding:28px 32px;text-align:center;">
 <a href="{site}" style="text-decoration:none;color:#ffffff;">
 <span style="font-family:Arial,Helvetica,sans-serif;font-size:22px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;">Artworks</span>
-<span style="font-family:Arial,Helvetica,sans-serif;font-size:22px;font-weight:300;color:{_BRAND["accent"]};"> Salon</span>
+<span style="font-family:Arial,Helvetica,sans-serif;font-size:22px;font-weight:300;color:{_BRAND["accent"]};"> Digital</span>
 </a>
 <p style="margin:8px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:11px;color:#aaaaaa;letter-spacing:0.12em;text-transform:uppercase;">{_BRAND["tagline"]}</p>
 </td>

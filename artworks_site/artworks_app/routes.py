@@ -49,7 +49,7 @@ def index():
     from .entitlements import has_public_portfolio
     from .seo_public import page_meta, site_json_ld, json_ld_script, _site_url
     artworks = Artwork.query.order_by(Artwork.id).all()
-    featured = featured_artworks(artworks, limit=8)
+    featured = featured_artworks(artworks, limit=12)
     seen = set()
     artists = []
     for a in artworks:
