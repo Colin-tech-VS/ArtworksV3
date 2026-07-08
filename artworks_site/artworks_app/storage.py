@@ -14,6 +14,7 @@ from flask import current_app, url_for
 from werkzeug.utils import secure_filename
 
 _log = logging.getLogger(__name__)
+_remote_exists: dict[str, bool] = {}
 
 
 def remote_enabled() -> bool:
@@ -46,6 +47,40 @@ def _upload_supabase(key: str, data: bytes, content_type: str) -> bool:
     except requests.RequestException as exc:
         _log.error('Supabase upload error: %s', exc)
     return False
+
+
+def _remote_object_ok(url: str) -> bool:
+    """Vérifie qu'un objet Supabase existe (cache en mémoire par worker)."""
+    if url in _remote_exists:
+        return _remote_exists[url]
+    ok = False
+    try:
+        r = requests.head(url, timeout=3, allow_redirects=True)
+        ok = r.status_code == 200
+        if not ok:
+            # Certains endpoints Supabase répondent mal au HEAD
+            r = requests.get(url, stream=True, timeout=3, allow_redirects=True)
+            ok = r.status_code == 200
+            r.close()
+    except requests.RequestException as exc:
+        _log.debug('remote image check failed %s: %s', url[:80], exc)
+    _remote_exists[url] = ok
+    if len(_remote_exists) > 400:
+        _remote_exists.clear()
+    return ok
+
+
+def _supabase_public_url(key: str) -> str:
+    base = current_app.config['SUPABASE_URL'].rstrip('/')
+    bucket = current_app.config['SUPABASE_STORAGE_BUCKET']
+    return f'{base}/storage/v1/object/public/{bucket}/{key}'
+
+
+def _local_upload_url(key: str) -> str | None:
+    upload_folder = current_app.config.get('UPLOAD_FOLDER')
+    if upload_folder and os.path.isfile(os.path.join(upload_folder, key)):
+        return url_for('static', filename=f'uploads/{key}')
+    return None
 
 
 def save_upload(file_storage) -> str | None:
@@ -88,11 +123,14 @@ def normalize_image_ref(value: str | None) -> str | None:
     if not value:
         return None
     if value.startswith('http://') or value.startswith('https://'):
+        # URLs V2 (render/image) — conserver l'URL complète telle quelle
+        if '/storage/v1/render/image/public/' in value:
+            return value
         marker = '/storage/v1/object/public/'
         if marker in value:
             rest = value.split(marker, 1)[1]
             if '/' in rest:
-                return rest.split('/', 1)[1]
+                return rest.split('/', 1)[1].split('?')[0]
         for prefix in ('/static/uploads/', '/uploads/'):
             if prefix in value:
                 return value.split(prefix, 1)[1].split('?')[0]
@@ -105,15 +143,20 @@ def normalize_image_ref(value: str | None) -> str | None:
 
 
 def public_url(value: str | None) -> str | None:
-    """URL publique d'une image (Supabase ou /static/uploads/)."""
+    """URL publique d'une image (Supabase, static demo, ou /static/uploads/)."""
     if not value:
         return None
     value = str(value).strip()
     if value.startswith('http://') or value.startswith('https://'):
+        # URL V2 render ou externe déjà valide
+        if '/storage/v1/render/image/public/' in value:
+            return value
         key = normalize_image_ref(value)
         if key and key != value:
             return public_url(key)
-        return value
+        if _remote_object_ok(value):
+            return value
+        return None
     if value.startswith('/static/uploads/'):
         value = value.replace('/static/uploads/', '', 1)
     elif value.startswith('uploads/'):
@@ -122,9 +165,16 @@ def public_url(value: str | None) -> str | None:
         return url_for('static', filename=value)
     key = value.split('/')[-1] if '/' in value else value
     if remote_enabled():
-        base = current_app.config['SUPABASE_URL'].rstrip('/')
-        bucket = current_app.config['SUPABASE_STORAGE_BUCKET']
-        return f'{base}/storage/v1/object/public/{bucket}/{key}'
+        remote = _supabase_public_url(key)
+        if _remote_object_ok(remote):
+            return remote
+        local = _local_upload_url(key)
+        if local:
+            return local
+        return None
+    local = _local_upload_url(key)
+    if local:
+        return local
     return url_for('static', filename=f'uploads/{key}')
 
 

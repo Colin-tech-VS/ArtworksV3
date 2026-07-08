@@ -18,8 +18,9 @@
   {% if mosaic %}
   <div class="art-mosaic reveal in" aria-hidden="true">
     {% for a in mosaic %}
+    {% set demo_img = 'demo/art-%02d.jpg'|format((loop.index0 % 12) + 1) %}
     <a href="{{ url_for('main.artwork_detail', artwork_id=a.id) }}" class="art-mosaic-cell" style="--i:{{ loop.index0 }}">
-      <img src="{{ img_url(a.image) }}" alt="" loading="{{ 'eager' if loop.index <= 4 else 'lazy' }}">
+      <img src="{{ img_url(a.image, demo_img) }}" alt="" loading="{{ 'eager' if loop.index <= 4 else 'lazy' }}" data-fallback="{{ url_for('static', filename=demo_img) }}">
     </a>
     {% endfor %}
   </div>
@@ -34,7 +35,7 @@
     </div>
     {% if hero %}
   <a href="{{ url_for('main.artwork_detail', artwork_id=hero.id) }}" class="art-first-spotlight">
-      <img src="{{ img_url(hero.image) }}" alt="{{ hero.title }}" loading="eager">
+      <img src="{{ img_url(hero.image, 'demo/art-09.jpg') }}" alt="{{ hero.title }}" loading="eager" data-fallback="{{ url_for('static', filename='demo/art-09.jpg') }}">
       <span class="art-first-spotlight-cap">
         <strong>{{ hero.title }}</strong>
         {{ hero.owner.name if hero.owner else 'Artiste' }}{% if hero.price %} · {{ hero.price_str }}{% endif %}
@@ -55,8 +56,9 @@
     </header>
     <div class="salon-catalog-grid reveal">
       {% for a in featured[:8] %}
+      {% set demo_img = 'demo/art-%02d.jpg'|format((loop.index0 % 12) + 1) %}
       <a href="{{ url_for('main.artwork_detail', artwork_id=a.id) }}" class="salon-catalog-item">
-        <img src="{{ img_url(a.image) }}" alt="{{ a.title }}" loading="lazy">
+        <img src="{{ img_url(a.image, demo_img) }}" alt="{{ a.title }}" loading="lazy" data-fallback="{{ url_for('static', filename=demo_img) }}">
         <div class="salon-catalog-cap">
           <strong>{{ a.title }}</strong>
           {{ a.owner.name if a.owner else 'Artiste' }}{% if a.price %} · {{ a.price_str }}{% endif %}

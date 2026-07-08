@@ -100,7 +100,7 @@
 
     <div class="detail reveal in">
       <div class="artist-line">
-        <img src="{{ img_url(artwork.owner.avatar) if artwork.owner else None or url_for('static', filename='demo/artist-01.jpg') }}" alt="{{ artwork.owner.name if artwork.owner else '' }}">
+        <img src="{{ img_url(artwork.owner.avatar, 'demo/artist-01.jpg') if artwork.owner else url_for('static', filename='demo/artist-01.jpg') }}" alt="{{ artwork.owner.name if artwork.owner else '' }}">
         <div>
           <div class="role">Œuvre originale de</div>
           {% if artwork.owner %}<a href="{{ url_for('main.artist', artist_id=artwork.owner.id) }}">{{ artwork.owner.name }}</a>{% else %}<span>Anonyme</span>{% endif %}
